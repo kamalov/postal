@@ -1,0 +1,39 @@
+Post Pascal (Postal) programming language
+
+Goal: syntax like TypeScript, compile time speed like Delphi, runtime memory and speed like C++
+
+Priorities (by desc):
+1. Typed 
+2. Memsafe
+3. run time	:: At least C++ runtime performance (speed and memory wise)
+4. compile time :: At least Free/Object Pascal compilation speed
+5. design time  :: At least TypeScript code writing speed (low friction)
+
+Implementation
+
+Phase zero (proof of concept):
+-- transpile to C++
+-- single source file
+-- basic syntax and semantics:
+   -- cpp/pascal hybrid syntax
+   -- type inference
+   -- generics
+   -- dyn arrays
+   -- custom types
+-- dynamic types are refcounted (strings, records, arrays)
+
+Phase one:
+-- multiple source files
+-- nested arrays
+-- first class functions
+-- variant data type
+-- VS Code support (language server, etc.)
+
+Phase two:
+-- for debug mode generate x86 native code (unoptimized) 
+-- debug mode compile speed (cold start) >= 100k loc per second
+-- debug mode compile speed (hot) == instant (less than 0.1ms)
+-- for production generate LLVM code 
+-- production mode compile speed >= 10k loc per second
+
+

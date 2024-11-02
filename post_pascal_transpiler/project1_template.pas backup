@@ -1,0 +1,32 @@
+program project1;
+
+{$mode objfpc}
+{$modeswitch advancedrecords}
+
+uses
+  Classes, SysUtils;
+
+type
+  generic TArray<T> = array of T;
+
+  generic procedure _array_push<T>(var arr: specialize TArray<T>; value: T);
+  begin
+    SetLength(arr, length(arr) + 1);
+    arr[length(arr) - 1] := value;
+  end;
+
+  generic function _array_pop<T>(var arr: specialize TArray<T>): T;
+  begin
+    result := arr[length(arr) - 1];
+    SetLength(arr, length(arr) - 1);
+  end;
+
+//  var a: specialize TArray<integer>;
+//  specialize push<integer>(a, 1);
+//  specialize pop<integer>(a);
+
+%GENERATED_CODE%
+
+begin
+  main;
+end.

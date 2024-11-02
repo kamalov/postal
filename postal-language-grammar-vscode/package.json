@@ -1,0 +1,26 @@
+{
+  "name": "postal-language-grammar",
+  "displayName": "postal_language_grammar",
+  "description": "postal language grammar",
+  "publisher": "kamalov",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.91.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "postal",
+      "aliases": ["postal", "postal"],
+      "extensions": [".post"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "postal",
+      "scopeName": "source.post",
+      "path": "./syntaxes/postal.tmLanguage.json"
+    }]
+  }
+}

@@ -1,0 +1,51 @@
+fn test 
+begin
+    c = 10
+    log('test passed ', c)
+end
+
+fn main
+begin
+    a = 5
+    b = a + 1.1
+
+    log('one', ' ', a + b)
+    test()
+      
+    if a < 0 {
+        log('a < 0')
+    } else if a > 10 {
+        log('a > 10')
+    } else {
+        log('a >= 0 and <= 10')
+        log(a + 10)
+    }
+    
+    i = 0
+    loop {
+        log('i = ', i)
+
+        i = i + 1
+        if i = 10 {
+            break
+        }
+        //todo: if i = 10 do break
+    }
+
+    items: [float]
+    push(items, 123)
+    push(items, 456)
+    push(items, 789)
+
+    items >> {
+        log('>> ', it_index, ' ', it) 
+        items >> {
+            log('    ', it_index, ' ', it) 
+        }
+        log('<< ', it_index, ' ', it) 
+        log()
+    }
+
+    // writeln(items[0]);
+    // ret items
+end

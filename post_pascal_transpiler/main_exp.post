@@ -1,0 +1,182 @@
+fn main_test 
+begin
+   a = 1*2 + 3*4/5 + 6
+   b = 1*2 mod 5 + 3*4 div 3
+   log("one", " ", a + b)
+   if b > 0 {
+       log("two")
+       log("three")
+   }
+   
+   if a < 0 
+      log('a < 0')
+   el a > 10 
+      log('a > 10')
+   el a*100 > 100
+      log('a >= 0 and <= 10')
+      log(a + 10)
+   el
+      log(a + 10)
+      log('a >= 0 and <= 10')
+end
+
+fn test(one: 0, two: true, three = "", four = 0.0, five: SomeType) SomeType
+    comments?
+    initialization?
+    anything?
+begin
+    self.skip_with_check('var')
+
+    a = [1, 2, 3]
+
+    name = { 
+        t = self.next
+        if t.kind <> .Identifier do panic ParseErr('wrong token') 
+        t.value
+    }
+
+    obj_param >> one.two as four, two as five, three as six
+
+    self.skip_with_check(":")
+
+    var_type = {
+        if t.kind in [.Identifier, .Keyword] do panic ParseErr('wrong token')
+        t.value
+    }
+
+    self.skip_with_check("=")
+
+    expression = self.parse_expression(";", "\n")
+
+    ret VariableDeclarationNode { 
+            name,
+            var_type,
+            rvalue_expression: expression 
+        }
+end
+
+fn main {
+    var a: float = 1*2 + 3*4/5 + 6;
+    // var a: float = 1*2 + 3*4/5 + 6;
+    var b: int = 1*2 + 3*4;
+    log("one", " ", a + b);
+    
+    if b > 0 {
+        log("two");
+        log("three");
+    }
+
+    var col: []int;
+    for a in col {
+        //log(col.length);
+    }
+&
+    for a {
+        if a << 5  {
+
+        }
+    }
+
+    let p = asdf
+    p = 
+    let p = asdf 
+    p || 10
+    a << 20
+    p = map(col, _ => _.name)
+    a = 20
+    if p && a {
+
+    }
+
+    if let a = asdf {
+
+    }
+
+    let a = col.map(function(elem) { return elem.name + " " + elem.second_name; });
+    a = 
+    to_vec()
+    a.push (some.of()) asdsldkf asdf (asd;lasjldkfj) (asdf) sdf
+    let a = filter(col, () => .name == "test");
+
+    for c of col {
+        if c.name == "test" {
+            a.push({ title: c.name + ' ' + c.value });
+        }
+    }
+
+    block {
+        
+    }
+
+    filter(col, => .name 
+    a = col >> {}
+    1 + 2 >> a
+    a << 1 + 2  >=
+
+    let a = col.filter(filter(col, elem => elem.asdf == "one");
+    a = map(col, elem => { title: elem.name + ' ' + elem.second_name });
+    a = col >> { title: .name + ' ' + .second_name }
+
+    if a := filter(col, > .asdf .asdf asd. ) >> (.name, ' ', .second_name)
+    let a = for col {
+        .name + ' ' .
+    }
+    a = 5
+    log 'asdfsd' 
+
+    
+    if a := 5 and (b := 10 and c := 20) {
+
+    }
+    a := 1;
+    var a := col >> .name + .second_name;
+
+
+    col.filter({ name, value})
+}
+
+fn main {
+    var n: int = 1;
+    var a: string = "test";
+    log("one", 1)
+    
+    for {
+
+    } 
+
+    if a == 1 {
+        a = 2
+    }
+    
+    var b = if a == 1 :: 2 :: b;
+
+    if a < 10 {
+
+    }
+    
+    log('asdfd', asdf);
+}
+
+(fn main 
+    
+    (var n 1
+    (var a string "test"
+    (let a 1
+    (obj.(one 1).(two_three 2 3).(four)
+    (log "one" 1
+    (log 'one' 1
+    (if (a < 10
+        (
+            
+
+let a = obj.one(1)
+let b = a.two_three()
+let c = b.four()
+
+let a = obj.one(1).two_three(2, 3).four(4);
+
+(four (two_three (one obj 1) 2 3) 4)
+
+(obj.(one 1).(two_three 2 3).(four))
+
+(var a (obj.(one 1).(two_three 2 3).(four 4)))

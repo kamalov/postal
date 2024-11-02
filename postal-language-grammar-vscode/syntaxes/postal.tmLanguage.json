@@ -1,0 +1,41 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "postal",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#operators"
+		},
+		{
+			"include": "#strings"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.postal",
+				"match": "\\b(else|loop|while|for|return|ret|fn|let|var|do|begin|end)\\b"
+			}]
+		},
+		"operators": {
+			"patterns": [{
+				"name": "operator.postal",
+				"match": "[<>,.=;:\"'\\+\\-\\/\\*\\[\\]]|and|or|not|div|mod"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.postal",
+			"begin": "'",
+			"end": "'",
+			"patterns": [
+				{
+					"name": "constant.character.escape.postal",
+					"match": "\\\\."
+				}
+			]
+		}
+	},
+	"scopeName": "source.post"
+}
