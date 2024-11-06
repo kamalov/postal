@@ -20,32 +20,35 @@ begin
         log('a >= 0 and <= 10')
         log(a + 10)
     }
-    
-    i = 0
-    loop {
-        log('i = ', i)
 
-        i = i + 1
-        if i = 10 {
-            break
-        }
-        //todo: if i = 10 do break
-    }
-
-    items: [float]
+    items: [double]
     push(items, 123)
     push(items, 456)
     push(items, 789)
 
+    i = 0
+    loop {
+        i = i + 1
+        log(i)
+        if i = 10 {
+            break
+        }
+
+        // todo
+        // if i = 10 do break
+    }
+
+    log()
+
     items >> {
-        log('>> ', it_index, ' ', it) 
+        log(it_index) 
+        log('items ', it_index, ' ', it) 
+        
         items >> {
             log('    ', it_index, ' ', it) 
         }
         log('<< ', it_index, ' ', it) 
-        log()
     }
 
-    // writeln(items[0]);
-    // ret items
+    // ret a
 end

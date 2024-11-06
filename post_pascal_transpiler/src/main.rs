@@ -52,8 +52,8 @@ fn main() {
     let generated_code = generator.generate_code();
     println!("\x1b[93m{generated_code}\x1b[0m");
 
-    let filename = "D:\\src\\postal\\post_pascal_transpiler\\project1_template.pas";
+    let filename = "D:\\src\\postal\\template.cpp";
     let text = read_to_string(filename.to_string()).unwrap();
     let text = text.replace("%GENERATED_CODE%", &generated_code);
-    fs::write("D:\\src\\postal\\_out.pas", text);
+    fs::write("D:\\src\\postal\\main.cpp", text);
 }

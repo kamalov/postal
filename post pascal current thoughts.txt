@@ -1,4 +1,4 @@
-Post Pascal (Postal) programming language
+Postal (POST pascAL) programming language
 
 Goal: syntax like TypeScript, compile time speed like Delphi, runtime memory and speed like C++
 
@@ -14,10 +14,11 @@ Implementation
 Phase zero (proof of concept):
 -- transpile to C++
 -- single source file
+-- ansi strings
 -- basic syntax and semantics:
-   -- cpp/pascal hybrid syntax
+   -- C++/Pascal hybrid syntax
    -- type inference
-   -- generics
+   -- generics (if needed)
    -- dyn arrays
    -- custom types
 -- dynamic types are refcounted (strings, records, arrays)
@@ -25,11 +26,12 @@ Phase zero (proof of concept):
 Phase one:
 -- multiple source files
 -- nested arrays
--- first class functions
--- variant data type
--- VS Code support (language server, etc.)
+-- semantic block comment (clojure style)
+-- IDE support (language server, etc.)
+-- ? maybe, first class functions
+-- ? maybe, variant data type
 
-Phase two:
+Phase last (may not be needed if transpile to C++ would be enought):
 -- for debug mode generate x86 native code (unoptimized) 
 -- debug mode compile speed (cold start) >= 100k loc per second
 -- debug mode compile speed (hot) == instant (less than 0.1ms)

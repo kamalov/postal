@@ -11,8 +11,8 @@ pub enum TokenKind {
     Identifier,
     Keyword,
     String,
-    Integer,
-    Float,
+    IntegerLiteral,
+    RealLiteral,
     Comment,
 }
 
@@ -29,10 +29,10 @@ impl Token {
     }
 }
 
-const KEYWORDS: [&str; 17] = [
+const KEYWORDS: [&str; 16] = [
     "begin", "end", "do", //
     "fn", "var", "if", "for", "in", "loop", "break", //
-    "int", "float", "bool", "string", //
+    "long", "double", "string", //
     "not", "and", "or" //
 ];
 
@@ -176,15 +176,15 @@ impl Tokenizer {
         let mut value = String::new();
         let index = self.ci;
 
-        let mut kind = TokenKind::Integer;
+        let mut kind = TokenKind::IntegerLiteral;
         while let Some(c) = self.peek() {
             if c.is_numeric() || c == '.' {
                 value.push(self.get_next_char());
                 if c == '.' {
-                    if kind == TokenKind::Float {
+                    if kind == TokenKind::RealLiteral {
                         panic!()
                     }
-                    kind = TokenKind::Float;
+                    kind = TokenKind::RealLiteral;
                 }
             } 
             else if c == '_' {
