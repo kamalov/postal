@@ -12,7 +12,7 @@ pub enum TokenKind {
     Keyword,
     String,
     IntegerLiteral,
-    RealLiteral,
+    FloatLiteral,
     Comment,
 }
 
@@ -32,7 +32,7 @@ impl Token {
 const KEYWORDS: [&str; 16] = [
     "begin", "end", "do", //
     "fn", "var", "if", "for", "in", "loop", "break", //
-    "long", "double", "string", //
+    "i64", "f64", "string", //
     "not", "and", "or" //
 ];
 
@@ -181,10 +181,10 @@ impl Tokenizer {
             if c.is_numeric() || c == '.' {
                 value.push(self.get_next_char());
                 if c == '.' {
-                    if kind == TokenKind::RealLiteral {
+                    if kind == TokenKind::FloatLiteral {
                         panic!()
                     }
-                    kind = TokenKind::RealLiteral;
+                    kind = TokenKind::FloatLiteral;
                 }
             } 
             else if c == '_' {

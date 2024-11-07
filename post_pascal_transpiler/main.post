@@ -21,7 +21,7 @@ begin
         log(a + 10)
     }
 
-    items: [double]
+    items: [i64]
     push(items, 123)
     push(items, 456)
     push(items, 789)

@@ -22,6 +22,15 @@ pub struct Gen<'a> {
 
 const PADDING: &str = "    ";
 
+fn convert_type_name_str(ti: &String) -> String {
+    match ti.as_str() {
+        "i64" => "long".to_string(),
+        "f64" => "double".to_string(),
+        //"bool" => "boolean".to_string(),
+        _ => panic!(), // ti.clone()
+    }
+}
+
 impl Gen<'_> {
     pub fn new<'a>(ast_bulder: &'a AstBuilder<'a>) -> Gen<'a> {
         Gen {
@@ -46,15 +55,6 @@ impl Gen<'_> {
     }
 
     fn generate_function_code(&mut self, function_node: &FunctionNode, padding: &str) -> String {
-        fn convert_type_name_str(ti: &String) -> String {
-            match ti.as_str() {
-                "long" => "long".to_string(),
-                "double" => "double".to_string(),
-                //"bool" => "boolean".to_string(),
-                _ => panic!(), // ti.clone()
-            }
-        }
-
         fn type_info_to_str(ti: &TypeInfo) -> String {
             let type_name = convert_type_name_str(&ti.type_str);
 
@@ -196,7 +196,7 @@ impl Gen<'_> {
 
         todo!();
         let index_variable_name = format!("_{}_index", f.iterator_variable_name);
-        // decls.push((index_variable_name.clone(), "integer".to_owned()));
+        // decls.push((index_variable_name.clone(), "i64".to_owned()));
 
         let iteratable = self.generate_expression_code(&f.iteratable.root);
         let block = self.generate_block_code(&f.for_block, padding);
@@ -248,7 +248,7 @@ impl Gen<'_> {
         function_context
             .iterators
             .push((it_name.clone(), it_type.clone()));
-        // decls.push((index_variable_name.clone(), "integer".to_owned()));
+        // decls.push((index_variable_name.clone(), "i64".to_owned()));
 
         let block = self.generate_block_code(&iteration_node.block, padding);
         writeln!(&mut r, "");
@@ -260,7 +260,7 @@ impl Gen<'_> {
         writeln!(
             &mut r,
             "{}{}{} {} = {}[{}];",
-            padding, PADDING, it_type, it_name, iteratable_name, it_index_name
+            padding, PADDING, convert_type_name_str(&it_type), it_name, iteratable_name, it_index_name
         );
 
         write!(&mut r, "{}", block);
@@ -295,11 +295,11 @@ impl Gen<'_> {
                     for (i, param) in f.function_call_params.iter().enumerate() {
                         let param_name = param_names[i].clone();
                         match param.expression.type_str.as_str() {
-                            "long" => {
+                            "i64" => {
                                 format_parts.push("%lld");
                                 names.push(format!("static_cast<long long>({})", param_name));
                             }
-                            "double" => {
+                            "f64" => {
                                 format_parts.push("%f");
                                 names.push(param_name.clone());
                             }

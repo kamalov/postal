@@ -5,8 +5,9 @@ use std::env::var;
 use std::fmt::Write;
 use std::fs::{read_dir, read_to_string};
 use std::slice::Iter;
-use std::{array, default, fs, mem};
+use std::{array, default, fs, iter, mem};
 use to_vec::ToVec;
+//use indexmap::IndexMap;
 
 use crate::stage01_tokenizer::*;
 
@@ -170,24 +171,36 @@ pub struct TypeInfo {
     pub type_str: String,
 }
 
+struct CurrentFunctionContext {
+    //function_node: FunctionNode,
+    //iterators: Vec<(String, String)>,
+    //iterators_count: u32,
+    vars: HashMap<String, TypeInfo>,
+    iterators: Vec<TypeInfo>,
+}
+
 //#[derive(Default)]
 pub struct AstBuilder<'a> {
     ti: usize,
-    current_function_vars: HashMap<String, TypeInfo>,
     pub tokenizer: &'a Tokenizer,
     pub tokens: Vec<Token>,
     pub root: ProgramNode,
+    current_function_context: Option<CurrentFunctionContext>
 }
 
 impl<'a> AstBuilder<'a> {
     pub fn new(tokenizer: &Tokenizer) -> AstBuilder {
         AstBuilder {
             ti: 0,
-            current_function_vars: HashMap::new(),
             tokenizer: tokenizer,
             tokens: tokenizer.tokens.clone(),
             root: ProgramNode { children: vec![] },
+            current_function_context: None,
         }
+    }
+
+    fn ctx(&mut self) -> &mut CurrentFunctionContext {
+        self.current_function_context.as_mut().unwrap()
     }
 
     fn peek(&self) -> &Token {
@@ -298,8 +311,14 @@ impl<'a> AstBuilder<'a> {
         }
 
         let name = name_token.value.clone();
+
+        self.current_function_context = Some(CurrentFunctionContext{
+            vars: HashMap::default(),
+            iterators: vec![],
+        });
         let block = self.parse_function_body()?;
-        let vars = mem::take(&mut self.current_function_vars);
+        //let vars = mem::take(&mut self.current_function_vars);
+        let vars = self.ctx().vars.clone();
 
         Ok(FunctionNode { name, body: block, vars })
     }
@@ -474,7 +493,11 @@ impl<'a> AstBuilder<'a> {
 
         self.skip_expected(">>")?;
 
+        let info = self.ctx().vars.get(&iteratable_name).unwrap().clone();
+        self.ctx().iterators.push(info);
         let block = self.parse_block()?;
+        self.ctx().iterators.pop();
+
         Ok(IterationNode {
             iteratable_name,
             block
@@ -487,15 +510,15 @@ impl<'a> AstBuilder<'a> {
             return Err(AstBuilderError::new(name_token, "identifier expected"));
         }
         let var_name = name_token.value.clone();
-        let info = self.current_function_vars.get(&var_name);
+        //let info = self.current_function_context.as_mut().unwrap().vars.get(&var_name);
         self.skip_expected("=")?;
 
         let expression = self.parse_expression(&["\n"])?;
         let type_str = expression.type_str.clone();
 
-        let info = match self.current_function_vars.entry(var_name.clone()) {
-            Entry::Occupied(o) => {
-                let info = o.into_mut();
+        let info = match self.ctx().vars.entry(var_name.clone()) {
+            Entry::Occupied(occupied) => {
+                let info = occupied.into_mut();
                 if info.type_str != type_str {
                     let s = format!(
                         "variable assignment with different type than first assignment\nwas {}, became {}",
@@ -515,12 +538,12 @@ impl<'a> AstBuilder<'a> {
 
                 info
             }
-            Entry::Vacant(v) => {
+            Entry::Vacant(vacant) => {
                 let info = TypeInfo {
                     is_array: false,
                     type_str: type_str.clone(),
                 };
-                v.insert(info)
+                vacant.insert(info)
             }
         };
 
@@ -550,22 +573,22 @@ impl<'a> AstBuilder<'a> {
             type_str = self.next().value.clone();
         }
 
-        let info = self.current_function_vars.get(&var_name);
-        let info = match self.current_function_vars.entry(var_name.clone()) {
-            Entry::Occupied(o) => {
-                let info = o.into_mut();
+        //let info = self.current_function_context.as_mut().unwrap().vars.get(&var_name);
+        let info = match self.ctx().vars.entry(var_name.clone()) {
+            Entry::Occupied(occupied) => {
+                let info = occupied.into_mut();
                 let s = format!(
                     "variable already defined {}",
                     var_name.clone()
                 );
                 return Err(ae(&name_token, s));
             }
-            Entry::Vacant(v) => {
+            Entry::Vacant(vacant) => {
                 let info = TypeInfo {
                     is_array,
                     type_str: type_str.clone(),
                 };
-                v.insert(info)
+                vacant.insert(info)
             }
         };
 
@@ -682,7 +705,7 @@ impl<'a> AstBuilder<'a> {
                     });
                     nodes.push(n);
                 }
-                TokenKind::RealLiteral => {
+                TokenKind::FloatLiteral => {
                     let n = AstNode::RealLiteral(RealLiteralNode {
                         value: t.value.clone(),
                     });
@@ -721,13 +744,14 @@ impl<'a> AstBuilder<'a> {
     }
 
     fn tree_node_to_ast_node(&self, tree_node: &TreeNode) -> AstResult<(AstNode, String)> {
+        
         fn get_binary_node_type(a: &String, b: &String) -> String {
             if a == b {
                 return a.clone();
             }
 
-            if a == "double" && b == "long" || a == "long" && b == "double" {
-                return "double".to_string();
+            if a == "f64" && b == "i64" || a == "i64" && b == "f64" {
+                return "f64".to_string();
             }
 
             panic!();
@@ -735,6 +759,18 @@ impl<'a> AstBuilder<'a> {
         }
 
         match tree_node.ast_node {
+            AstNode::RealLiteral(_) => {
+                return Ok((tree_node.ast_node.clone(), "f64".to_string()));
+            }
+            AstNode::IntegerLiteral(_) => {
+                return Ok((tree_node.ast_node.clone(), "i64".to_string()));
+            }
+            AstNode::StringLiteral(_) => {
+                return Ok((tree_node.ast_node.clone(), "string".to_string()));
+            }
+            AstNode::BinaryOperation(b) => {
+                return Ok((tree_node.ast_node.clone(), b.type_str.clone()));
+            }
             AstNode::Operator(o) => {
                 let (left, left_type) = self.tree_node_to_ast_node(&tree_node.childs[0])?;
                 let (right, right_type) = self.tree_node_to_ast_node(&tree_node.childs[1])?;
@@ -746,26 +782,16 @@ impl<'a> AstBuilder<'a> {
                 });
                 return Ok((node, type_str));
             }
-            AstNode::RealLiteral(_) => {
-                return Ok((tree_node.ast_node.clone(), "double".to_string()));
-            }
-            AstNode::IntegerLiteral(_) => {
-                return Ok((tree_node.ast_node.clone(), "long".to_string()));
-            }
-            AstNode::StringLiteral(_) => {
-                return Ok((tree_node.ast_node.clone(), "string".to_string()));
-            }
-            AstNode::BinaryOperation(b) => {
-                return Ok((tree_node.ast_node.clone(), b.type_str.clone()));
-            }
             AstNode::Identifier(v) => {
+                let ctx = self.current_function_context.as_ref().unwrap();
                 if v.value == "it" {
-                    todo!("it type");
-                    return Ok((tree_node.ast_node.clone(), "double".to_string()));
+                    let type_info = ctx.iterators.last().unwrap();
+                    return Ok((tree_node.ast_node.clone(), type_info.type_str.clone()));
+
                 } else if v.value == "it_index" {
-                    return Ok((tree_node.ast_node.clone(), "long".to_string()));
-                } else if let Some(info) = self.current_function_vars.get(&v.value) {
-                    return Ok((tree_node.ast_node.clone(), info.type_str.clone()));
+                    return Ok((tree_node.ast_node.clone(), "i64".to_string()));
+                } else if let Some(type_info) = ctx.vars.get(&v.value) {
+                    return Ok((tree_node.ast_node.clone(), type_info.type_str.clone()));
                 } else {
                     return Err(AstBuilderError::new(
                         v.token.clone(),

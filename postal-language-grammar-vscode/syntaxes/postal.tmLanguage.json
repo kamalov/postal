@@ -1,6 +1,7 @@
 {
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
 	"name": "postal",
+	"scopeName": "source.post",
 	"patterns": [
 		{
 			"include": "#keywords"
@@ -10,32 +11,36 @@
 		},
 		{
 			"include": "#strings"
-		}
-	],
+		},
+        {
+            "name": "comment.line.postal",
+            "match": "//.*$"
+        }	
+    ],
 	"repository": {
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.postal",
-				"match": "\\b(else|loop|while|for|return|ret|fn|let|var|do|begin|end)\\b"
+				"match": "\\b(if|else|loop|while|for|return|ret|fn|do|begin|end|it|it_index)\\b"
 			}]
 		},
 		"operators": {
 			"patterns": [{
 				"name": "operator.postal",
-				"match": "[<>,.=;:\"'\\+\\-\\/\\*\\[\\]]|and|or|not|div|mod"
+				"match_backup": "[<>,.=;:\\+\\-\\/\\*\\[\\]]|and|or|not|div|mod",
+				"match": "[=]|and|or|not|div|mod"
 			}]
 		},
-		"strings": {
-			"name": "string.quoted.double.postal",
-			"begin": "'",
-			"end": "'",
-			"patterns": [
-				{
-					"name": "constant.character.escape.postal",
-					"match": "\\\\."
-				}
-			]
-		}
-	},
-	"scopeName": "source.post"
+        "strings": {
+            "name": "string.quoted.single.postal",
+            "begin": "\\'",
+            "end": "\\'",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.postal",
+                    "match": "\\\\."
+                }
+            ]
+        }             	
+    }
 }
