@@ -55,5 +55,5 @@ fn main() {
     let filename = "D:\\src\\postal\\template.cpp";
     let text = read_to_string(filename.to_string()).unwrap();
     let text = text.replace("%GENERATED_CODE%", &generated_code);
-    fs::write("D:\\src\\postal\\main.cpp", text);
+    fs::write("D:\\src\\postal\\generated.cpp", text);
 }

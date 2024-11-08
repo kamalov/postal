@@ -1,9 +1,11 @@
 #![allow(warnings)]
+use indexmap::IndexMap;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 use std::env::var;
 use std::fmt::Write;
 use std::fs::{read_dir, read_to_string};
+use std::ops::Index;
 use std::slice::Iter;
 use std::{array, default, fs, iter, mem};
 use to_vec::ToVec;
@@ -17,8 +19,15 @@ pub struct ProgramNode {
 }
 
 #[derive(Debug, Clone)]
-pub struct FunctionNode {
+pub struct FunctionDeclarationParam {
     pub name: String,
+    pub type_info: TypeInfo,
+}
+
+#[derive(Debug, Clone)]
+pub struct FunctionDeclarationNode {
+    pub name: String,
+    pub params: IndexMap<String, TypeInfo>,
     pub body: BlockNode,
     pub vars: HashMap<String, TypeInfo>,
 }
@@ -55,8 +64,14 @@ pub struct VariableDeclarationNode {
 
 #[derive(Debug, Clone)]
 pub struct FunctionCallNode {
-    pub function_name: String,
-    pub function_call_params: Vec<FunctionParamNode>,
+    pub name: String,
+    pub params_group: GroupNode,
+}
+
+#[derive(Debug, Clone)]
+pub struct GroupNode {
+    pub token: Token,
+    pub expressions: Vec<ExpressionNode>,
 }
 
 #[derive(Debug, Clone)]
@@ -130,7 +145,7 @@ pub struct IterationNode {
 #[derive(Debug, Clone)]
 pub enum AstNode {
     Program(ProgramNode),
-    Function(FunctionNode),
+    Function(FunctionDeclarationNode),
     Block(BlockNode),
     IfStatement(IfStatementNode),
     ForStatement(ForStatementNode),
@@ -147,6 +162,7 @@ pub enum AstNode {
     Operator(OperatorNode),
     Comment(CommentNode),
     BinaryOperation(BinaryOperationNode),
+    Group(GroupNode),
 }
 
 pub struct AstBuilderError {
@@ -176,6 +192,7 @@ struct CurrentFunctionContext {
     //iterators: Vec<(String, String)>,
     //iterators_count: u32,
     vars: HashMap<String, TypeInfo>,
+    params: IndexMap<String, TypeInfo>,
     iterators: Vec<TypeInfo>,
 }
 
@@ -185,7 +202,7 @@ pub struct AstBuilder<'a> {
     pub tokenizer: &'a Tokenizer,
     pub tokens: Vec<Token>,
     pub root: ProgramNode,
-    current_function_context: Option<CurrentFunctionContext>
+    current_function_context: Option<CurrentFunctionContext>,
 }
 
 impl<'a> AstBuilder<'a> {
@@ -203,7 +220,7 @@ impl<'a> AstBuilder<'a> {
         self.current_function_context.as_mut().unwrap()
     }
 
-    fn peek(&self) -> &Token {
+    fn peek_next(&self) -> &Token {
         if self.ti < self.tokens.len() {
             &self.tokens[self.ti]
         } else {
@@ -211,7 +228,7 @@ impl<'a> AstBuilder<'a> {
         }
     }
 
-    fn peek_second(&self) -> &Token {
+    fn peek_next_next(&self) -> &Token {
         if self.ti < self.tokens.len() - 1 {
             &self.tokens[self.ti + 1]
         } else {
@@ -254,11 +271,11 @@ impl<'a> AstBuilder<'a> {
     }
 
     fn try_skip(&mut self, check: &str) -> bool {
-        if self.peek().is_eof() {
+        if self.peek_next().is_eof() {
             todo!();
         };
 
-        let t = self.peek();
+        let t = self.peek_next();
         //if t.kind == TokenKind::Special && t.value == check {
         if t.value == check {
             self.skip_expected(check);
@@ -282,7 +299,7 @@ impl<'a> AstBuilder<'a> {
         loop {
             self.skip_line_end_tokens();
 
-            let t = self.peek();
+            let t = self.peek_next();
             if t.is_eof() {
                 break;
             };
@@ -302,25 +319,87 @@ impl<'a> AstBuilder<'a> {
         Ok(())
     }
 
-    fn parse_function(&mut self) -> AstResult<FunctionNode> {
+    fn parse_function(&mut self) -> AstResult<FunctionDeclarationNode> {
         self.skip_expected("fn")?;
 
-        let name_token = self.next();
-        if name_token.kind != TokenKind::Identifier {
-            return Err(AstBuilderError::new(name_token.clone(), "identifier"));
-        }
-
-        let name = name_token.value.clone();
-
-        self.current_function_context = Some(CurrentFunctionContext{
-            vars: HashMap::default(),
+        self.current_function_context = Some(CurrentFunctionContext {
+            params: IndexMap::new(),
+            vars: HashMap::new(),
             iterators: vec![],
         });
-        let block = self.parse_function_body()?;
-        //let vars = mem::take(&mut self.current_function_vars);
-        let vars = self.ctx().vars.clone();
 
-        Ok(FunctionNode { name, body: block, vars })
+        let fn_name_token = self.next();
+        if fn_name_token.kind != TokenKind::Identifier {
+            return Err(AstBuilderError::new(
+                fn_name_token.clone(),
+                "identifier expected",
+            ));
+        }
+
+        let fn_name = fn_name_token.value.clone();
+        let fn_params = self.parse_function_declaration_params()?;
+        self.ctx().params = fn_params.clone();
+        let fn_body = self.parse_function_body()?;
+        //let vars = mem::take(&mut self.current_function_vars);
+        let fn_vars = self.ctx().vars.clone();
+
+        Ok(FunctionDeclarationNode {
+            name: fn_name,
+            params: fn_params,
+            body: fn_body,
+            vars: fn_vars,
+        })
+    }
+
+    fn parse_function_declaration_params(&mut self) -> AstResult<IndexMap<String, TypeInfo>> {
+        if !self.try_skip("(") {
+            return Ok(IndexMap::new());
+        }
+
+        let mut params = IndexMap::new();
+        loop {
+            if self.try_skip(")") {
+                break;
+            }
+
+            let (name, type_info) = self.parse_function_declaration_param(&[",", ")"])?;
+            params.insert(name, type_info);
+
+            self.try_skip(",");
+        }
+
+        Ok(params)
+    }
+
+    fn parse_function_declaration_param(
+        &mut self,
+        terminators: &[&str],
+    ) -> AstResult<(String, TypeInfo)> {
+        let name_token = self.next().clone();
+        if name_token.kind != TokenKind::Identifier {
+            return Err(AstBuilderError::new(name_token, "identifier expected"));
+        }
+        let var_name = name_token.value.clone();
+        self.skip_expected(":")?;
+
+        let mut is_array: bool;
+        let mut type_str: String;
+        if self.peek_next().value == "[" {
+            is_array = true;
+            self.skip_expected("[")?;
+            type_str = self.next().value.clone();
+            self.skip_expected("]")?;
+        } else {
+            is_array = false;
+            type_str = self.next().value.clone();
+        }
+
+        let type_info = TypeInfo {
+            is_array,
+            type_str: type_str.clone(),
+        };
+
+        Ok((var_name, type_info))
     }
 
     fn parse_function_body(&mut self) -> AstResult<BlockNode> {
@@ -330,7 +409,7 @@ impl<'a> AstBuilder<'a> {
         loop {
             self.skip_line_end_tokens();
 
-            let t = self.peek();
+            let t = self.peek_next();
 
             if t.kind == TokenKind::Keyword && t.value == "end" {
                 self.skip_expected("end")?;
@@ -344,14 +423,21 @@ impl<'a> AstBuilder<'a> {
         Ok(BlockNode { statements })
     }
 
+    fn parse_function_call(&mut self) -> AstResult<FunctionCallNode> {
+        let t = self.next();
+        let name = t.value.clone();
+        let params_group = self.parse_group()?;
+        Ok(FunctionCallNode { name, params_group })
+    }
+
     fn parse_block(&mut self) -> AstResult<BlockNode> {
         self.skip_expected("{")?;
         let mut statements = vec![];
         loop {
             self.skip_line_end_tokens();
 
-            let t = self.peek();
-            if t.kind == TokenKind::Special && t.value == "}" {
+            let t = self.peek_next();
+            if t.kind == TokenKind::SpecialSymbol && t.value == "}" {
                 self.skip_expected("}")?;
                 break;
             }
@@ -364,11 +450,11 @@ impl<'a> AstBuilder<'a> {
     }
 
     fn parse_statement(&mut self) -> AstResult<AstNode> {
-        let t = self.peek();
+        let t = self.peek_next();
         //println!("{:?}", t);
         match t.kind {
             TokenKind::Identifier => {
-                let t = self.peek_second();
+                let t = self.peek_next_next();
                 match t.value.as_str() {
                     "(" => {
                         let f = self.parse_function_call()?;
@@ -378,17 +464,17 @@ impl<'a> AstBuilder<'a> {
                     "=" => {
                         let f = self.parse_variable_assignment()?;
                         return Ok(AstNode::VariableAssignment(f));
-                    }                    
+                    }
 
                     ":" => {
                         let f = self.parse_variable_declaration()?;
                         return Ok(AstNode::VariableDeclaration(f));
-                    }                    
+                    }
 
                     ">>" => {
                         let f = self.parse_iteration()?;
                         return Ok(AstNode::Iteration(f));
-                    }                    
+                    }
 
                     _ => {
                         panic!()
@@ -407,7 +493,7 @@ impl<'a> AstBuilder<'a> {
                     return Ok(AstNode::ForStatement(f));
                 }
 
-                if t.value == "loop" {  
+                if t.value == "loop" {
                     let f = self.parse_loop_statement()?;
                     return Ok(AstNode::LoopStatement(f));
                 }
@@ -425,24 +511,31 @@ impl<'a> AstBuilder<'a> {
                 self.skip();
                 Ok(AstNode::Comment(CommentNode { value }))
             }
+
+            TokenKind::SpecialSymbol => {
+                let value = t.value.clone();
+                self.skip();
+                Ok(AstNode::Comment(CommentNode { value }))
+            }
+
             _ => todo!(),
         }
     }
 
     fn parse_if_statement(&mut self) -> AstResult<IfStatementNode> {
         self.skip_expected("if")?;
-        
+
         let mut if_blocks: Vec<(ExpressionNode, BlockNode)> = Vec::new();
         let mut else_block = None;
 
-        let condition = self.parse_expression(&["{"])?;
+        let condition = self.parse_expression_until(&["{"])?;
         let block = self.parse_block()?;
         if_blocks.push((condition, block));
 
         loop {
             if self.try_skip("else") {
                 if self.try_skip("if") {
-                    let condition = self.parse_expression(&["{"])?;
+                    let condition = self.parse_expression_until(&["{"])?;
                     let block = self.parse_block()?;
                     if_blocks.push((condition, block));
                 } else {
@@ -462,11 +555,11 @@ impl<'a> AstBuilder<'a> {
 
     fn parse_loop_statement(&mut self) -> AstResult<LoopStatementNode> {
         self.skip_expected("loop")?;
-        
+
         let block = self.parse_block()?;
         Ok(LoopStatementNode { block })
     }
- 
+
     fn parse_for_statement(&mut self) -> AstResult<ForStatementNode> {
         self.skip_expected("for")?;
         let it = self.next();
@@ -475,7 +568,7 @@ impl<'a> AstBuilder<'a> {
         }
         let iterator_variable_name = it.value.clone();
         self.skip_expected("in")?;
-        let iteratable = self.parse_expression(&["{"])?;
+        let iteratable = self.parse_expression_until(&["{"])?;
         let for_block = self.parse_block()?;
         Ok(ForStatementNode {
             iterator_variable_name,
@@ -500,7 +593,7 @@ impl<'a> AstBuilder<'a> {
 
         Ok(IterationNode {
             iteratable_name,
-            block
+            block,
         })
     }
 
@@ -513,7 +606,7 @@ impl<'a> AstBuilder<'a> {
         //let info = self.current_function_context.as_mut().unwrap().vars.get(&var_name);
         self.skip_expected("=")?;
 
-        let expression = self.parse_expression(&["\n"])?;
+        let expression = self.parse_expression_until(&["\n"])?;
         let type_str = expression.type_str.clone();
 
         let info = match self.ctx().vars.entry(var_name.clone()) {
@@ -563,7 +656,7 @@ impl<'a> AstBuilder<'a> {
 
         let mut is_array: bool;
         let mut type_str: String;
-        if self.peek().value == "[" {
+        if self.peek_next().value == "[" {
             is_array = true;
             self.skip_expected("[")?;
             type_str = self.next().value.clone();
@@ -577,10 +670,7 @@ impl<'a> AstBuilder<'a> {
         let info = match self.ctx().vars.entry(var_name.clone()) {
             Entry::Occupied(occupied) => {
                 let info = occupied.into_mut();
-                let s = format!(
-                    "variable already defined {}",
-                    var_name.clone()
-                );
+                let s = format!("variable already defined {}", var_name.clone());
                 return Err(ae(&name_token, s));
             }
             Entry::Vacant(vacant) => {
@@ -597,87 +687,38 @@ impl<'a> AstBuilder<'a> {
         })
     }
 
-    fn parse_function_call(&mut self) -> AstResult<FunctionCallNode> {
-        let t = self.next();
-        let function_name = t.value.clone();
-        let params = self.parse_function_call_params()?;
-        Ok(FunctionCallNode {
-            function_name,
-            function_call_params: params,
-        })
-    }
-
-    fn parse_function_call_params(&mut self) -> AstResult<Vec<FunctionParamNode>> {
+    fn parse_group(&mut self) -> AstResult<GroupNode> {
+        let token = self.peek_next().clone();
         self.skip_expected("(")?;
-        let mut params = vec![];
+        let mut expressions = vec![];
         loop {
             if self.try_skip(")") {
                 break;
             }
 
-            let expression = self.parse_expression(&[",", ")"])?;
-            let p = FunctionParamNode { expression };
-            params.push(p);
+            let expression = self.parse_expression_until(&[",", ")"])?;
+            expressions.push(expression);
 
             self.try_skip(",");
         }
 
-        Ok(params)
+        Ok(GroupNode { token, expressions })
     }
 
-    fn parse_expression(&mut self, terminators: &[&str]) -> AstResult<ExpressionNode> {
-
-        fn parse_expression_part<'b>(
-            builder: &mut AstBuilder,
-            nodes: &'b Vec<AstNode>,
-            index: &mut usize,
-            node: TreeNode<'b>,
-            priority: usize,
-        ) -> TreeNode<'b> {
-            let mut node = node;
-            let mut priority = priority;
-            loop {
-                if *index >= nodes.len() {
-                    break;
-                }
-    
-                let next_op = &nodes[*index];
-                if let AstNode::Operator(o) = next_op {
-                    let next_priority = *builder.tokenizer.priorities.get(&o.value).unwrap();
-    
-                    if next_priority < priority {
-                        break;
-                    }
-    
-                    let next_r = &nodes[*index + 1];
-                    let next_r = TreeNode {
-                        ast_node: next_r,
-                        childs: vec![],
-                    };
-                    *index += 2;
-                    let next_r = parse_expression_part(builder, nodes, index, next_r, next_priority);
-                    let mut childs = vec![];
-                    childs.push(node);
-                    childs.push(next_r);
-                    node = TreeNode {
-                        ast_node: &next_op,
-                        childs,
-                    }
-                } else {
-                    //println!("{:?}", next_op);
-                    todo!();
-                }
-            }
-    
-            node
-        }
-        
-        let mut nodes = vec![];
+    fn parse_expression_until(&mut self, terminators: &[&str]) -> AstResult<ExpressionNode> {
+        let mut ast_nodes = vec![];
         loop {
-            let t = self.peek();
-            if t.kind == TokenKind::Special {
+            let t = self.peek_next();
+            if t.kind == TokenKind::SpecialSymbol {
                 if terminators.contains(&t.value.as_str()) {
                     break;
+                }
+
+                if t.value == "(" {
+                    let group_node = self.parse_group()?;
+                    let node = AstNode::Group(group_node);
+                    ast_nodes.push(node);
+                    continue;
                 }
             }
 
@@ -687,49 +728,49 @@ impl<'a> AstBuilder<'a> {
                     break;
                 }
                 TokenKind::Identifier => {
-                    let n = AstNode::Identifier(IdentifierNode {
+                    let node = AstNode::Identifier(IdentifierNode {
                         token: t.clone(),
                         value: t.value.clone(),
                     });
-                    nodes.push(n);
+                    ast_nodes.push(node);
                 }
-                TokenKind::Special => {
-                    let n = AstNode::Operator(OperatorNode {
+                TokenKind::SpecialSymbol => {
+                    let node = AstNode::Operator(OperatorNode {
                         value: t.value.clone(),
                     });
-                    nodes.push(n);
+                    ast_nodes.push(node);
                 }
                 TokenKind::IntegerLiteral => {
-                    let n = AstNode::IntegerLiteral(IntegerLiteralNode {
+                    let node = AstNode::IntegerLiteral(IntegerLiteralNode {
                         value: t.value.clone(),
                     });
-                    nodes.push(n);
+                    ast_nodes.push(node);
                 }
                 TokenKind::FloatLiteral => {
-                    let n = AstNode::RealLiteral(RealLiteralNode {
+                    let node = AstNode::RealLiteral(RealLiteralNode {
                         value: t.value.clone(),
                     });
-                    nodes.push(n);
+                    ast_nodes.push(node);
                 }
                 TokenKind::String => {
-                    let n = AstNode::StringLiteral(StringLiteralNode {
+                    let node = AstNode::StringLiteral(StringLiteralNode {
                         value: t.value.clone(),
                     });
-                    nodes.push(n);
+                    ast_nodes.push(node);
                 }
                 _ => (),
             }
         }
 
         let mut root = TreeNode {
-            ast_node: &nodes[0],
+            ast_node: &ast_nodes[0],
             childs: vec![],
         };
 
         let mut index = 1;
         loop {
-            if index < nodes.len() {
-                root = parse_expression_part(self, &nodes, &mut index, root, 0);
+            if index < ast_nodes.len() {
+                root = self.ast_node_list_to_tree_node(&ast_nodes, &mut index, root, 0);
                 //println!("{:?}", root);
             } else {
                 break;
@@ -743,8 +784,85 @@ impl<'a> AstBuilder<'a> {
         })
     }
 
+    fn ast_node_list_to_tree_node<'b>(
+        &mut self,
+        ast_node_list: &'b Vec<AstNode>,
+        next_ast_node_index: &mut usize,
+        tree_node: TreeNode<'b>,
+        priority: usize,
+    ) -> TreeNode<'b> {
+        let mut tree_node = tree_node;
+        let mut priority = priority;
+        loop {
+            if *next_ast_node_index >= ast_node_list.len() {
+                break;
+            }
+
+            let next_ast_node = &ast_node_list[*next_ast_node_index];
+
+            match next_ast_node {
+                AstNode::Operator(operator) => {
+                    let next_priority = *self.tokenizer.priorities.get(&operator.value).unwrap();
+
+                    if next_priority < priority {
+                        break;
+                    }
+
+                    let next_next_ast_node = &ast_node_list[*next_ast_node_index + 1];
+                    let mut next_tree_node = TreeNode {
+                        ast_node: next_next_ast_node,
+                        childs: vec![],
+                    };
+
+                    *next_ast_node_index += 2;
+                    next_tree_node = self.ast_node_list_to_tree_node(
+                        ast_node_list,
+                        next_ast_node_index,
+                        next_tree_node,
+                        next_priority,
+                    );
+                    let mut childs = vec![];
+                    childs.push(tree_node);
+                    childs.push(next_tree_node);
+                    tree_node = TreeNode {
+                        ast_node: &next_ast_node,
+                        childs,
+                    }
+                }
+
+                // AstNode::Group(group_node) => {
+                //     match tree_node.ast_node {
+                //         AstNode::Identifier(identifier_node) => {
+                //             let node = AstNode::FunctionCall(
+                //                 FunctionCallNode {
+                //                     name: identifier_node.value,
+                //                     params_group: group_node,
+                //                 }
+                //             );
+                //             tree_node.ast_node = node;
+                //         }
+                        
+                //         AstNode::BinaryOperation(binary_operation_node) => {
+                            
+                //         }
+
+                //         AstNode::Group(group_node) => todo!(),
+
+                //         else_ => panic!()
+                //     }
+                // }
+
+                _ => {
+                    //println!("{:?}", next_op);
+                    todo!();
+                }
+            }
+        }
+
+        tree_node
+    }
+
     fn tree_node_to_ast_node(&self, tree_node: &TreeNode) -> AstResult<(AstNode, String)> {
-        
         fn get_binary_node_type(a: &String, b: &String) -> String {
             if a == b {
                 return a.clone();
@@ -762,15 +880,19 @@ impl<'a> AstBuilder<'a> {
             AstNode::RealLiteral(_) => {
                 return Ok((tree_node.ast_node.clone(), "f64".to_string()));
             }
+
             AstNode::IntegerLiteral(_) => {
                 return Ok((tree_node.ast_node.clone(), "i64".to_string()));
             }
+
             AstNode::StringLiteral(_) => {
                 return Ok((tree_node.ast_node.clone(), "string".to_string()));
             }
+
             AstNode::BinaryOperation(b) => {
                 return Ok((tree_node.ast_node.clone(), b.type_str.clone()));
             }
+
             AstNode::Operator(o) => {
                 let (left, left_type) = self.tree_node_to_ast_node(&tree_node.childs[0])?;
                 let (right, right_type) = self.tree_node_to_ast_node(&tree_node.childs[1])?;
@@ -782,23 +904,44 @@ impl<'a> AstBuilder<'a> {
                 });
                 return Ok((node, type_str));
             }
-            AstNode::Identifier(v) => {
+
+            AstNode::Identifier(identifier_node) => {
                 let ctx = self.current_function_context.as_ref().unwrap();
-                if v.value == "it" {
+
+                let var_name = &identifier_node.value;
+                
+                if var_name == "it" {
                     let type_info = ctx.iterators.last().unwrap();
                     return Ok((tree_node.ast_node.clone(), type_info.type_str.clone()));
-
-                } else if v.value == "it_index" {
+                } 
+                
+                if var_name == "it_index" {
                     return Ok((tree_node.ast_node.clone(), "i64".to_string()));
-                } else if let Some(type_info) = ctx.vars.get(&v.value) {
-                    return Ok((tree_node.ast_node.clone(), type_info.type_str.clone()));
-                } else {
-                    return Err(AstBuilderError::new(
-                        v.token.clone(),
-                        "undeclared identifier",
-                    ));
+                } 
+
+                if let Some(type_info) = ctx.vars.get(var_name) {
+                    return Ok((tree_node.ast_node.clone(), type_info.type_str.clone()));                    
                 }
+
+                if let Some(type_info) = ctx.params.get(&identifier_node.value) {
+                    return Ok((tree_node.ast_node.clone(), type_info.type_str.clone()));                    
+                }
+                
+                return Err(AstBuilderError::new(
+                    identifier_node.token.clone(),
+                    "undeclared identifier",
+                ));
             }
+
+            AstNode::Group(group) => {
+                if group.expressions.is_empty() {
+                    return Err(AstBuilderError::new(group.token.clone(), "empty group"));
+                }
+
+                let last = group.expressions.last().unwrap();
+                return Ok((tree_node.ast_node.clone(), last.type_str.clone()));
+            }
+
             else_ => {
                 assert!(false, "can't detect type");
                 return Ok((tree_node.ast_node.clone(), "unknown".to_string()));

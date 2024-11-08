@@ -4,13 +4,14 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 use std::fs::{read_dir, read_to_string};
 use std::{array, default, fs};
+use indexmap::IndexMap;
 use to_vec::ToVec;
 
 use crate::stage01_tokenizer::*;
 use crate::stage02_ast_builder::*;
 
 struct CurrentFunctionContext {
-    function_node: FunctionNode,
+    function_node: FunctionDeclarationNode,
     iterators: Vec<(String, String)>,
     iterators_count: u32,
 }
@@ -28,6 +29,16 @@ fn convert_type_name_str(ti: &String) -> String {
         "f64" => "double".to_string(),
         //"bool" => "boolean".to_string(),
         _ => panic!(), // ti.clone()
+    }
+}
+
+fn type_info_to_str(ti: &TypeInfo) -> String {
+    let type_name = convert_type_name_str(&ti.type_str);
+
+    if ti.is_array {
+        format!("std::vector<{}>", type_name)
+    } else {
+        type_name
     }
 }
 
@@ -54,47 +65,48 @@ impl Gen<'_> {
         r
     }
 
-    fn generate_function_code(&mut self, function_node: &FunctionNode, padding: &str) -> String {
-        fn type_info_to_str(ti: &TypeInfo) -> String {
-            let type_name = convert_type_name_str(&ti.type_str);
-
-            if ti.is_array {
-                format!("std::vector<{}>", type_name)
-            } else {
-                type_name
-            }
-        }
-
+    fn generate_function_code(&mut self, function_node: &FunctionDeclarationNode, padding: &str) -> String {
         self.current_function_context = Some(CurrentFunctionContext {
             function_node: function_node.clone(),
             iterators: vec![],
             iterators_count: 0,
         });
 
-        let s = self.generate_block_code(&function_node.body, padding);
+        let fn_params_code = self.generate_function_declaration_params_code(&function_node.params);
+        let fn_body_code = self.generate_block_code(&function_node.body, padding);
 
         let mut r = String::new();
 
-        writeln!(&mut r, "{}void {}() {{", padding, function_node.name);
+        writeln!(&mut r, "{}void {}({}) {{", padding, function_node.name, fn_params_code);
 
         for d in &function_node.vars {
             let s = type_info_to_str(&d.1);
             writeln!(&mut r, "    {} {};", s, d.0.clone());
         }
 
-        let iterators = &self.current_function_context.as_ref().unwrap().iterators;
-        for (it_name, it_type) in iterators {
-            //writeln!(&mut r, "    {}: {};", it_name, convert_type_name_str(&it_type));
-            //writeln!(&mut r, "    {}_index: {};", it_name, &"int".to_string());
-        }
+        // let iterators = &self.current_function_context.as_ref().unwrap().iterators;
+        // for (it_name, it_type) in iterators {
+        //     writeln!(&mut r, "    {}: {};", it_name, convert_type_name_str(&it_type));
+        //     writeln!(&mut r, "    {}_index: {};", it_name, &"int".to_string());
+        // }
 
-        write!(&mut r, "{s}");
+        write!(&mut r, "{fn_body_code}");
         writeln!(&mut r, "}}");
         writeln!(&mut r, "");
 
         self.current_function_context = None;
 
         r
+    }
+
+    fn generate_function_declaration_params_code(&self, params: &IndexMap<String, TypeInfo>) -> String {
+        let mut parts = vec![];
+        for (name, type_info) in params {
+            let s = format!("{} {}", type_info_to_str(type_info), name);
+            parts.push(s);
+        }
+        
+        parts.join(", ")
     }
 
     fn generate_block_code(&mut self, b: &BlockNode, padding: &str) -> String {
@@ -125,31 +137,36 @@ impl Gen<'_> {
 
         match statement {
             AstNode::IfStatement(st) => {
-                let s = self.generate_if_statement(st, padding);
+                let s = self.generate_if_statement_code(st, padding);
                 r.push_str(s.as_str());
             }
             AstNode::ForStatement(st) => {
-                let s = self.generate_for_statement(st, padding);
+                let s = self.generate_for_statement_code(st, padding);
                 r.push_str(s.as_str());
             }
             AstNode::LoopStatement(st) => {
-                let s = self.generate_loop_statement(st, padding);
+                let s = self.generate_loop_statement_code(st, padding);
                 r.push_str(s.as_str());
             }
             AstNode::Iteration(st) => {
-                let s = self.generate_iteration(st, padding);
+                let s = self.generate_iteration_code(st, padding);
                 r.push_str(s.as_str());
             }
-            AstNode::BreakStatement() => {
-                writeln!(&mut r, "{}break;", padding);
-            }
             AstNode::FunctionCall(st) => {
-                let s = self.generate_function_call(st, padding);
+                let s = self.generate_function_call_code(st, padding);
                 r.push_str(s.as_str());
             }
             AstNode::VariableAssignment(v) => {
-                let s = self.generate_variable_assignment(v, padding);
+                let s = self.generate_variable_assignment_code(v, padding);
                 r.push_str(s.as_str());
+            }
+            AstNode::Group(v) => {
+                let s = self.generate_group_code(v, padding);
+                r.push_str(s.as_str());
+            }
+
+            AstNode::BreakStatement() => {
+                writeln!(&mut r, "{}break;", padding);
             }
             AstNode::Comment(c) => {
                 writeln!(&mut r, "{}//{}", padding, c.value);
@@ -160,7 +177,7 @@ impl Gen<'_> {
         r
     }
 
-    fn generate_if_statement(&mut self, f: &IfStatementNode, padding: &str) -> String {
+    fn generate_if_statement_code(&mut self, f: &IfStatementNode, padding: &str) -> String {
         let mut r = String::new();
 
         for i in 0..f.if_blocks.len() {
@@ -191,7 +208,7 @@ impl Gen<'_> {
         r
     }
 
-    fn generate_for_statement(&mut self, f: &ForStatementNode, padding: &str) -> String {
+    fn generate_for_statement_code(&mut self, f: &ForStatementNode, padding: &str) -> String {
         let mut r = String::new();
 
         todo!();
@@ -218,7 +235,7 @@ impl Gen<'_> {
         r
     }
 
-    fn generate_loop_statement(&mut self, f: &LoopStatementNode, padding: &str) -> String {
+    fn generate_loop_statement_code(&mut self, f: &LoopStatementNode, padding: &str) -> String {
         let mut r = String::new();
 
         let block = self.generate_block_code(&f.block, padding);
@@ -230,7 +247,7 @@ impl Gen<'_> {
         r
     }
 
-    fn generate_iteration(&mut self, iteration_node: &IterationNode, padding: &str) -> String {
+    fn generate_iteration_code(&mut self, iteration_node: &IterationNode, padding: &str) -> String {
         let mut r = String::new();
 
         let mut function_context = self.current_function_context.as_mut().unwrap();
@@ -275,26 +292,26 @@ impl Gen<'_> {
         r
     }
 
-    fn generate_function_call(&mut self, f: &FunctionCallNode, padding: &str) -> String {
+    fn generate_function_call_code(&mut self, f: &FunctionCallNode, padding: &str) -> String {
         let mut r = String::new();
 
         let mut param_names = vec![];
-        for function_call_param in &f.function_call_params {
-            let s = self.generate_expression_code(&*function_call_param.expression.root);
+        for expression in &f.params_group.expressions {
+            let s = self.generate_expression_code(&*expression.root);
             param_names.push(s);
         }
         let p = param_names.join(", ");
-        let function_name = f.function_name.as_str();
+        let function_name = f.name.as_str();
         match function_name {
             "log" => {
-                if f.function_call_params.is_empty() {
+                if f.params_group.expressions.is_empty() {
                     writeln!(&mut r,"{}printf(\"\\n\");", padding);
                 } else {
                     let mut format_parts = vec![];
                     let mut names = vec![];
-                    for (i, param) in f.function_call_params.iter().enumerate() {
+                    for (i, expression) in f.params_group.expressions.iter().enumerate() {
                         let param_name = param_names[i].clone();
-                        match param.expression.type_str.as_str() {
+                        match expression.type_str.as_str() {
                             "i64" => {
                                 format_parts.push("%lld");
                                 names.push(format!("static_cast<long long>({})", param_name));
@@ -337,7 +354,21 @@ impl Gen<'_> {
         r
     }
 
-    fn generate_variable_assignment(
+    fn generate_group_code(&mut self, group: &GroupNode, padding: &str) -> String {
+        let mut s = String::new();
+
+        let mut expression_code_list = vec![];
+        for expression in &group.expressions {
+            let s = self.generate_expression_code(&*expression.root);
+            expression_code_list.push(s);
+        }
+        let code = expression_code_list.join(", ");
+        write!(&mut s, "{}({})", padding, code);
+
+        s
+    }
+
+    fn generate_variable_assignment_code(
         &mut self,
         v: &VariableAssignmentNode,
         padding: &str,
@@ -406,6 +437,10 @@ impl Gen<'_> {
                     write!(&mut r, "{} {} {}", left, b.operation.value, right);
                 }
             }
+            AstNode::Group(group) => {
+                let code = self.generate_group_code(group, "");
+                write!(&mut r, "{}", code);
+            }
             a => {
                 println!("{:?}", a);
                 panic!();
@@ -414,4 +449,5 @@ impl Gen<'_> {
 
         r
     }
+   
 }

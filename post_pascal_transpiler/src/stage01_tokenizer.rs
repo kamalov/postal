@@ -7,7 +7,7 @@ use to_vec::ToVec;
 pub enum TokenKind {
     Eof,
     LineEnd,
-    Special,
+    SpecialSymbol,
     Identifier,
     Keyword,
     String,
@@ -73,19 +73,22 @@ impl Tokenizer {
             t.specials.insert(c.to_string());
         }
 
-        t.priorities.insert("*".to_string(), 1000);
-        t.priorities.insert("/".to_string(), 1000);
-        
-        t.priorities.insert("+".to_string(), 900);
-        t.priorities.insert("-".to_string(), 900);
-        
-        t.priorities.insert("<".to_string(), 500);
-        t.priorities.insert(">".to_string(), 500);
-        t.priorities.insert("<=".to_string(), 500);
-        t.priorities.insert(">=".to_string(), 500);
+        t.priorities.insert("()".to_string(), 20);
+        t.priorities.insert("[]".to_string(), 20);
 
-        t.priorities.insert("=".to_string(), 400);
-        t.priorities.insert("<>".to_string(), 400);
+        t.priorities.insert("*".to_string(), 10);
+        t.priorities.insert("/".to_string(), 10);
+        
+        t.priorities.insert("+".to_string(), 9);
+        t.priorities.insert("-".to_string(), 9);
+        
+        t.priorities.insert("<".to_string(), 5);
+        t.priorities.insert(">".to_string(), 5);
+        t.priorities.insert("<=".to_string(), 5);
+        t.priorities.insert(">=".to_string(), 5);
+
+        t.priorities.insert("=".to_string(), 4);
+        t.priorities.insert("<>".to_string(), 4);
 
         t.chars = text.chars().to_vec();
 
@@ -297,7 +300,7 @@ impl Tokenizer {
 
             if self.check_next(">>") {
                 let t = Token {
-                    kind: TokenKind::Special,
+                    kind: TokenKind::SpecialSymbol,
                     value: ">>".to_string(),
                     char_index: self.ci,
                 };
@@ -309,7 +312,7 @@ impl Tokenizer {
 
             if self.specials.contains(&c.to_string()) {
                 let t = Token {
-                    kind: TokenKind::Special,
+                    kind: TokenKind::SpecialSymbol,
                     value: c.to_string(),
                     char_index: self.ci,
                 };
