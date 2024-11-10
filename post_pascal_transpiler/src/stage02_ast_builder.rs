@@ -25,11 +25,12 @@ pub struct FunctionDeclarationParam {
 }
 
 #[derive(Debug, Clone)]
-pub struct FunctionDeclarationNode {
+pub struct FunctionNode {
     pub name: String,
     pub params: IndexMap<String, TypeInfo>,
-    pub body: BlockNode,
     pub vars: HashMap<String, TypeInfo>,
+    pub body: BlockNode,
+    pub return_type: TypeInfo
 }
 
 #[derive(Debug, Clone)]
@@ -72,6 +73,17 @@ pub struct FunctionCallNode {
 pub struct GroupNode {
     pub token: Token,
     pub expressions: Vec<ExpressionNode>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ArrayBracketsNode {
+    pub expression: ExpressionNode,
+}
+
+#[derive(Debug, Clone)]
+pub struct ArrayItemAccessNode {
+    pub array_name: String,
+    pub access_expression: ExpressionNode,
 }
 
 #[derive(Debug, Clone)]
@@ -145,13 +157,14 @@ pub struct IterationNode {
 #[derive(Debug, Clone)]
 pub enum AstNode {
     Program(ProgramNode),
-    Function(FunctionDeclarationNode),
+    Function(FunctionNode),
     Block(BlockNode),
     IfStatement(IfStatementNode),
     ForStatement(ForStatementNode),
     LoopStatement(LoopStatementNode),
     Iteration(IterationNode),
     BreakStatement(),
+    ReturnStatement(ExpressionNode),
     FunctionCall(FunctionCallNode),
     VariableAssignment(VariableAssignmentNode),
     VariableDeclaration(VariableDeclarationNode),
@@ -163,6 +176,8 @@ pub enum AstNode {
     Comment(CommentNode),
     BinaryOperation(BinaryOperationNode),
     Group(GroupNode),
+    ArrayBrackets(ArrayBracketsNode),
+    ArrayItemAccess(ArrayItemAccessNode),
 }
 
 pub struct AstBuilderError {
@@ -319,7 +334,7 @@ impl<'a> AstBuilder<'a> {
         Ok(())
     }
 
-    fn parse_function(&mut self) -> AstResult<FunctionDeclarationNode> {
+    fn parse_function(&mut self) -> AstResult<FunctionNode> {
         self.skip_expected("fn")?;
 
         self.current_function_context = Some(CurrentFunctionContext {
@@ -338,16 +353,18 @@ impl<'a> AstBuilder<'a> {
 
         let fn_name = fn_name_token.value.clone();
         let fn_params = self.parse_function_declaration_params()?;
+        let fn_return_type = self.parse_function_return_type()?;
         self.ctx().params = fn_params.clone();
         let fn_body = self.parse_function_body()?;
         //let vars = mem::take(&mut self.current_function_vars);
         let fn_vars = self.ctx().vars.clone();
 
-        Ok(FunctionDeclarationNode {
+        Ok(FunctionNode {
             name: fn_name,
             params: fn_params,
-            body: fn_body,
             vars: fn_vars,
+            body: fn_body,
+            return_type: fn_return_type
         })
     }
 
@@ -369,6 +386,18 @@ impl<'a> AstBuilder<'a> {
         }
 
         Ok(params)
+    }
+
+    fn parse_function_return_type(&mut self) -> AstResult<TypeInfo> {
+        self.skip_line_end_tokens();
+        
+        if self.peek_next().value == "begin" {
+            return Ok(TypeInfo { is_array: false, type_str: String::new() });
+        }
+
+        let return_type = self.parse_type_info(&["begin"])?;
+
+        Ok(return_type)
     }
 
     fn parse_function_declaration_param(
@@ -483,27 +512,37 @@ impl<'a> AstBuilder<'a> {
             }
 
             TokenKind::Keyword => {
-                if t.value == "if" {
-                    let f = self.parse_if_statement()?;
-                    return Ok(AstNode::IfStatement(f));
-                }
+                match t.value.as_str() {
+                    "if" => {
+                        let f = self.parse_if_statement()?;
+                        return Ok(AstNode::IfStatement(f));
+                    }
 
-                if t.value == "for" {
-                    let f = self.parse_for_statement()?;
-                    return Ok(AstNode::ForStatement(f));
-                }
+                    "for" => {
+                        let f = self.parse_for_statement()?;
+                        return Ok(AstNode::ForStatement(f));
+                    }
 
-                if t.value == "loop" {
-                    let f = self.parse_loop_statement()?;
-                    return Ok(AstNode::LoopStatement(f));
-                }
+                    "loop" => {
+                        let f = self.parse_loop_statement()?;
+                        return Ok(AstNode::LoopStatement(f));
+                    }
 
-                if t.value == "break" {
-                    self.skip_expected("break")?;
-                    return Ok(AstNode::BreakStatement());
-                }
+                    "break" => {
+                        self.skip_expected("break")?;
+                        return Ok(AstNode::BreakStatement());
+                    }
 
-                todo!();
+                    "ret" => {
+                        self.skip_expected("ret")?;
+                        let expression_node = self.parse_expression_until(&["\n"])?;
+                        return Ok(AstNode::ReturnStatement(expression_node));
+                    }
+
+                    panic_ => {
+                        panic!();
+                    }
+                }
             }
 
             TokenKind::Comment => {
@@ -646,15 +685,8 @@ impl<'a> AstBuilder<'a> {
         })
     }
 
-    fn parse_variable_declaration(&mut self) -> AstResult<VariableDeclarationNode> {
-        let name_token = self.next().clone();
-        if name_token.kind != TokenKind::Identifier {
-            return Err(AstBuilderError::new(name_token, "identifier expected"));
-        }
-        let var_name = name_token.value.clone();
-        self.skip_expected(":")?;
-
-        let mut is_array: bool;
+    fn parse_type_info(&mut self, terminators: &[&str]) -> AstResult<TypeInfo> {
+        let mut is_array = false;
         let mut type_str: String;
         if self.peek_next().value == "[" {
             is_array = true;
@@ -666,6 +698,19 @@ impl<'a> AstBuilder<'a> {
             type_str = self.next().value.clone();
         }
 
+        Ok(TypeInfo { is_array, type_str })
+    }
+
+    fn parse_variable_declaration(&mut self) -> AstResult<VariableDeclarationNode> {
+        let name_token = self.next().clone();
+        if name_token.kind != TokenKind::Identifier {
+            return Err(AstBuilderError::new(name_token, "identifier expected"));
+        }
+        let var_name = name_token.value.clone();
+        self.skip_expected(":")?;
+
+        let type_info = self.parse_type_info(&["\n", ""])?;
+
         //let info = self.current_function_context.as_mut().unwrap().vars.get(&var_name);
         let info = match self.ctx().vars.entry(var_name.clone()) {
             Entry::Occupied(occupied) => {
@@ -674,11 +719,7 @@ impl<'a> AstBuilder<'a> {
                 return Err(ae(&name_token, s));
             }
             Entry::Vacant(vacant) => {
-                let info = TypeInfo {
-                    is_array,
-                    type_str: type_str.clone(),
-                };
-                vacant.insert(info)
+                vacant.insert(type_info)
             }
         };
 
@@ -705,6 +746,15 @@ impl<'a> AstBuilder<'a> {
         Ok(GroupNode { token, expressions })
     }
 
+    fn parse_array_brackets(&mut self) -> AstResult<ArrayBracketsNode> {
+        let token = self.peek_next().clone();
+        self.skip_expected("[")?;
+        let expression = self.parse_expression_until(&[",", "]"])?;
+        self.skip_expected("]")?;
+
+        Ok(ArrayBracketsNode { expression })
+    }
+
     fn parse_expression_until(&mut self, terminators: &[&str]) -> AstResult<ExpressionNode> {
         let mut ast_nodes = vec![];
         loop {
@@ -717,6 +767,13 @@ impl<'a> AstBuilder<'a> {
                 if t.value == "(" {
                     let group_node = self.parse_group()?;
                     let node = AstNode::Group(group_node);
+                    ast_nodes.push(node);
+                    continue;
+                }
+
+                if t.value == "[" {
+                    let array_brackets_node = self.parse_array_brackets()?;
+                    let node = AstNode::ArrayBrackets(array_brackets_node);
                     ast_nodes.push(node);
                     continue;
                 }
@@ -763,7 +820,7 @@ impl<'a> AstBuilder<'a> {
         }
 
         let mut root = TreeNode {
-            ast_node: &ast_nodes[0],
+            ast_node: ast_nodes[0].clone(),
             childs: vec![],
         };
 
@@ -786,11 +843,11 @@ impl<'a> AstBuilder<'a> {
 
     fn ast_node_list_to_tree_node<'b>(
         &mut self,
-        ast_node_list: &'b Vec<AstNode>,
+        ast_node_list: &Vec<AstNode>,
         next_ast_node_index: &mut usize,
-        tree_node: TreeNode<'b>,
+        tree_node: TreeNode,
         priority: usize,
-    ) -> TreeNode<'b> {
+    ) -> TreeNode {
         let mut tree_node = tree_node;
         let mut priority = priority;
         loop {
@@ -810,7 +867,7 @@ impl<'a> AstBuilder<'a> {
 
                     let next_next_ast_node = &ast_node_list[*next_ast_node_index + 1];
                     let mut next_tree_node = TreeNode {
-                        ast_node: next_next_ast_node,
+                        ast_node: next_next_ast_node.clone(),
                         childs: vec![],
                     };
 
@@ -821,36 +878,57 @@ impl<'a> AstBuilder<'a> {
                         next_tree_node,
                         next_priority,
                     );
+
                     let mut childs = vec![];
                     childs.push(tree_node);
                     childs.push(next_tree_node);
                     tree_node = TreeNode {
-                        ast_node: &next_ast_node,
+                        ast_node: next_ast_node.clone(),
                         childs,
                     }
                 }
 
-                // AstNode::Group(group_node) => {
-                //     match tree_node.ast_node {
-                //         AstNode::Identifier(identifier_node) => {
-                //             let node = AstNode::FunctionCall(
-                //                 FunctionCallNode {
-                //                     name: identifier_node.value,
-                //                     params_group: group_node,
-                //                 }
-                //             );
-                //             tree_node.ast_node = node;
-                //         }
+                AstNode::Group(group_node) => {
+                    match &tree_node.ast_node {
+                        AstNode::Identifier(identifier_node) => {
+                            let node = AstNode::FunctionCall(
+                                FunctionCallNode {
+                                    name: identifier_node.value.clone(),
+                                    params_group: group_node.clone(),
+                                }
+                            );
+                            tree_node.ast_node = node;
+                            *next_ast_node_index += 1;
+                            break;
+                        }
                         
-                //         AstNode::BinaryOperation(binary_operation_node) => {
-                            
-                //         }
+                        else_ => {
+                            println!("{:?}", tree_node.ast_node);
+                            panic!()
+                        }
+                    }
+                }
 
-                //         AstNode::Group(group_node) => todo!(),
-
-                //         else_ => panic!()
-                //     }
-                // }
+                AstNode::ArrayBrackets(array_brackets_node) => {
+                    match &tree_node.ast_node {
+                        AstNode::Identifier(identifier_node) => {
+                            let node = AstNode::ArrayItemAccess(
+                                ArrayItemAccessNode {
+                                    array_name: identifier_node.value.clone(),
+                                    access_expression: array_brackets_node.expression.clone(),
+                                }
+                            );
+                            tree_node.ast_node = node;
+                            *next_ast_node_index += 1;
+                            break;
+                        }
+                        
+                        else_ => {
+                            println!("{:?}", tree_node.ast_node);
+                            panic!()
+                        }
+                    }
+                }
 
                 _ => {
                     //println!("{:?}", next_op);
@@ -868,21 +946,21 @@ impl<'a> AstBuilder<'a> {
                 return a.clone();
             }
 
-            if a == "f64" && b == "i64" || a == "i64" && b == "f64" {
-                return "f64".to_string();
+            if a == "real" && b == "int" || a == "int" && b == "real" {
+                return "real".to_string();
             }
 
             panic!();
             return "incompatible types".to_string();
         }
 
-        match tree_node.ast_node {
+        match &tree_node.ast_node {
             AstNode::RealLiteral(_) => {
-                return Ok((tree_node.ast_node.clone(), "f64".to_string()));
+                return Ok((tree_node.ast_node.clone(), "real".to_string()));
             }
 
             AstNode::IntegerLiteral(_) => {
-                return Ok((tree_node.ast_node.clone(), "i64".to_string()));
+                return Ok((tree_node.ast_node.clone(), "int".to_string()));
             }
 
             AstNode::StringLiteral(_) => {
@@ -916,7 +994,7 @@ impl<'a> AstBuilder<'a> {
                 } 
                 
                 if var_name == "it_index" {
-                    return Ok((tree_node.ast_node.clone(), "i64".to_string()));
+                    return Ok((tree_node.ast_node.clone(), "int".to_string()));
                 } 
 
                 if let Some(type_info) = ctx.vars.get(var_name) {
@@ -942,6 +1020,27 @@ impl<'a> AstBuilder<'a> {
                 return Ok((tree_node.ast_node.clone(), last.type_str.clone()));
             }
 
+            AstNode::ArrayItemAccess(array_item_access_node) => {
+                // if check empty expression {
+                //     return Err(AstBuilderError::new(group.token.clone(), "empty group"));
+                // }
+                let ctx = self.current_function_context.as_ref().unwrap();
+                let type_str: String;
+                if ctx.vars.contains_key(&array_item_access_node.array_name) {
+                    type_str = ctx.vars.get(&array_item_access_node.array_name).unwrap().type_str.clone();
+                } else if ctx.params.contains_key(&array_item_access_node.array_name) {
+                    type_str = ctx.params.get(&array_item_access_node.array_name).unwrap().type_str.clone();
+                } else {
+                    panic!();
+                }
+
+                return Ok((tree_node.ast_node.clone(), type_str));
+            }
+
+            AstNode::FunctionCall(function_call_node) => {
+                return Ok((tree_node.ast_node.clone(), "int".to_string()));
+            }
+
             else_ => {
                 assert!(false, "can't detect type");
                 return Ok((tree_node.ast_node.clone(), "unknown".to_string()));
@@ -951,9 +1050,9 @@ impl<'a> AstBuilder<'a> {
 }
 
 #[derive(Debug)]
-struct TreeNode<'a> {
-    ast_node: &'a AstNode,
-    childs: Vec<TreeNode<'a>>,
+struct TreeNode {
+    ast_node: AstNode,
+    childs: Vec<TreeNode>,
 }
 
 fn ae(t: &Token, s: impl Into<String>) -> AstBuilderError {

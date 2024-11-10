@@ -1,4 +1,4 @@
-fn test_multiple_params(a: i64, b: f64)
+fn test_multiple_params(a: int, b: real)
 begin
     x = a + 1.1
     log(a, b, '  ->  ', x)
@@ -34,7 +34,7 @@ end
 
 fn test_iterator
 begin
-    items: [i64]
+    items: [int]
     push(items, 123)
     push(items, 456)
     push(items, 789)
@@ -42,7 +42,6 @@ begin
     items >> {
         log(it_index) 
         log('items ', it_index, ' ', it) 
-        
         items >> {
             log('    ', it_index, ' ', it) 
         }
@@ -50,11 +49,33 @@ begin
     }
 end
 
-fn test(a: i64)
+
+fn test_params1(a: int, b: int) int
 begin
+    ret a + b
 end
 
-fn all_tests() 
+fn test_params
+begin
+    b = 5 + 6 + 7*test_params1(5, 6)
+    log(b)
+    b = test_params1(test_params1(5, 6), 6)
+    log(b)
+end
+
+fn test_array_access
+begin
+    items: [real]
+    push(items, 123)
+    push(items, 456)
+    push(items, 789)
+
+    items >> {
+        log(items[it_index])
+    }
+end
+
+fn all_tests
 begin
     test_multiple_params(5, 6)
     test_if()
@@ -64,11 +85,6 @@ end
 
 fn run
 begin
-    all_tests()
-
-    items: [i64]
-    push(items, 123)
-    b = 5 //test(5)
-    // //b = items[0]
-    log(b)
+    // all_tests()
+    test_array_access()
 end

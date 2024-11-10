@@ -18,21 +18,21 @@ Phase zero (proof of concept):
 -- basic syntax and semantics:
    -- C++/Pascal hybrid syntax
    -- type inference
+   -- built-in dyn array and hashtable
+   -- only structs (no oop)
    -- generics (if needed)
-   -- dyn arrays
-   -- custom types
--- dynamic types are refcounted (strings, records, arrays)
+-- dynamic types (strings, structs, arrays) are refcounted
 
 Phase one:
--- multiple source files
+-- !!! multiple source files
 -- nested arrays
 -- semantic block comment (clojure style)
--- IDE support (language server, etc.)
 -- ? maybe, first class functions
 -- ? maybe, variant data type
+-- ? maybe, IDE support (language server, etc.)
 
-Phase last (may not be needed if transpile to C++ would be enought):
--- for debug mode generate x86 native code (unoptimized) 
+Phase last (most likely will not be needed soon as transpile to C++ should be enought):
+-- for debug mode generate x64 native code (unoptimized) 
 -- debug mode compile speed (cold start) >= 100k loc per second
 -- debug mode compile speed (hot) == instant (less than 0.1ms)
 -- for production generate LLVM code 

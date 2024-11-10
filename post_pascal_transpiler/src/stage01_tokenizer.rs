@@ -29,10 +29,10 @@ impl Token {
     }
 }
 
-const KEYWORDS: [&str; 16] = [
+const KEYWORDS: [&str; 17] = [
     "begin", "end", "do", //
-    "fn", "var", "if", "for", "in", "loop", "break", //
-    "i64", "f64", "string", //
+    "fn", "var", "if", "for", "in", "loop", "break", "ret", //
+    "int", "real", "str", //
     "not", "and", "or" //
 ];
 
