@@ -14,7 +14,7 @@ use to_vec::ToVec;
 use crate::stage01_tokenizer::*;
 
 #[derive(Debug, Clone)]
-pub struct ProgramNode {
+pub struct ProgramRootNode {
     pub children: Vec<AstNode>,
 }
 
@@ -30,7 +30,13 @@ pub struct FunctionNode {
     pub params: IndexMap<String, TypeInfo>,
     pub vars: HashMap<String, TypeInfo>,
     pub body: BlockNode,
-    pub return_type: TypeInfo
+    pub return_type: TypeInfo,
+}
+
+#[derive(Debug, Clone)]
+pub struct RecordNode {
+    pub name: String,
+    pub fields: IndexMap<String, TypeInfo>,
 }
 
 #[derive(Debug, Clone)]
@@ -156,8 +162,9 @@ pub struct IterationNode {
 
 #[derive(Debug, Clone)]
 pub enum AstNode {
-    Program(ProgramNode),
+    Program(ProgramRootNode),
     Function(FunctionNode),
+    Record(RecordNode),
     Block(BlockNode),
     IfStatement(IfStatementNode),
     ForStatement(ForStatementNode),
@@ -212,21 +219,23 @@ struct CurrentFunctionContext {
 }
 
 //#[derive(Default)]
-pub struct AstBuilder<'a> {
+pub struct AstBuilder {
     ti: usize,
-    pub tokenizer: &'a Tokenizer,
+    pub tokenizer: Tokenizer,
     pub tokens: Vec<Token>,
-    pub root: ProgramNode,
+    pub root: ProgramRootNode,
+    pub records: HashMap<String, RecordNode>,
     current_function_context: Option<CurrentFunctionContext>,
 }
 
-impl<'a> AstBuilder<'a> {
+impl AstBuilder {
     pub fn new(tokenizer: &Tokenizer) -> AstBuilder {
         AstBuilder {
             ti: 0,
-            tokenizer: tokenizer,
+            tokenizer: tokenizer.clone(),
             tokens: tokenizer.tokens.clone(),
-            root: ProgramNode { children: vec![] },
+            root: ProgramRootNode { children: vec![] },
+            records: HashMap::new(),
             current_function_context: None,
         }
     }
@@ -259,6 +268,15 @@ impl<'a> AstBuilder<'a> {
         } else {
             todo!();
         }
+    }
+
+    fn need_next_identifier_token(&mut self) -> AstResult<&Token> {
+        let token = self.next();
+        if token.kind != TokenKind::Identifier {
+            return Err(AstBuilderError::new(token.clone(), "expected identifier"));
+        }
+
+        return Ok(&token);
     }
 
     fn skip_line_end_tokens(&mut self) {
@@ -309,29 +327,82 @@ impl<'a> AstBuilder<'a> {
     }
 
     pub fn parse_tokens_to_ast(&mut self) -> AstResult<()> {
-        let mut root = ProgramNode { children: vec![] };
+        let mut root = ProgramRootNode { children: vec![] };
 
         loop {
             self.skip_line_end_tokens();
 
-            let t = self.peek_next();
-            if t.is_eof() {
+            let token = self.peek_next();
+            if token.is_eof() {
                 break;
             };
 
-            match t.kind {
-                TokenKind::Keyword => {
-                    if t.value == "fn" {
+            match token.kind {
+                TokenKind::Keyword => match token.value.as_str() {
+                    "fn" => {
                         let fun = self.parse_function()?;
                         root.children.push(AstNode::Function(fun));
                     }
+                    "rec" => {
+                        let record = self.parse_record()?;
+                        root.children.push(AstNode::Record(record));
+                    }
+                    else_ => {
+                        return Err(AstBuilderError::new(token.clone(), "unexpected token"));
+                    }
+                },
+                TokenKind::Comment => {
+                    let value = token.value.clone();
+                    self.skip();
+                    root.children.push(AstNode::Comment(CommentNode { value }));
                 }
-                _ => todo!(),
+                _ => {
+                    return Err(AstBuilderError::new(token.clone(), "unexpected token"));
+                }
             }
         }
 
         self.root = root;
         Ok(())
+    }
+
+    fn parse_record(&mut self) -> AstResult<RecordNode> {
+        self.skip_expected("rec")?;
+
+        let record_name_token = self.need_next_identifier_token()?.clone();
+        let record_name = record_name_token.value.clone();
+        self.skip_expected("{")?;
+
+        let mut fields = IndexMap::new();
+        loop {
+            self.skip_line_end_tokens();
+
+            if self.try_skip("}") {
+                break;
+            }
+
+            let field_name = self.need_next_identifier_token()?.value.clone();
+            self.skip_expected(":")?;
+            let type_info = self.parse_type_info(&["\n"])?;
+
+            fields.insert(field_name, type_info);
+        }
+
+        let record_node = RecordNode {
+            name: record_name.clone(),
+            fields,
+        };
+
+        match self.records.entry(record_name) {
+            Entry::Occupied(occupied_entry) => {
+                return Err(AstBuilderError::new(record_name_token, "duplicate record identifier")); 
+            },
+            Entry::Vacant(vacant_entry) => {
+                vacant_entry.insert(record_node.clone());        
+            },
+        }
+
+        Ok(record_node)
     }
 
     fn parse_function(&mut self) -> AstResult<FunctionNode> {
@@ -345,10 +416,7 @@ impl<'a> AstBuilder<'a> {
 
         let fn_name_token = self.next();
         if fn_name_token.kind != TokenKind::Identifier {
-            return Err(AstBuilderError::new(
-                fn_name_token.clone(),
-                "identifier expected",
-            ));
+            return Err(AstBuilderError::new(fn_name_token.clone(), "identifier expected"));
         }
 
         let fn_name = fn_name_token.value.clone();
@@ -364,7 +432,7 @@ impl<'a> AstBuilder<'a> {
             params: fn_params,
             vars: fn_vars,
             body: fn_body,
-            return_type: fn_return_type
+            return_type: fn_return_type,
         })
     }
 
@@ -390,9 +458,12 @@ impl<'a> AstBuilder<'a> {
 
     fn parse_function_return_type(&mut self) -> AstResult<TypeInfo> {
         self.skip_line_end_tokens();
-        
+
         if self.peek_next().value == "begin" {
-            return Ok(TypeInfo { is_array: false, type_str: String::new() });
+            return Ok(TypeInfo {
+                is_array: false,
+                type_str: String::new(),
+            });
         }
 
         let return_type = self.parse_type_info(&["begin"])?;
@@ -400,10 +471,7 @@ impl<'a> AstBuilder<'a> {
         Ok(return_type)
     }
 
-    fn parse_function_declaration_param(
-        &mut self,
-        terminators: &[&str],
-    ) -> AstResult<(String, TypeInfo)> {
+    fn parse_function_declaration_param(&mut self, terminators: &[&str]) -> AstResult<(String, TypeInfo)> {
         let name_token = self.next().clone();
         if name_token.kind != TokenKind::Identifier {
             return Err(AstBuilderError::new(name_token, "identifier expected"));
@@ -511,39 +579,37 @@ impl<'a> AstBuilder<'a> {
                 }
             }
 
-            TokenKind::Keyword => {
-                match t.value.as_str() {
-                    "if" => {
-                        let f = self.parse_if_statement()?;
-                        return Ok(AstNode::IfStatement(f));
-                    }
-
-                    "for" => {
-                        let f = self.parse_for_statement()?;
-                        return Ok(AstNode::ForStatement(f));
-                    }
-
-                    "loop" => {
-                        let f = self.parse_loop_statement()?;
-                        return Ok(AstNode::LoopStatement(f));
-                    }
-
-                    "break" => {
-                        self.skip_expected("break")?;
-                        return Ok(AstNode::BreakStatement());
-                    }
-
-                    "ret" => {
-                        self.skip_expected("ret")?;
-                        let expression_node = self.parse_expression_until(&["\n"])?;
-                        return Ok(AstNode::ReturnStatement(expression_node));
-                    }
-
-                    panic_ => {
-                        panic!();
-                    }
+            TokenKind::Keyword => match t.value.as_str() {
+                "if" => {
+                    let f = self.parse_if_statement()?;
+                    return Ok(AstNode::IfStatement(f));
                 }
-            }
+
+                "for" => {
+                    let f = self.parse_for_statement()?;
+                    return Ok(AstNode::ForStatement(f));
+                }
+
+                "loop" => {
+                    let f = self.parse_loop_statement()?;
+                    return Ok(AstNode::LoopStatement(f));
+                }
+
+                "break" => {
+                    self.skip_expected("break")?;
+                    return Ok(AstNode::BreakStatement());
+                }
+
+                "ret" => {
+                    self.skip_expected("ret")?;
+                    let expression_node = self.parse_expression_until(&["\n"])?;
+                    return Ok(AstNode::ReturnStatement(expression_node));
+                }
+
+                panic_ => {
+                    panic!();
+                }
+            },
 
             TokenKind::Comment => {
                 let value = t.value.clone();
@@ -586,10 +652,7 @@ impl<'a> AstBuilder<'a> {
             }
         }
 
-        Ok(IfStatementNode {
-            if_blocks,
-            else_block,
-        })
+        Ok(IfStatementNode { if_blocks, else_block })
     }
 
     fn parse_loop_statement(&mut self) -> AstResult<LoopStatementNode> {
@@ -630,10 +693,7 @@ impl<'a> AstBuilder<'a> {
         let block = self.parse_block()?;
         self.ctx().iterators.pop();
 
-        Ok(IterationNode {
-            iteratable_name,
-            block,
-        })
+        Ok(IterationNode { iteratable_name, block })
     }
 
     fn parse_variable_assignment(&mut self) -> AstResult<VariableAssignmentNode> {
@@ -654,7 +714,8 @@ impl<'a> AstBuilder<'a> {
                 if info.type_str != type_str {
                     let s = format!(
                         "variable assignment with different type than first assignment\nwas {}, became {}",
-                        info.type_str.clone(), type_str.clone()
+                        info.type_str.clone(),
+                        type_str.clone()
                     );
                     return Err(ae(&name_token, s));
                 }
@@ -718,14 +779,10 @@ impl<'a> AstBuilder<'a> {
                 let s = format!("variable already defined {}", var_name.clone());
                 return Err(ae(&name_token, s));
             }
-            Entry::Vacant(vacant) => {
-                vacant.insert(type_info)
-            }
+            Entry::Vacant(vacant) => vacant.insert(type_info),
         };
 
-        Ok(VariableDeclarationNode {
-            name: var_name.clone(),
-        })
+        Ok(VariableDeclarationNode { name: var_name.clone() })
     }
 
     fn parse_group(&mut self) -> AstResult<GroupNode> {
@@ -792,27 +849,19 @@ impl<'a> AstBuilder<'a> {
                     ast_nodes.push(node);
                 }
                 TokenKind::SpecialSymbol => {
-                    let node = AstNode::Operator(OperatorNode {
-                        value: t.value.clone(),
-                    });
+                    let node = AstNode::Operator(OperatorNode { value: t.value.clone() });
                     ast_nodes.push(node);
                 }
                 TokenKind::IntegerLiteral => {
-                    let node = AstNode::IntegerLiteral(IntegerLiteralNode {
-                        value: t.value.clone(),
-                    });
+                    let node = AstNode::IntegerLiteral(IntegerLiteralNode { value: t.value.clone() });
                     ast_nodes.push(node);
                 }
                 TokenKind::FloatLiteral => {
-                    let node = AstNode::RealLiteral(RealLiteralNode {
-                        value: t.value.clone(),
-                    });
+                    let node = AstNode::RealLiteral(RealLiteralNode { value: t.value.clone() });
                     ast_nodes.push(node);
                 }
                 TokenKind::String => {
-                    let node = AstNode::StringLiteral(StringLiteralNode {
-                        value: t.value.clone(),
-                    });
+                    let node = AstNode::StringLiteral(StringLiteralNode { value: t.value.clone() });
                     ast_nodes.push(node);
                 }
                 _ => (),
@@ -888,47 +937,39 @@ impl<'a> AstBuilder<'a> {
                     }
                 }
 
-                AstNode::Group(group_node) => {
-                    match &tree_node.ast_node {
-                        AstNode::Identifier(identifier_node) => {
-                            let node = AstNode::FunctionCall(
-                                FunctionCallNode {
-                                    name: identifier_node.value.clone(),
-                                    params_group: group_node.clone(),
-                                }
-                            );
-                            tree_node.ast_node = node;
-                            *next_ast_node_index += 1;
-                            break;
-                        }
-                        
-                        else_ => {
-                            println!("{:?}", tree_node.ast_node);
-                            panic!()
-                        }
+                AstNode::Group(group_node) => match &tree_node.ast_node {
+                    AstNode::Identifier(identifier_node) => {
+                        let node = AstNode::FunctionCall(FunctionCallNode {
+                            name: identifier_node.value.clone(),
+                            params_group: group_node.clone(),
+                        });
+                        tree_node.ast_node = node;
+                        *next_ast_node_index += 1;
+                        break;
                     }
-                }
 
-                AstNode::ArrayBrackets(array_brackets_node) => {
-                    match &tree_node.ast_node {
-                        AstNode::Identifier(identifier_node) => {
-                            let node = AstNode::ArrayItemAccess(
-                                ArrayItemAccessNode {
-                                    array_name: identifier_node.value.clone(),
-                                    access_expression: array_brackets_node.expression.clone(),
-                                }
-                            );
-                            tree_node.ast_node = node;
-                            *next_ast_node_index += 1;
-                            break;
-                        }
-                        
-                        else_ => {
-                            println!("{:?}", tree_node.ast_node);
-                            panic!()
-                        }
+                    else_ => {
+                        println!("{:?}", tree_node.ast_node);
+                        panic!()
                     }
-                }
+                },
+
+                AstNode::ArrayBrackets(array_brackets_node) => match &tree_node.ast_node {
+                    AstNode::Identifier(identifier_node) => {
+                        let node = AstNode::ArrayItemAccess(ArrayItemAccessNode {
+                            array_name: identifier_node.value.clone(),
+                            access_expression: array_brackets_node.expression.clone(),
+                        });
+                        tree_node.ast_node = node;
+                        *next_ast_node_index += 1;
+                        break;
+                    }
+
+                    else_ => {
+                        println!("{:?}", tree_node.ast_node);
+                        panic!()
+                    }
+                },
 
                 _ => {
                     //println!("{:?}", next_op);
@@ -987,24 +1028,24 @@ impl<'a> AstBuilder<'a> {
                 let ctx = self.current_function_context.as_ref().unwrap();
 
                 let var_name = &identifier_node.value;
-                
+
                 if var_name == "it" {
                     let type_info = ctx.iterators.last().unwrap();
                     return Ok((tree_node.ast_node.clone(), type_info.type_str.clone()));
-                } 
-                
+                }
+
                 if var_name == "it_index" {
                     return Ok((tree_node.ast_node.clone(), "int".to_string()));
-                } 
+                }
 
                 if let Some(type_info) = ctx.vars.get(var_name) {
-                    return Ok((tree_node.ast_node.clone(), type_info.type_str.clone()));                    
+                    return Ok((tree_node.ast_node.clone(), type_info.type_str.clone()));
                 }
 
                 if let Some(type_info) = ctx.params.get(&identifier_node.value) {
-                    return Ok((tree_node.ast_node.clone(), type_info.type_str.clone()));                    
+                    return Ok((tree_node.ast_node.clone(), type_info.type_str.clone()));
                 }
-                
+
                 return Err(AstBuilderError::new(
                     identifier_node.token.clone(),
                     "undeclared identifier",
@@ -1027,9 +1068,19 @@ impl<'a> AstBuilder<'a> {
                 let ctx = self.current_function_context.as_ref().unwrap();
                 let type_str: String;
                 if ctx.vars.contains_key(&array_item_access_node.array_name) {
-                    type_str = ctx.vars.get(&array_item_access_node.array_name).unwrap().type_str.clone();
+                    type_str = ctx
+                        .vars
+                        .get(&array_item_access_node.array_name)
+                        .unwrap()
+                        .type_str
+                        .clone();
                 } else if ctx.params.contains_key(&array_item_access_node.array_name) {
-                    type_str = ctx.params.get(&array_item_access_node.array_name).unwrap().type_str.clone();
+                    type_str = ctx
+                        .params
+                        .get(&array_item_access_node.array_name)
+                        .unwrap()
+                        .type_str
+                        .clone();
                 } else {
                     panic!();
                 }

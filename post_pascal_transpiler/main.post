@@ -15,6 +15,8 @@ begin
         log('a >= 0 and <= 10')
         log(a + 10)
     }
+
+    // todo: переделать 'else if' и 'else' на 'el'
 end
 
 fn test_loop
@@ -49,7 +51,6 @@ begin
     }
 end
 
-
 fn test_params1(a: int, b: int) int
 begin
     ret a + b
@@ -71,7 +72,7 @@ begin
     push(items, 789)
 
     items >> {
-        log(items[it_index])
+        log(items[it_index])        
     }
 end
 
@@ -81,10 +82,24 @@ begin
     test_if()
     test_loop()
     test_iterator()
+    test_array_access()
 end
+
+rec Coordinates {
+    x: int
+    y: int    
+}
 
 fn run
 begin
-    // all_tests()
-    test_array_access()
+    all_tests()
+
+    // r: Coordinates
+    // r.x = 10
+    // log(r.x)
+
+    // r.y = 20
+    // log(r.x*r.y)
+
+    log(1)
 end

@@ -21,14 +21,14 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.postal",
-				"match": "\\b(if|else|loop|while|for|return|ret|fn|do|begin|end|it|it_index)\\b"
+				"match": "\\b(if|else|loop|while|for|return|ret|fn|do|begin|end|it|it_index|rec)\\b"
 			}]
 		},
 		"operators": {
 			"patterns": [{
 				"name": "operator.postal",
-				"match_backup": "[<>,.=;:\\+\\-\\/\\*\\[\\]]|and|or|not|div|mod",
-				"match": "[=]|and|or|not|div|mod"
+				"match_backup": "[<>,.=;:\\+\\-\\/\\*\\[\\]]",
+				"match": "\\b(=|and|or|not|div|mod)\\b"
 			}]
 		},
         "strings": {

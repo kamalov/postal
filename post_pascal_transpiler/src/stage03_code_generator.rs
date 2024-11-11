@@ -4,6 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 use std::fs::{read_dir, read_to_string};
 use std::{array, default, fs};
+
 use indexmap::IndexMap;
 use to_vec::ToVec;
 
@@ -16,8 +17,8 @@ struct CurrentFunctionContext {
     iterators_count: u32,
 }
 
-pub struct Gen<'a> {
-    root: &'a ProgramNode,
+pub struct CodeGenerator {
+    root: ProgramRootNode,
     current_function_context: Option<CurrentFunctionContext>,
 }
 
@@ -43,20 +44,21 @@ fn type_info_to_str(ti: &TypeInfo) -> String {
     }
 }
 
-impl Gen<'_> {
-    pub fn new<'a>(ast_bulder: &'a AstBuilder<'a>) -> Gen<'a> {
-        Gen {
-            root: &ast_bulder.root,
-            current_function_context: None,
-        }
+impl CodeGenerator {
+    pub fn new(ast_bulder: &AstBuilder) -> CodeGenerator {
+        CodeGenerator { root: ast_bulder.root.clone(), current_function_context: None }
     }
 
     pub fn generate_code(&mut self) -> String {
         let mut r = String::new();
-        for n in &self.root.children {
+        for n in &self.root.children.clone() {
             match n {
-                AstNode::Function(f) => {
-                    let code = self.generate_function_code(f, "");
+                AstNode::Record(record_node) => {
+                    let code = self.generate_record_code(record_node, "");
+                    r.push_str(code.as_str());
+                }
+                AstNode::Function(function_node) => {
+                    let code = self.generate_function_code(function_node, "");
                     r.push_str(code.as_str());
                 }
                 _ => (),
@@ -66,12 +68,24 @@ impl Gen<'_> {
         r
     }
 
+    fn generate_record_code(&mut self, record_node: &RecordNode, padding: &str) -> String {
+        let mut result_str = String::new();
+
+        writeln!(&mut result_str, "{padding}struct {} {{", record_node.name);
+
+        for (field_name, type_info) in &record_node.fields {
+            let type_info_str = type_info_to_str(type_info);
+            writeln!(&mut result_str, "{padding}{PADDING}{type_info_str} {field_name};");
+        }
+
+        writeln!(&mut result_str, "}};");
+        writeln!(&mut result_str, "");
+
+        result_str
+    }
+
     fn generate_function_code(&mut self, function_node: &FunctionNode, padding: &str) -> String {
-        self.current_function_context = Some(CurrentFunctionContext {
-            function_node: function_node.clone(),
-            iterators: vec![],
-            iterators_count: 0,
-        });
+        self.current_function_context = Some(CurrentFunctionContext { function_node: function_node.clone(), iterators: vec![], iterators_count: 0 });
 
         let fn_params_code = self.generate_function_declaration_params_code(&function_node.params);
         let fn_body_code = self.generate_block_code(&function_node.body, padding);
@@ -107,7 +121,7 @@ impl Gen<'_> {
             let s = format!("{} {}", type_info_to_str(type_info), name);
             parts.push(s);
         }
-        
+
         parts.join(", ")
     }
 
@@ -223,16 +237,8 @@ impl Gen<'_> {
         let iteratable = self.generate_expression_code(&f.iteratable.root);
         let block = self.generate_block_code(&f.for_block, padding);
         writeln!(&mut r, "");
-        writeln!(
-            &mut r,
-            "{}for {} := Low({}) to High({}) do begin",
-            padding, index_variable_name, iteratable, iteratable
-        );
-        writeln!(
-            &mut r,
-            "{}{}{} := ({})[{}];",
-            padding, PADDING, f.iterator_variable_name, iteratable, index_variable_name
-        );
+        writeln!(&mut r, "{}for {} := Low({}) to High({}) do begin", padding, index_variable_name, iteratable, iteratable);
+        writeln!(&mut r, "{}{}{} := ({})[{}];", padding, PADDING, f.iterator_variable_name, iteratable, index_variable_name);
 
         write!(&mut r, "{}", block);
         writeln!(&mut r, "{}end;", padding);
@@ -258,41 +264,23 @@ impl Gen<'_> {
         let mut function_context = self.current_function_context.as_mut().unwrap();
         let index = function_context.iterators_count;
         function_context.iterators_count += 1;
-        let iteratable = function_context
-            .function_node
-            .vars
-            .get(&iteration_node.iteratable_name)
-            .unwrap();
+        let iteratable = function_context.function_node.vars.get(&iteration_node.iteratable_name).unwrap();
         let iteratable_name = iteration_node.iteratable_name.clone();
         let it_name = format!("{}__it{}", iteratable_name, index);
         let it_index_name = format!("{}_index", it_name);
         let it_type = iteratable.type_str.clone();
-        function_context
-            .iterators
-            .push((it_name.clone(), it_type.clone()));
+        function_context.iterators.push((it_name.clone(), it_type.clone()));
         // decls.push((index_variable_name.clone(), "int".to_owned()));
 
         let block = self.generate_block_code(&iteration_node.block, padding);
         writeln!(&mut r, "");
-        writeln!(
-            &mut r,
-            "{0}for (int {1} = 0; {1} < {2}.size(); {1}++) {{",
-            padding, it_index_name, iteratable_name
-        );
-        writeln!(
-            &mut r,
-            "{}{}{} {} = {}[{}];",
-            padding, PADDING, convert_type_name_str(&it_type), it_name, iteratable_name, it_index_name
-        );
+        writeln!(&mut r, "{0}for (int {1} = 0; {1} < {2}.size(); {1}++) {{", padding, it_index_name, iteratable_name);
+        writeln!(&mut r, "{}{}{} {} = {}[{}];", padding, PADDING, convert_type_name_str(&it_type), it_name, iteratable_name, it_index_name);
 
         write!(&mut r, "{}", block);
         writeln!(&mut r, "{}}}", padding);
 
-        self.current_function_context
-            .as_mut()
-            .unwrap()
-            .iterators
-            .pop();
+        self.current_function_context.as_mut().unwrap().iterators.pop();
 
         r
     }
@@ -310,7 +298,7 @@ impl Gen<'_> {
         match function_name {
             "log" => {
                 if f.params_group.expressions.is_empty() {
-                    write!(&mut r,"printf(\"\\n\")");
+                    write!(&mut r, "printf(\"\\n\")");
                 } else {
                     let mut format_parts = vec![];
                     let mut names = vec![];
@@ -335,12 +323,7 @@ impl Gen<'_> {
                             }
                         }
                     }
-                    write!(
-                        &mut r,
-                        "printf(\"{}\\n\", {})",
-                        format_parts.join(" "),
-                        names.join(", ")
-                    );
+                    write!(&mut r, "printf(\"{}\\n\", {})", format_parts.join(" "), names.join(", "));
                 }
             }
 
@@ -383,11 +366,7 @@ impl Gen<'_> {
         s
     }
 
-    fn generate_variable_assignment_code(
-        &mut self,
-        v: &VariableAssignmentNode,
-        padding: &str,
-    ) -> String {
+    fn generate_variable_assignment_code(&mut self, v: &VariableAssignmentNode, padding: &str) -> String {
         let mut r = String::new();
 
         let s = self.generate_expression_code(&*v.rvalue_expression.root);
@@ -409,9 +388,7 @@ impl Gen<'_> {
                         Some(current_function_context) => {
                             let iterators = &current_function_context.iterators;
                             if iterators.is_empty() {
-                                panic!(
-                                    "it or it_index is reserved and allowed only inside iterators"
-                                );
+                                panic!("it or it_index is reserved and allowed only inside iterators");
                             }
 
                             let (it_name, it_type_str) = iterators.last().unwrap();

@@ -29,10 +29,10 @@ impl Token {
     }
 }
 
-const KEYWORDS: [&str; 17] = [
+const KEYWORDS: [&str; 18] = [
     "begin", "end", "do", //
     "fn", "var", "if", "for", "in", "loop", "break", "ret", //
-    "int", "real", "str", //
+    "int", "real", "str", "rec", //
     "not", "and", "or" //
 ];
 
@@ -50,7 +50,7 @@ fn is_identifier_starter_char(c: char) -> bool {
     !c.is_whitespace() && (c as u32) < 128 && c.is_alphabetic()
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Tokenizer {
     ci: usize,
     text: String,
@@ -97,11 +97,11 @@ impl Tokenizer {
         t
     }
 
-    pub fn char_index_to_line_column(&self, index: usize) -> (usize, usize) {
-        let mut line = 1;
+    pub fn char_index_to_line_and_column(&self, index: usize) -> (usize, usize) {
+        let mut line = 0;
         let mut last_new_line_index = 0;
         let mut prev_char = 0 as char;
-        for i in 0..index {
+        for i in 0..(index + 1) {
             if prev_char == '\n' {
                 line += 1;
                 last_new_line_index = i;
