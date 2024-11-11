@@ -59,8 +59,13 @@ pub struct ExpressionNode {
 #[derive(Debug, Clone)]
 pub struct VariableAssignmentNode {
     pub name: String,
-    //pub var_type: String,
     pub rvalue_expression: ExpressionNode,
+}
+
+#[derive(Debug, Clone)]
+pub struct AssignmentNode {
+    pub lvalue: ExpressionNode,
+    pub rvalue: ExpressionNode,
 }
 
 #[derive(Debug, Clone)]
@@ -174,6 +179,7 @@ pub enum AstNode {
     ReturnStatement(ExpressionNode),
     FunctionCall(FunctionCallNode),
     VariableAssignment(VariableAssignmentNode),
+    Assignment(AssignmentNode),
     VariableDeclaration(VariableDeclarationNode),
     IntegerLiteral(IntegerLiteralNode),
     RealLiteral(RealLiteralNode),
@@ -395,11 +401,11 @@ impl AstBuilder {
 
         match self.records.entry(record_name) {
             Entry::Occupied(occupied_entry) => {
-                return Err(AstBuilderError::new(record_name_token, "duplicate record identifier")); 
-            },
+                return Err(AstBuilderError::new(record_name_token, "duplicate record identifier"));
+            }
             Entry::Vacant(vacant_entry) => {
-                vacant_entry.insert(record_node.clone());        
-            },
+                vacant_entry.insert(record_node.clone());
+            }
         }
 
         Ok(record_node)
@@ -547,12 +553,10 @@ impl AstBuilder {
     }
 
     fn parse_statement(&mut self) -> AstResult<AstNode> {
-        let t = self.peek_next();
-        //println!("{:?}", t);
-        match t.kind {
+        let token = self.peek_next();
+        match token.kind {
             TokenKind::Identifier => {
-                let t = self.peek_next_next();
-                match t.value.as_str() {
+                match self.peek_next_next().value.as_str() {
                     "(" => {
                         let f = self.parse_function_call()?;
                         return Ok(AstNode::FunctionCall(f));
@@ -573,13 +577,19 @@ impl AstBuilder {
                         return Ok(AstNode::Iteration(f));
                     }
 
-                    _ => {
-                        panic!()
-                    }
+                    _ => {}
                 }
+
+                let left_side_expression = self.parse_expression_until(&["=", "\n"])?;
+                self.skip_expected("=");
+                let right_side_expression = self.parse_expression_until(&["\n"])?;
+                return Ok(AstNode::Assignment(AssignmentNode {
+                    lvalue: left_side_expression,
+                    rvalue: right_side_expression,
+                }));
             }
 
-            TokenKind::Keyword => match t.value.as_str() {
+            TokenKind::Keyword => match token.value.as_str() {
                 "if" => {
                     let f = self.parse_if_statement()?;
                     return Ok(AstNode::IfStatement(f));
@@ -612,13 +622,13 @@ impl AstBuilder {
             },
 
             TokenKind::Comment => {
-                let value = t.value.clone();
+                let value = token.value.clone();
                 self.skip();
                 Ok(AstNode::Comment(CommentNode { value }))
             }
 
             TokenKind::SpecialSymbol => {
-                let value = t.value.clone();
+                let value = token.value.clone();
                 self.skip();
                 Ok(AstNode::Comment(CommentNode { value }))
             }
@@ -711,14 +721,14 @@ impl AstBuilder {
         let info = match self.ctx().vars.entry(var_name.clone()) {
             Entry::Occupied(occupied) => {
                 let info = occupied.into_mut();
-                if info.type_str != type_str {
-                    let s = format!(
-                        "variable assignment with different type than first assignment\nwas {}, became {}",
-                        info.type_str.clone(),
-                        type_str.clone()
-                    );
-                    return Err(ae(&name_token, s));
-                }
+                // if info.type_str != type_str {
+                //     let s = format!(
+                //         "variable assignment with different type than first assignment\nwas {}, became {}",
+                //         info.type_str.clone(),
+                //         type_str.clone()
+                //     );
+                //     return Err(ae(&name_token, s));
+                // }
 
                 // todo:
                 // if info.is_array != is_array {
@@ -991,8 +1001,8 @@ impl AstBuilder {
                 return "real".to_string();
             }
 
-            panic!();
-            return "incompatible types".to_string();
+            //panic!();
+            return "some types".to_string();
         }
 
         match &tree_node.ast_node {
@@ -1005,7 +1015,7 @@ impl AstBuilder {
             }
 
             AstNode::StringLiteral(_) => {
-                return Ok((tree_node.ast_node.clone(), "string".to_string()));
+                return Ok((tree_node.ast_node.clone(), "str".to_string()));
             }
 
             AstNode::BinaryOperation(b) => {
@@ -1045,6 +1055,8 @@ impl AstBuilder {
                 if let Some(type_info) = ctx.params.get(&identifier_node.value) {
                     return Ok((tree_node.ast_node.clone(), type_info.type_str.clone()));
                 }
+
+                return Ok((tree_node.ast_node.clone(), "unknown".to_string()));
 
                 return Err(AstBuilderError::new(
                     identifier_node.token.clone(),

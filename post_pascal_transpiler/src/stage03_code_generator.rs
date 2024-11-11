@@ -1,6 +1,6 @@
 #![allow(warnings)]
-
 use std::collections::{HashMap, HashSet};
+use std::collections::hash_map::Entry;
 use std::fmt::Write;
 use std::fs::{read_dir, read_to_string};
 use std::{array, default, fs};
@@ -11,6 +11,12 @@ use to_vec::ToVec;
 use crate::stage01_tokenizer::*;
 use crate::stage02_ast_builder::*;
 
+const OPERATORS_MAP: [(&str, &str); 3] = [
+    ("+", " + "),
+    ("-", " - "),
+    ("=", " == "),
+];
+
 struct CurrentFunctionContext {
     function_node: FunctionNode,
     iterators: Vec<(String, String)>,
@@ -19,6 +25,7 @@ struct CurrentFunctionContext {
 
 pub struct CodeGenerator {
     root: ProgramRootNode,
+    operators_map: HashMap<String, String>,
     current_function_context: Option<CurrentFunctionContext>,
 }
 
@@ -29,8 +36,7 @@ fn convert_type_name_str(ti: &String) -> String {
         "" => "void".to_string(),
         "int" => "long".to_string(),
         "real" => "double".to_string(),
-        //"bool" => "boolean".to_string(),
-        _ => panic!(), // ti.clone()
+        _ => ti.clone()
     }
 }
 
@@ -46,7 +52,16 @@ fn type_info_to_str(ti: &TypeInfo) -> String {
 
 impl CodeGenerator {
     pub fn new(ast_bulder: &AstBuilder) -> CodeGenerator {
-        CodeGenerator { root: ast_bulder.root.clone(), current_function_context: None }
+        let mut operators_map = HashMap::new();
+        for (op_from, op_to) in OPERATORS_MAP {
+            operators_map.insert(op_from.to_string(), op_to.to_string());
+        }
+
+        CodeGenerator { 
+            root: ast_bulder.root.clone(), 
+            current_function_context: None,
+            operators_map
+        }
     }
 
     pub fn generate_code(&mut self) -> String {
@@ -190,7 +205,16 @@ impl CodeGenerator {
             AstNode::ReturnStatement(expression) => {
                 writeln!(&mut r, "{}return {};", padding, self.generate_expression_code(&expression.root));
             }
-            _ => (),
+            AstNode::VariableDeclaration(_) => {
+            }
+            AstNode::Assignment(assignment_node) => {
+                let s = self.generate_assignment_code(assignment_node, padding);
+                r.push_str(s.as_str());
+            }
+            _ => {
+                println!("{:?}", ast_node);
+                panic!();
+            }
         }
 
         r
@@ -313,13 +337,14 @@ impl CodeGenerator {
                                 format_parts.push("%f");
                                 names.push(param_name.clone());
                             }
-                            "string" => {
+                            "str" => {
                                 format_parts.push("%s");
                                 names.push(param_name.clone());
                             }
-                            _ => {
-                                println!("{:?}", p);
-                                panic!();
+                            else_ => {
+                                format_parts.push("%d");
+                                //names.push(format!("(void *)&{param_name}"));
+                                names.push(format!("{param_name}"));
                             }
                         }
                     }
@@ -375,6 +400,16 @@ impl CodeGenerator {
         r
     }
 
+    fn generate_assignment_code(&mut self, assignment_node: &AssignmentNode, padding: &str) -> String {
+        let mut result_str = String::new();
+
+        let left = self.generate_expression_code(&assignment_node.lvalue.root);
+        let right = self.generate_expression_code(&assignment_node.rvalue.root);
+        writeln!(&mut result_str, "{padding}{left} = {right};");
+
+        result_str
+    }
+
     fn generate_expression_code(&mut self, node: &AstNode) -> String {
         let mut r = String::new();
 
@@ -407,8 +442,8 @@ impl CodeGenerator {
                     write!(&mut r, "{}", identifier_node.value);
                 }
             }
-            AstNode::Operator(o) => {
-                write!(&mut r, " {} ", o.value);
+            AstNode::Operator(operator_node) => {
+                write!(&mut r, " {} ", operator_node.value);
             }
             AstNode::IntegerLiteral(f) => {
                 write!(&mut r, "{}", f.value);
@@ -422,12 +457,9 @@ impl CodeGenerator {
             AstNode::BinaryOperation(b) => {
                 let left = self.generate_expression_code(&b.children[0]);
                 let right = self.generate_expression_code(&b.children[1]);
-                //write!(&mut r, "({} {} {})", left, b.operation.value, right);
-                if b.operation.value == "=" {
-                    write!(&mut r, "{} {} {}", left, "==", right);
-                } else {
-                    write!(&mut r, "{} {} {}", left, b.operation.value, right);
-                }
+                let mut op = b.operation.value.clone();
+                op = self.operators_map.get(&op).cloned().unwrap_or(op);
+                write!(&mut r, "{left}{op}{right}");
             }
             AstNode::Group(group) => {
                 let code = self.generate_group_code(group, "");

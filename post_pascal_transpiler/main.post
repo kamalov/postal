@@ -92,14 +92,18 @@ rec Coordinates {
 
 fn run
 begin
-    all_tests()
+    //all_tests()
 
-    // r: Coordinates
-    // r.x = 10
-    // log(r.x)
+    r: Coordinates
+    r.x = 10
+    r.y = 20
+    log(r.x)
+    log(r.y)
+    a: int
+    a = r.x*r.y
+    log(r.x*r.y)
+    log(a)
+    log(r.x*r.y = a)
 
-    // r.y = 20
-    // log(r.x*r.y)
-
-    log(1)
+    log('done')
 end

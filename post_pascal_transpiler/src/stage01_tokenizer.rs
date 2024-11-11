@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::fs::{read_dir, read_to_string};
+use std::hash::Hash;
 use std::{array, default, fs};
 use to_vec::ToVec;
 
@@ -36,9 +37,9 @@ const KEYWORDS: [&str; 18] = [
     "not", "and", "or" //
 ];
 
-const SPECIALS: [&str; 17] = [
+const SPECIALS: [&str; 18] = [
     "{", "}", "(", ")", "[", "]", ",", ":", ";", "=", "*", "/", "+", "-", "<", ">",
-    ">>"
+    ">>", "."
     //, "::", "<<", "<=", ">=", "=>", "->"
 ];
 
@@ -73,6 +74,7 @@ impl Tokenizer {
             t.specials.insert(c.to_string());
         }
 
+        t.priorities.insert(".".to_string(), 20);
         t.priorities.insert("()".to_string(), 20);
         t.priorities.insert("[]".to_string(), 20);
 
