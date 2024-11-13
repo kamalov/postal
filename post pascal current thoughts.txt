@@ -20,18 +20,21 @@ Phase zero (proof of concept):
    -- type inference
    -- built-in dyn array and hashtable
    -- only structs (no oop)
-   -- generics (if needed)
--- dynamic types (strings, structs, arrays) are refcounted
 
 Phase one:
--- !!! multiple source files
+-- multiple source files (modules)
+-- refcount for dynamic types (strings, structs, arrays, etc.)
+-- generics
+-- exceptions
 -- nested arrays
--- semantic block comment (clojure style)
--- ? maybe, first class functions
--- ? maybe, variant data type
--- ? maybe, IDE support (language server, etc.)
 
-Phase last (most likely will not be needed soon as transpile to C++ should be enought):
+Phase two (bells and whistles):
+-- first class functions
+-- variant data type
+-- IDE support (language server, etc.)
+-- semantic block comment (clojure style)
+
+Phase last (most likely will not be needed as transpile to C++ should be enought):
 -- for debug mode generate x64 native code (unoptimized) 
 -- debug mode compile speed (cold start) >= 100k loc per second
 -- debug mode compile speed (hot) == instant (less than 0.1ms)
