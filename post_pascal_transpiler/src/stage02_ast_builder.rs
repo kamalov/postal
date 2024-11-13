@@ -1,5 +1,4 @@
 #![allow(warnings)]
-use indexmap::IndexMap;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 use std::env::var;
@@ -8,8 +7,9 @@ use std::fs::{read_dir, read_to_string};
 use std::ops::Index;
 use std::slice::Iter;
 use std::{array, default, fs, iter, mem};
+
 use to_vec::ToVec;
-//use indexmap::IndexMap;
+use indexmap::IndexMap;
 
 use crate::stage01_tokenizer::*;
 
@@ -215,6 +215,7 @@ pub struct TypeInfo {
     pub type_str: String,
 }
 
+#[derive(Clone)]
 struct CurrentFunctionContext {
     //function_node: FunctionNode,
     //iterators: Vec<(String, String)>,
@@ -224,7 +225,7 @@ struct CurrentFunctionContext {
     iterators: Vec<TypeInfo>,
 }
 
-//#[derive(Default)]
+#[derive(Clone)]
 pub struct AstBuilder {
     ti: usize,
     pub tokenizer: Tokenizer,
