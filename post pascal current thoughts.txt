@@ -11,24 +11,33 @@ Priorities (by desc):
 
 Implementation
 
-Phase zero (proof of concept):
--- transpile to C++
--- single source file
--- ansi strings
--- basic syntax and semantics:
+Phase zero (basic syntax and type checking):
+-- features:
+   -- type checking
+   -- type inference (variable type and function return type)
    -- C++/Pascal hybrid syntax
-   -- type inference
-   -- built-in dyn array and hashtable
+   -- built-in dyn array and hash table
    -- only structs (no oop)
+-- phase limitations:
+   -- transpilation to C++
+   -- no memory management
+   -- single source file
+   -- ansi strings
+
+Phase zero.1:
+-- refcounted memory management
+-- exceptions
 
 Phase one:
 -- multiple source files (modules)
--- refcount for dynamic types (strings, structs, arrays, etc.)
+-- utf-8 strings
 -- generics
--- exceptions
+-- enums
 -- nested arrays
+-- function overload
+-- better compile error messages
 
-Phase two (bells and whistles):
+Phase pre-last (bells and whistles):
 -- first class functions
 -- variant data type
 -- IDE support (language server, etc.)
@@ -36,9 +45,7 @@ Phase two (bells and whistles):
 
 Phase last (most likely will not be needed as transpile to C++ should be enought):
 -- for debug mode generate x64 native code (unoptimized) 
+-- for production generate LLVM code 
 -- debug mode compile speed (cold start) >= 100k loc per second
 -- debug mode compile speed (hot) == instant (less than 0.1ms)
--- for production generate LLVM code 
 -- production mode compile speed >= 10k loc per second
-
-

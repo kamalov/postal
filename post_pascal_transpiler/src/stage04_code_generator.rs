@@ -18,13 +18,13 @@ const OPERATORS_MAP: [(&str, &str); 3] = [
 ];
 
 struct CurrentFunctionContext {
-    function_node: FunctionNode,
+    function_node: Function,
     iterators: Vec<(String, String)>,
     iterators_count: u32,
 }
 
 pub struct CodeGenerator {
-    root: ProgramRootNode,
+    root_nodes: Vec<RootNode>,
     operators_map: HashMap<String, String>,
     current_function_context: Option<CurrentFunctionContext>,
 }
@@ -51,14 +51,14 @@ fn type_info_to_str(ti: &TypeInfo) -> String {
 }
 
 impl CodeGenerator {
-    pub fn new(ast_bulder: &AstBuilder) -> CodeGenerator {
+    pub fn new(root_nodes: Vec<RootNode>) -> CodeGenerator {
         let mut operators_map = HashMap::new();
         for (op_from, op_to) in OPERATORS_MAP {
             operators_map.insert(op_from.to_string(), op_to.to_string());
         }
 
         CodeGenerator { 
-            root: ast_bulder.root.clone(), 
+            root_nodes, 
             current_function_context: None,
             operators_map
         }
@@ -66,14 +66,18 @@ impl CodeGenerator {
 
     pub fn generate_code(&mut self) -> String {
         let mut r = String::new();
-        for n in &self.root.children.clone() {
+        for n in &self.root_nodes.clone() {
             match n {
-                AstNode::Record(record_node) => {
+                RootNode::Record(record_node) => {
                     let code = self.generate_record_code(record_node, "");
                     r.push_str(code.as_str());
                 }
-                AstNode::Function(function_node) => {
+                RootNode::Function(function_node) => {
                     let code = self.generate_function_code(function_node, "");
+                    r.push_str(code.as_str());
+                }
+                RootNode::Comment(line_comment) => {
+                    let code = self.generate_comment_code(line_comment, "");
                     r.push_str(code.as_str());
                 }
                 _ => (),
@@ -83,7 +87,7 @@ impl CodeGenerator {
         r
     }
 
-    fn generate_record_code(&mut self, record_node: &RecordNode, padding: &str) -> String {
+    fn generate_record_code(&mut self, record_node: &Record, padding: &str) -> String {
         let mut result_str = String::new();
 
         writeln!(&mut result_str, "{padding}struct {} {{", record_node.name);
@@ -99,27 +103,24 @@ impl CodeGenerator {
         result_str
     }
 
-    fn generate_function_code(&mut self, function_node: &FunctionNode, padding: &str) -> String {
+    fn generate_function_code(&mut self, function_node: &Function, padding: &str) -> String {
         self.current_function_context = Some(CurrentFunctionContext { function_node: function_node.clone(), iterators: vec![], iterators_count: 0 });
 
-        let fn_params_code = self.generate_function_declaration_params_code(&function_node.params);
+        let fn_params_code = self.generate_function_declaration_params_code(&function_node.decl.params);
         let fn_body_code = self.generate_block_code(&function_node.body, padding);
 
         let mut r = String::new();
-        let return_type_str = type_info_to_str(&function_node.return_type);
+        let return_type_str = 
+            match &function_node.decl.return_type {
+                Some(info) => type_info_to_str(info),
+                None => "void".to_string()
+            };
 
-        writeln!(&mut r, "{}{} {}({}) {{", padding, return_type_str, function_node.name, fn_params_code);
+        writeln!(&mut r, "{}{} {}({}) {{", padding, return_type_str, function_node.decl.name, fn_params_code);
 
-        for d in &function_node.vars {
-            let s = type_info_to_str(&d.1);
-            writeln!(&mut r, "    {} {};", s, d.0.clone());
+        for (name, type_info) in &function_node.vars {
+            writeln!(&mut r, "    {} {name};", type_info_to_str(type_info));
         }
-
-        // let iterators = &self.current_function_context.as_ref().unwrap().iterators;
-        // for (it_name, it_type) in iterators {
-        //     writeln!(&mut r, "    {}: {};", it_name, convert_type_name_str(&it_type));
-        //     writeln!(&mut r, "    {}_index: {};", it_name, &"int".to_string());
-        // }
 
         write!(&mut r, "{fn_body_code}");
         writeln!(&mut r, "}}");
@@ -140,7 +141,7 @@ impl CodeGenerator {
         parts.join(", ")
     }
 
-    fn generate_block_code(&mut self, b: &BlockNode, padding: &str) -> String {
+    fn generate_block_code(&mut self, b: &Block, padding: &str) -> String {
         let mut r = String::new();
 
         let mut s = vec![];
@@ -163,56 +164,55 @@ impl CodeGenerator {
         r
     }
 
-    fn generate_statement_code(&mut self, ast_node: &AstNode, padding: &str) -> String {
+    fn generate_statement_code(&mut self, statement_node: &StatementNode, padding: &str) -> String {
         let mut r = String::new();
 
-        match ast_node {
-            AstNode::IfStatement(st) => {
+        match statement_node {
+            StatementNode::If(st) => {
                 let s = self.generate_if_statement_code(st, padding);
                 r.push_str(s.as_str());
             }
-            AstNode::ForStatement(st) => {
-                let s = self.generate_for_statement_code(st, padding);
-                r.push_str(s.as_str());
-            }
-            AstNode::LoopStatement(st) => {
+            StatementNode::Loop(st) => {
                 let s = self.generate_loop_statement_code(st, padding);
                 r.push_str(s.as_str());
             }
-            AstNode::Iteration(st) => {
-                let s = self.generate_iteration_code(st, padding);
-                r.push_str(s.as_str());
+            StatementNode::Iteration(st) => {
+                //let s = self.generate_iteration_code(st, padding);
+                //r.push_str(s.as_str());
+                r.push_str("//iteration stub\n");
             }
-            AstNode::FunctionCall(st) => {
+            StatementNode::FunctionCall(st) => {
                 let s = self.generate_function_call_code(st);
                 let s = format!("{}{};\n", padding, s);
                 r.push_str(s.as_str());
             }
-            AstNode::VariableAssignment(v) => {
+            StatementNode::VariableAssignment(v) => {
                 let s = self.generate_variable_assignment_code(v, padding);
                 r.push_str(s.as_str());
             }
-            AstNode::Group(v) => {
-                let s = self.generate_group_code(v, padding);
-                r.push_str(s.as_str());
-            }
-            AstNode::BreakStatement() => {
+            // StatementNode::Group(v) => {
+            //     panic!();
+            //     let s = self.generate_group_code(v, padding);
+            //     r.push_str(s.as_str());
+            // }
+            StatementNode::Break() => {
                 writeln!(&mut r, "{}break;", padding);
             }
-            AstNode::Comment(c) => {
-                writeln!(&mut r, "{}//{}", padding, c.value);
+            StatementNode::Comment(line_comment) => {
+                let s = self.generate_comment_code(line_comment, padding);
+                r.push_str(s.as_str());
             }
-            AstNode::ReturnStatement(expression) => {
-                writeln!(&mut r, "{}return {};", padding, self.generate_expression_code(&expression.root));
+            StatementNode::Return((token, expression)) => {
+                writeln!(&mut r, "{}return {};", padding, self.generate_expression_code(&expression));
             }
-            AstNode::VariableDeclaration(_) => {
+            StatementNode::VariableDeclaration(_) => {
             }
-            AstNode::Assignment(assignment_node) => {
+            StatementNode::Assignment(assignment_node) => {
                 let s = self.generate_assignment_code(assignment_node, padding);
                 r.push_str(s.as_str());
             }
             _ => {
-                println!("{:?}", ast_node);
+                println!("{:?}", statement_node);
                 panic!();
             }
         }
@@ -220,12 +220,12 @@ impl CodeGenerator {
         r
     }
 
-    fn generate_if_statement_code(&mut self, f: &IfStatementNode, padding: &str) -> String {
+    fn generate_if_statement_code(&mut self, f: &IfStatement, padding: &str) -> String {
         let mut r = String::new();
 
         for i in 0..f.if_blocks.len() {
             let (condition, block) = &f.if_blocks[i];
-            let expr = self.generate_expression_code(&condition.root);
+            let expr = self.generate_expression_code(&condition);
             let block = self.generate_block_code(&block, padding);
 
             writeln!(&mut r, "");
@@ -251,26 +251,7 @@ impl CodeGenerator {
         r
     }
 
-    fn generate_for_statement_code(&mut self, f: &ForStatementNode, padding: &str) -> String {
-        let mut r = String::new();
-
-        todo!();
-        let index_variable_name = format!("_{}_index", f.iterator_variable_name);
-        // decls.push((index_variable_name.clone(), "int".to_owned()));
-
-        let iteratable = self.generate_expression_code(&f.iteratable.root);
-        let block = self.generate_block_code(&f.for_block, padding);
-        writeln!(&mut r, "");
-        writeln!(&mut r, "{}for {} := Low({}) to High({}) do begin", padding, index_variable_name, iteratable, iteratable);
-        writeln!(&mut r, "{}{}{} := ({})[{}];", padding, PADDING, f.iterator_variable_name, iteratable, index_variable_name);
-
-        write!(&mut r, "{}", block);
-        writeln!(&mut r, "{}end;", padding);
-
-        r
-    }
-
-    fn generate_loop_statement_code(&mut self, f: &LoopStatementNode, padding: &str) -> String {
+    fn generate_loop_statement_code(&mut self, f: &LoopStatement, padding: &str) -> String {
         let mut r = String::new();
 
         let block = self.generate_block_code(&f.block, padding);
@@ -282,7 +263,7 @@ impl CodeGenerator {
         r
     }
 
-    fn generate_iteration_code(&mut self, iteration_node: &IterationNode, padding: &str) -> String {
+    fn generate_iteration_code(&mut self, iteration_node: &IterationStatement, padding: &str) -> String {
         let mut r = String::new();
 
         let mut function_context = self.current_function_context.as_mut().unwrap();
@@ -309,12 +290,12 @@ impl CodeGenerator {
         r
     }
 
-    fn generate_function_call_code(&mut self, f: &FunctionCallNode) -> String {
+    fn generate_function_call_code(&mut self, f: &FunctionCall) -> String {
         let mut r = String::new();
 
         let mut param_names = vec![];
         for expression in &f.params_group.expressions {
-            let s = self.generate_expression_code(&*expression.root);
+            let s = self.generate_expression_code(&expression);
             param_names.push(s);
         }
         let p = param_names.join(", ");
@@ -329,6 +310,7 @@ impl CodeGenerator {
                     for (i, expression) in f.params_group.expressions.iter().enumerate() {
                         let param_name = param_names[i].clone();
                         match expression.type_str.as_str() {
+//                          match "int" {
                             "int" => {
                                 format_parts.push("%lld");
                                 names.push(format!("static_cast<long long>({})", param_name));
@@ -371,7 +353,7 @@ impl CodeGenerator {
 
         let mut expression_code_list = vec![];
         for expression in &group.expressions {
-            let s = self.generate_expression_code(&*expression.root);
+            let s = self.generate_expression_code(&expression);
             expression_code_list.push(s);
         }
         let code = expression_code_list.join(", ");
@@ -380,50 +362,55 @@ impl CodeGenerator {
         s
     }
 
-    fn generate_array_item_access_code(&mut self, array_item_access: &ArrayItemAccessNode) -> String {
+    fn generate_comment_code(&mut self, line_comment: &String, padding: impl Into<String>) -> String {
+        let mut s = String::new();
+        writeln!(&mut s, "{}//{line_comment}", padding.into());
+        s
+    }
+
+    fn generate_array_item_access_code(&mut self, array_name: &String, index_expression: &ExpressionNode) -> String {
         let mut s = String::new();
 
-        let root = &*array_item_access.access_expression.root;
-        let expression_code = self.generate_expression_code(root);
+        let expression_code = self.generate_expression_code(index_expression);
 
-        write!(&mut s, "{}[{}]", array_item_access.array_name, expression_code);
+        write!(&mut s, "{}[{}]", array_name, expression_code);
 
         s
     }
 
-    fn generate_variable_assignment_code(&mut self, v: &VariableAssignmentNode, padding: &str) -> String {
+    fn generate_variable_assignment_code(&mut self, v: &VariableAssignment, padding: &str) -> String {
         let mut r = String::new();
 
-        let s = self.generate_expression_code(&*v.rvalue_expression.root);
+        let s = self.generate_expression_code(&v.rvalue_expression);
         writeln!(&mut r, "{}{} = {};", padding, v.name, s);
 
         r
     }
 
-    fn generate_assignment_code(&mut self, assignment_node: &AssignmentNode, padding: &str) -> String {
+    fn generate_assignment_code(&mut self, assignment_node: &Assignment, padding: &str) -> String {
         let mut result_str = String::new();
 
-        let left = self.generate_expression_code(&assignment_node.lvalue.root);
-        let right = self.generate_expression_code(&assignment_node.rvalue.root);
+        let left = self.generate_expression_code(&assignment_node.lvalue);
+        let right = self.generate_expression_code(&assignment_node.rvalue);
         writeln!(&mut result_str, "{padding}{left} = {right};");
 
         result_str
     }
 
-    fn generate_expression_code(&mut self, node: &AstNode) -> String {
+    fn generate_expression_code(&mut self, node: &ExpressionNode) -> String {
         let mut r = String::new();
 
         match &node {
-            AstNode::Identifier(identifier_node) => {
-                if identifier_node.value == "it" || identifier_node.value == "it_index" {
+            ExpressionNode::Identifier(identifier_node) => {
+                if identifier_node.value == "it" || identifier_node.value == "idx" {
                     match &self.current_function_context {
                         None => {
-                            panic!("it or it_index is reserved and allowed only inside iterators inside functions");
+                            panic!("it or idx is reserved and allowed only inside iterators inside functions");
                         }
                         Some(current_function_context) => {
                             let iterators = &current_function_context.iterators;
                             if iterators.is_empty() {
-                                panic!("it or it_index is reserved and allowed only inside iterators");
+                                panic!("it or idx is reserved and allowed only inside iterators");
                             }
 
                             let (it_name, it_type_str) = iterators.last().unwrap();
@@ -431,8 +418,8 @@ impl CodeGenerator {
                                 "it" => {
                                     write!(&mut r, "{}", it_name.clone());
                                 }
-                                "it_index" => {
-                                    write!(&mut r, "{}", it_name.clone() + "_index");
+                                "idx" => {
+                                    write!(&mut r, "{}", it_name.clone() + "__index");
                                 }
                                 _ => panic!(),
                             }
@@ -442,35 +429,35 @@ impl CodeGenerator {
                     write!(&mut r, "{}", identifier_node.value);
                 }
             }
-            AstNode::Operator(operator_node) => {
+            ExpressionNode::Operator(operator_node) => {
                 write!(&mut r, " {} ", operator_node.value);
             }
-            AstNode::IntegerLiteral(f) => {
-                write!(&mut r, "{}", f.value);
+            ExpressionNode::IntegerLiteral(literal) => {
+                write!(&mut r, "{}", literal);
             }
-            AstNode::RealLiteral(f) => {
-                write!(&mut r, "{}", f.value);
+            ExpressionNode::RealLiteral(literal) => {
+                write!(&mut r, "{}", literal);
             }
-            AstNode::StringLiteral(f) => {
-                write!(&mut r, "\"{}\"", f.value);
+            ExpressionNode::StringLiteral(literal) => {
+                write!(&mut r, "\"{}\"", literal);
             }
-            AstNode::BinaryOperation(b) => {
-                let left = self.generate_expression_code(&b.children[0]);
-                let right = self.generate_expression_code(&b.children[1]);
+            ExpressionNode::BinaryOperation(b) => {
+                let left = self.generate_expression_code(&b.left);
+                let right = self.generate_expression_code(&b.right);
                 let mut op = b.operation.value.clone();
                 op = self.operators_map.get(&op).cloned().unwrap_or(op);
                 write!(&mut r, "{left}{op}{right}");
             }
-            AstNode::Group(group) => {
+            ExpressionNode::Group(group) => {
                 let code = self.generate_group_code(group, "");
                 write!(&mut r, "{}", code);
             }
-            AstNode::FunctionCall(function_call_node) => {
+            ExpressionNode::FunctionCall(function_call_node) => {
                 let code = self.generate_function_call_code(function_call_node);
                 write!(&mut r, "{}", code);
             }
-            AstNode::ArrayItemAccess(array_item_access) => {
-                let code = self.generate_array_item_access_code(array_item_access);
+            ExpressionNode::ArrayItemAccess { token, array_name, access_expression } => {
+                let code = self.generate_array_item_access_code(array_name, &access_expression);
                 write!(&mut r, "{}", code);
             }
             panic_ => {

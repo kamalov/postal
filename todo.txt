@@ -1,14 +1,16 @@
 current: 
-  -- проверка типов (как отдельный этап?)
+  -- проверка типов
+     -- function params
 
-after: 
-  -- строки (cow?)
-  -- shared_ptr
+week: 
+  -- строки (cow or immutable?)
   -- hash table
 
 later:
   -- присваивание значения по индексу массива
-  -- унарный минус, унарный NOT, унарный плюс
+  -- унарный минус, унарный NOT
+  -- iteration mapping (a = some >> { it })
+
 
 
 

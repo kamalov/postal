@@ -53,7 +53,7 @@ fn is_identifier_starter_char(c: char) -> bool {
 
 #[derive(Default, Clone)]
 pub struct Tokenizer {
-    ci: usize,
+    char_index: usize,
     text: String,
     keywords: HashSet<String>,
     specials: HashSet<String>,
@@ -116,9 +116,9 @@ impl Tokenizer {
     }
 
     fn get_next_char(&mut self) -> char {
-        if self.ci < self.chars.len() {
-            let c = self.chars[self.ci];
-            self.ci += 1;
+        if self.char_index < self.chars.len() {
+            let c = self.chars[self.char_index];
+            self.char_index += 1;
             c
         } else {
             panic!();
@@ -126,16 +126,16 @@ impl Tokenizer {
     }
 
     fn skip(&mut self) {
-        if self.ci < self.chars.len() {
-            self.ci += 1;
+        if self.char_index < self.chars.len() {
+            self.char_index += 1;
         } else {
             panic!();
         }
     }
 
     fn peek(&mut self) -> Option<char> {
-        if self.ci < self.chars.len() {
-            Some(self.chars[self.ci])
+        if self.char_index < self.chars.len() {
+            Some(self.chars[self.char_index])
         } else {
             None
         }
@@ -143,8 +143,8 @@ impl Tokenizer {
 
     fn check_next(&mut self, s: impl Into<String>) -> bool {
         let s: String = s.into();
-        if self.ci < self.chars.len() - s.len() + 1 {
-            let chars = &self.chars[self.ci..(self.ci + s.len())];
+        if self.char_index < self.chars.len() - s.len() + 1 {
+            let chars = &self.chars[self.char_index..(self.char_index + s.len())];
             let v: String = chars.iter().collect();
             v == s
         } else {
@@ -154,7 +154,7 @@ impl Tokenizer {
 
     fn parse_name(&mut self) -> Token {
         let mut value = String::new();
-        let index = self.ci;
+        let index = self.char_index;
 
         while let Some(c) = self.peek() {
             if is_identifier_char(c) {
@@ -179,7 +179,7 @@ impl Tokenizer {
 
     fn parse_number(&mut self) -> Token {
         let mut value = String::new();
-        let index = self.ci;
+        let index = self.char_index;
 
         let mut kind = TokenKind::IntegerLiteral;
         while let Some(c) = self.peek() {
@@ -209,7 +209,7 @@ impl Tokenizer {
 
     fn parse_string(&mut self) -> Token {
         let mut value = String::new();
-        let index = self.ci;
+        let index = self.char_index;
 
         self.skip();
         while let Some(c) = self.peek() {
@@ -229,7 +229,7 @@ impl Tokenizer {
 
     fn parse_comment(&mut self) -> Token {
         let mut value = String::new();
-        let index = self.ci;
+        let index = self.char_index;
 
         self.skip();
         self.skip();
@@ -265,7 +265,7 @@ impl Tokenizer {
                 let t = Token {
                     kind: TokenKind::LineEnd,
                     value: "\n".to_string(),
-                    char_index: self.ci,
+                    char_index: self.char_index,
                 };
                 self.skip();
                 tokens.push(t);
@@ -304,7 +304,7 @@ impl Tokenizer {
                 let t = Token {
                     kind: TokenKind::SpecialSymbol,
                     value: ">>".to_string(),
-                    char_index: self.ci,
+                    char_index: self.char_index,
                 };
                 self.skip();
                 self.skip();
@@ -316,7 +316,7 @@ impl Tokenizer {
                 let t = Token {
                     kind: TokenKind::SpecialSymbol,
                     value: c.to_string(),
-                    char_index: self.ci,
+                    char_index: self.char_index,
                 };
                 self.skip();
                 tokens.push(t);

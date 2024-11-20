@@ -42,12 +42,12 @@ begin
     push(items, 789)
 
     items >> {
-        log(it_index) 
-        log('items ', it_index, ' ', it) 
+        log(idx) 
+        log('items ', idx, ' ', it) 
         items >> {
-            log('    ', it_index, ' ', it) 
+            log('    ', idx, ' ', it) 
         }
-        log('<< ', it_index, ' ', it) 
+        log('<< ', idx, ' ', it) 
     }
 end
 
@@ -72,7 +72,7 @@ begin
     push(items, 789)
 
     items >> {
-        log(items[it_index])        
+        log(items[idx])        
     }
 end
 
@@ -86,7 +86,7 @@ begin
 end
 
 rec Coordinates {
-    x: int
+    x: real
     y: int    
 }
 
@@ -99,7 +99,7 @@ begin
     r.y = 20
     log(r.x)
     log(r.y)
-    a: int
+    //a: int
     a = r.x*r.y
     log(r.x*r.y)
     log(a)
