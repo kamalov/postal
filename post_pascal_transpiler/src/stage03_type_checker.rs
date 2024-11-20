@@ -1,17 +1,7 @@
 #![allow(warnings)]
-use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
-use std::env::var;
-use std::f32::consts::E;
-use std::fmt::Write;
-use std::fs::{read_dir, read_to_string};
-use std::ops::Index;
-use std::os::windows::process;
-use std::slice::Iter;
-use std::{array, default, fs, iter, mem, vec};
+use std::{vec};
 
-use indexmap::{indexmap, IndexMap};
-use to_vec::ToVec;
+use indexmap::{IndexMap};
 
 use crate::stage01_tokenizer::*;
 use crate::stage02_ast_builder::*;
@@ -142,27 +132,27 @@ impl TypeChecker {
         Ok(())
     }
 
-    fn get_expression_type(&self, expression_node: &ExpressionNode) -> TypeCheckResult<TypeInfo> {
-        match expression_node {
-            ExpressionNode::IntegerLiteral(..) => {
+    fn get_expression_type(&self, expression: &Expression) -> TypeCheckResult<TypeInfo> {
+        match &*expression.kind {
+            ExpressionKind::IntegerLiteral(..) => {
                 return Ok(TypeInfo {
                     type_str: "int".to_string(),
                     ..TypeInfo::default()
                 })
             }
-            ExpressionNode::RealLiteral(..) => {
+            ExpressionKind::RealLiteral(..) => {
                 return Ok(TypeInfo {
                     type_str: "real".to_string(),
                     ..TypeInfo::default()
                 })
             }
-            ExpressionNode::StringLiteral(..) => {
+            ExpressionKind::StringLiteral(..) => {
                 return Ok(TypeInfo {
                     type_str: "str".to_string(),
                     ..TypeInfo::default()
                 })
             }
-            ExpressionNode::FunctionCall(function_call) => {
+            ExpressionKind::FunctionCall(function_call) => {
                 match self.ast_builder.fn_declarations.get(&function_call.name) {
                     Some(fn_declaration) => match &fn_declaration.return_type {
                         Some(return_type) => {
@@ -170,25 +160,25 @@ impl TypeChecker {
                         }
                         None => {
                             return Err(TypeCheckError::new(
-                                &function_call.token,
+                                &expression.token,
                                 format!("can't figure return type of '{}' function call, please specify return type explicitly",
                                 function_call.name)));
                         }
                     },
                     None => {
-                        return Err(TypeCheckError::new(&function_call.token, "no such function"));
+                        return Err(TypeCheckError::new(&expression.token, "no such function"));
                     }
                 }
 
                 // todo: check formal and actual params
             }
-            ExpressionNode::Identifier(identifier_node) => {
+            ExpressionKind::Identifier(identifier_name) => {
                 //
-                match identifier_node.value.as_str() {
+                match identifier_name.as_str() {
                     "it" => {
                         if self.ctx.iterator_type_list.is_empty() {
                             return Err(TypeCheckError::new(
-                                &identifier_node.token,
+                                &expression.token,
                                 "Keyword 'it' is reserved and can be used only in iterations",
                             ));
                         }
@@ -203,30 +193,30 @@ impl TypeChecker {
                     }
                     else_ => {
                         //
-                        match self.get_function_param_or_var_type(&identifier_node.value) {
+                        match self.get_function_param_or_var_type(&identifier_name) {
                             Some(type_info) => {
                                 return Ok(type_info.clone());
                             }
                             None => {
-                                return Err(TypeCheckError::new(&identifier_node.token, "undeclared variable"));
+                                return Err(TypeCheckError::new(&expression.token, "undeclared variable"));
                             }
                         }
                     }
                 }
             }
-            ExpressionNode::BinaryOperation(BinaryOperationNode { token, operation, left, right }) => {
-                let left_side_type_info = self.get_expression_type(&*left)?;
+            ExpressionKind::BinaryOperation { operation, left, right } => {
+                let left_side_type_info = self.get_expression_type(&left)?;
                 
-                if operation.value == "." {
-                    if let ExpressionNode::Identifier(right_identifier_node) = &**right {
+                if operation == "." {
+                    if let ExpressionKind::Identifier(right_identifier_name) = &*right.kind {
                         match self.ast_builder.records.get(&left_side_type_info.type_str) {
                             Some(record) => {
-                                let field_name = &right_identifier_node.value;
+                                let field_name = right_identifier_name;
                                 match record.fields.get(field_name) {
                                     Some(type_info) => return Ok(type_info.clone()),
                                     None => {
                                         return Err(TypeCheckError::new(
-                                            &right_identifier_node.token,
+                                            &right.token,
                                             format!("unknown field: '{field_name}'"),
                                         ));
                                     }
@@ -234,7 +224,7 @@ impl TypeChecker {
                             }
                             None => {
                                 return Err(TypeCheckError::new(
-                                    &token,
+                                    &expression.token,
                                     format!("unknown type: '{left_side_type_info}'"),
                                 ));
                             }
@@ -242,57 +232,57 @@ impl TypeChecker {
                         Ok(left_side_type_info)
                     } else {
                         return Err(TypeCheckError::new(
-                            &token,
+                            &expression.token,
                             format!("must be identifier after .: '{right:?}'"),
                         ));
                     }
                 } else {
-                    let right_side_type_info = self.get_expression_type(&*right)?;
+                    let right_side_type_info = self.get_expression_type(&right)?;
                     match get_common_type(&left_side_type_info, &right_side_type_info) {
                         Ok(common_type) => {
                             return Ok(common_type);
                         }
                         Err(_) => {
                             return Err(TypeCheckError::new(
-                                &token,
+                                &expression.token,
                                 format!("incompatible types: '{left_side_type_info}' and '{right_side_type_info}'"),
                             ));
                         }
                     }
                 }
             }
-            ExpressionNode::Group(group_node) => {
-                if group_node.expressions.is_empty() {
-                    return Err(TypeCheckError::new(&group_node.token, "empty group"));
+            ExpressionKind::Group(group_expressions) => {
+                if group_expressions.is_empty() {
+                    return Err(TypeCheckError::new(&expression.token, "empty group"));
                 }
 
-                for expression in &group_node.expressions {
-                    self.get_expression_type(expression_node)?;
+                for expression in group_expressions {
+                    self.get_expression_type(expression)?;
                 }
 
-                let last_type_info = self.get_expression_type(group_node.expressions.last().unwrap())?;
+                let last_type_info = self.get_expression_type(group_expressions.last().unwrap())?;
 
                 return Ok(last_type_info);
             }
-            ExpressionNode::ArrayItemAccess {token, array_name, access_expression} => {
+            ExpressionKind::ArrayItemAccess { array_name, access_expression } => {
                 let type_info = self.get_expression_type(&access_expression)?;
 
                 if type_info.is_array || type_info.type_str != "int" {
                     return Err(TypeCheckError::new(
-                        &token,
+                        &expression.token,
                         format!("incorrect index type '{type_info}'"),
                     ));
                 }
 
-                let type_info = match self.get_function_param_or_var_type(array_name) {
+                let type_info = match self.get_function_param_or_var_type(&array_name) {
                     Some(type_info) => type_info,
                     None => {
-                        return Err(TypeCheckError::new(&token, format!("undeclared array '{array_name}'")));
+                        return Err(TypeCheckError::new(&expression.token, format!("undeclared array '{array_name}'")));
                     }
                 };
 
                 if !type_info.is_array {
-                    return Err(TypeCheckError::new(&token, format!("not an array: '{array_name}'")));
+                    return Err(TypeCheckError::new(&expression.token, format!("not an array: '{array_name}'")));
                 }
 
                 return Ok(type_info.clone());
@@ -300,7 +290,7 @@ impl TypeChecker {
             _ => {
                 //ExpressionNode::ArrayBrackets(array_brackets_node) => panic!(),
                 //ExpressionNode::Operator(operator_node) => panic!(),
-                println!("{expression_node:?}");
+                println!("{expression:?}");
                 panic!()
             }
         }
@@ -321,15 +311,15 @@ impl TypeChecker {
                 StatementNode::Loop(loop_statement) => {
                     self.process_block_statements(&loop_statement.block);
                 }
-                StatementNode::Return((token, expression_node)) => {
-                    let return_type = self.get_expression_type(expression_node)?;
+                StatementNode::Return(expression) => {
+                    let return_type = self.get_expression_type(expression)?;
                     match &self.ctx.return_type {
                         Some(current_return_type) => match get_common_type(current_return_type, &return_type) {
                             Ok(return_type) => {
                                 self.ctx.return_type = Some(return_type);
                             }
                             Err(_) => {
-                                return Err(TypeCheckError::new(token, "return type differs from previous"));
+                                return Err(TypeCheckError::new(&expression.token, "return type differs from previous"));
                             }
                         },
                         None => self.ctx.return_type = Some(return_type),

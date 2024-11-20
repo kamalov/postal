@@ -1,16 +1,10 @@
 #![allow(warnings)]
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
-use std::env::var;
+use std::collections::{HashMap};
 use std::fmt;
 use std::fmt::Write;
-use std::fs::{read_dir, read_to_string};
-use std::ops::Index;
-use std::slice::Iter;
-use std::{array, default, fs, iter, mem};
 
 use indexmap::IndexMap;
-use to_vec::ToVec;
 
 use crate::stage01_tokenizer::*;
 
@@ -59,69 +53,25 @@ pub struct Block {
 pub struct VariableAssignment {
     pub token: Token,
     pub name: String,
-    pub rvalue_expression: ExpressionNode,
+    pub rvalue_expression: Expression,
 }
 
 #[derive(Debug, Clone)]
 pub struct Assignment {
     pub token: Token,
-    pub lvalue: ExpressionNode,
-    pub rvalue: ExpressionNode,
+    pub lvalue: Expression,
+    pub rvalue: Expression,
 }
 
 #[derive(Debug, Clone)]
 pub struct FunctionCall {
-    pub token: Token,
     pub name: String,
-    pub params_group: GroupNode,
-    pub params_types: Vec<TypeInfo>,
-}
-
-#[derive(Debug, Clone)]
-pub struct GroupNode {
-    pub token: Token,
-    pub expressions: Vec<ExpressionNode>,
-}
-
-#[derive(Debug, Clone)]
-pub struct ArrayBracketsNode {
-    pub expression: Box<ExpressionNode>,
-}
-
-#[derive(Debug, Clone)]
-pub struct IdentifierNode {
-    pub token: Token,
-    pub value: String,
-}
-
-#[derive(Debug, Clone)]
-pub struct OperatorNode {
-    token: Token,
-    pub value: String,
-}
-
-#[derive(Debug, Clone)]
-pub struct CommentNode {
-    pub value: String,
-}
-
-#[derive(Clone, Copy)]
-pub struct Test {
-    pub type_str: i32,
-    //pub children: Vec<AstNode>,
-}
-
-#[derive(Debug, Clone)]
-pub struct BinaryOperationNode {
-    pub token: Token,
-    pub operation: OperatorNode,
-    pub left: Box<ExpressionNode>,
-    pub right: Box<ExpressionNode>,
+    pub params: Vec<Expression>,
 }
 
 #[derive(Debug, Clone)]
 pub struct IfStatement {
-    pub if_blocks: Vec<(ExpressionNode, Block)>,
+    pub if_blocks: Vec<(Expression, Block)>,
     pub else_block: Option<Block>,
 }
 
@@ -133,26 +83,48 @@ pub struct LoopStatement {
 #[derive(Debug, Clone)]
 pub struct IterationStatement {
     pub token: Token,
-    pub iteratable_name: String,
+    pub iterable_name: String,
     pub block: Block,
 }
 
 #[derive(Debug, Clone)]
-pub enum ExpressionNode {
+pub enum ExpressionKind {
     FunctionCall(FunctionCall),
     IntegerLiteral(String),
     RealLiteral(String),
     StringLiteral(String),
-    Identifier(IdentifierNode),
-    Operator(OperatorNode),
-    BinaryOperation(BinaryOperationNode),
-    Group(GroupNode),
-    ArrayBrackets(ArrayBracketsNode),
-    ArrayItemAccess {
-        token: Token,
-        array_name: String,
-        access_expression: Box<ExpressionNode>,
+    Identifier(String),
+    BinaryOperation {
+        operation: String,
+        left: Expression,
+        right: Expression,
     },
+    Group(Vec<Expression>),
+    ArrayItemAccess {
+        array_name: String,
+        access_expression: Expression,
+    },
+
+    // todo low: tmp operators, used only on parsing stage, not presented in final tree, needs refactoring
+    Operator(String),
+    ArrayBrackets(Expression),
+}
+
+#[derive(Debug, Clone)]
+pub struct Expression {
+    pub token: Token,
+    pub kind: Box<ExpressionKind>,
+    pub type_info: Option<TypeInfo>,
+}
+
+impl Expression {
+    pub fn new(token: &Token, kind: ExpressionKind) -> Expression {
+        Expression {
+            token: token.clone(),
+            kind: Box::new(kind),
+            type_info: None
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -161,7 +133,7 @@ pub enum StatementNode {
     Loop(LoopStatement),
     Iteration((Token, String, Block)),
     Break(),
-    Return((Token, ExpressionNode)),
+    Return(Expression),
     FunctionCall(FunctionCall),
     VariableAssignment(VariableAssignment),
     Assignment(Assignment),
@@ -504,13 +476,15 @@ impl AstBuilder {
     fn parse_function_call(&mut self) -> AstResult<FunctionCall> {
         let token = self.next().clone();
         let name = token.value.clone();
-        let params_group = self.parse_group()?;
-        Ok(FunctionCall {
-            token,
-            name,
-            params_group,
-            params_types: vec![]
-        })
+        let group = self.parse_group()?;
+        if let ExpressionKind::Group(expressions) = *group.kind {
+            Ok(FunctionCall {
+                name,
+                params: expressions,
+            })
+        } else {
+            panic!();
+        }
     }
 
     fn parse_block(&mut self) -> AstResult<Block> {
@@ -585,8 +559,8 @@ impl AstBuilder {
                 }
                 "ret" => {
                     self.skip_expected("ret")?;
-                    let expression_node = self.parse_expression_until(&["\n"])?;
-                    return Ok(StatementNode::Return((token.clone(), expression_node)));
+                    let expression = self.parse_expression_until(&["\n"])?;
+                    return Ok(StatementNode::Return(expression));
                 }
                 panic_ => {
                     panic!();
@@ -609,7 +583,7 @@ impl AstBuilder {
     fn parse_if_statement(&mut self) -> AstResult<IfStatement> {
         self.skip_expected("if")?;
 
-        let mut if_blocks: Vec<(ExpressionNode, Block)> = Vec::new();
+        let mut if_blocks: Vec<(Expression, Block)> = Vec::new();
         let mut else_block = None;
 
         let condition = self.parse_expression_until(&["{"])?;
@@ -681,7 +655,7 @@ impl AstBuilder {
         Ok((name_token.clone(), var_name, type_info))
     }
 
-    fn parse_group(&mut self) -> AstResult<GroupNode> {
+    fn parse_group(&mut self) -> AstResult<Expression> {
         let token = self.peek_next().clone();
         self.skip_expected("(")?;
         let mut expressions = vec![];
@@ -696,22 +670,20 @@ impl AstBuilder {
             self.try_skip(",");
         }
 
-        Ok(GroupNode { token, expressions })
+        Ok(Expression::new(&token, ExpressionKind::Group(expressions)))
     }
 
-    fn parse_array_brackets(&mut self) -> AstResult<ArrayBracketsNode> {
+    fn parse_array_brackets(&mut self) -> AstResult<Expression> {
         let token = self.peek_next().clone();
         self.skip_expected("[")?;
-        let expression_node = self.parse_expression_until(&[",", "]"])?;
+        let expression = self.parse_expression_until(&[",", "]"])?;
         self.skip_expected("]")?;
 
-        Ok(ArrayBracketsNode {
-            expression: Box::new(expression_node),
-        })
+        Ok(Expression::new(&token, ExpressionKind::ArrayBrackets(expression)))
     }
 
-    fn parse_expression_until(&mut self, terminators: &[&str]) -> AstResult<ExpressionNode> {
-        let mut ast_nodes = vec![];
+    fn parse_expression_until(&mut self, terminators: &[&str]) -> AstResult<Expression> {
+        let mut expressions = vec![];
         loop {
             let t = self.peek_next();
             if t.kind == TokenKind::SpecialSymbol {
@@ -720,108 +692,101 @@ impl AstBuilder {
                 }
 
                 if t.value == "(" {
-                    let group_node = self.parse_group()?;
-                    let node = ExpressionNode::Group(group_node);
-                    ast_nodes.push(node);
+                    let expression = self.parse_group()?;
+                    expressions.push(expression);
                     continue;
                 }
 
                 if t.value == "[" {
-                    let array_brackets_node = self.parse_array_brackets()?;
-                    let node = ExpressionNode::ArrayBrackets(array_brackets_node);
-                    ast_nodes.push(node);
+                    let expression = self.parse_array_brackets()?;
+                    expressions.push(expression);
                     continue;
                 }
             }
 
             let token = self.next();
+            let value = token.value.clone();
             match token.kind {
                 TokenKind::LineEnd => {
                     break;
                 }
                 TokenKind::Identifier => {
-                    let node = ExpressionNode::Identifier(IdentifierNode {
-                        token: token.clone(),
-                        value: token.value.clone(),
-                    });
-                    ast_nodes.push(node);
+                    let expression = Expression::new(token, ExpressionKind::Identifier(value));
+                    expressions.push(expression);
                 }
                 TokenKind::SpecialSymbol => {
-                    let node = ExpressionNode::Operator(OperatorNode {
-                        token: token.clone(),
-                        value: token.value.clone(),
-                    });
-                    ast_nodes.push(node);
+                    let expression = Expression::new(token, ExpressionKind::Operator(value));
+                    expressions.push(expression);
                 }
                 TokenKind::IntegerLiteral => {
-                    let node = ExpressionNode::IntegerLiteral(token.value.clone());
-                    ast_nodes.push(node);
+                    let expression = Expression::new(token, ExpressionKind::IntegerLiteral(value));
+                    expressions.push(expression);
                 }
                 TokenKind::FloatLiteral => {
-                    let node = ExpressionNode::RealLiteral(token.value.clone());
-                    ast_nodes.push(node);
+                    let expression = Expression::new(token, ExpressionKind::RealLiteral(value));
+                    expressions.push(expression);
                 }
                 TokenKind::String => {
-                    let node = ExpressionNode::StringLiteral(token.value.clone());
-                    ast_nodes.push(node);
+                    let expression = Expression::new(token, ExpressionKind::StringLiteral(value));
+                    expressions.push(expression);
                 }
                 _ => (),
             }
         }
 
         let mut root = TreeNode {
-            expression_node: ast_nodes[0].clone(),
+            expression: expressions[0].clone(),
             childs: vec![],
         };
 
         let mut index = 1;
         loop {
-            if index < ast_nodes.len() {
-                root = self.expression_node_list_to_tree_node(&ast_nodes, &mut index, root, 0);
+            if index < expressions.len() {
+                root = self.expressions_to_tree_node(&expressions, &mut index, root, 0);
                 //println!("{:?}", root);
             } else {
                 break;
             }
         }
 
-        let node = self.tree_node_to_expression_node(&root)?;
+        let node = self.tree_node_to_expression(&root)?;
         Ok(node)
     }
 
-    fn expression_node_list_to_tree_node(
+    fn expressions_to_tree_node(
         &mut self,
-        ast_node_list: &Vec<ExpressionNode>,
-        next_ast_node_index: &mut usize,
+        expressions: &Vec<Expression>,
+        next_expression_index: &mut usize,
         tree_node: TreeNode,
         priority: usize,
     ) -> TreeNode {
         let mut tree_node = tree_node;
         let mut priority = priority;
         loop {
-            if *next_ast_node_index >= ast_node_list.len() {
+            if *next_expression_index >= expressions.len() {
                 break;
             }
 
-            let next_ast_node = &ast_node_list[*next_ast_node_index];
+            let next_expression = &expressions[*next_expression_index];
 
-            match next_ast_node {
-                ExpressionNode::Operator(operator) => {
-                    let next_priority = *self.tokenizer.priorities.get(&operator.value).unwrap();
+            match &*next_expression.kind {
+                ExpressionKind::Operator(operator) => {
+                    let next_priority = *self.tokenizer.priorities.get(operator).unwrap();
 
                     if next_priority < priority {
                         break;
                     }
 
-                    let next_next_ast_node = &ast_node_list[*next_ast_node_index + 1];
+                    let next_next_ast_node = &expressions[*next_expression_index + 1];
                     let mut next_tree_node = TreeNode {
-                        expression_node: next_next_ast_node.clone(),
+                        expression: next_next_ast_node.clone(),
                         childs: vec![],
                     };
 
-                    *next_ast_node_index += 2;
-                    next_tree_node = self.expression_node_list_to_tree_node(
-                        ast_node_list,
-                        next_ast_node_index,
+                    *next_expression_index += 2;
+                    next_tree_node = self.expressions_to_tree_node(
+                        expressions,
+                        next_expression_index,
                         next_tree_node,
                         next_priority,
                     );
@@ -830,45 +795,54 @@ impl AstBuilder {
                     childs.push(tree_node);
                     childs.push(next_tree_node);
                     tree_node = TreeNode {
-                        expression_node: next_ast_node.clone(),
+                        expression: next_expression.clone(),
                         childs,
                     }
                 }
 
-                ExpressionNode::Group(group_node) => match &tree_node.expression_node {
-                    ExpressionNode::Identifier(identifier_node) => {
-                        let node = ExpressionNode::FunctionCall(FunctionCall {
-                            token: identifier_node.token.clone(),
-                            name: identifier_node.value.clone(),
-                            params_group: group_node.clone(),
-                            params_types: vec![]
-                        });
-                        tree_node.expression_node = node;
-                        *next_ast_node_index += 1;
-                        break;
-                    }
+                ExpressionKind::Group(group_expressions) => {
+                    //
+                    match &*tree_node.expression.kind {
+                        ExpressionKind::Identifier(identifier_name) => {
+                            let kind = ExpressionKind::FunctionCall(FunctionCall {
+                                name: identifier_name.clone(),
+                                params: group_expressions.clone(),
+                            });
 
-                    else_ => {
-                        println!("{:?}", tree_node.expression_node);
-                        panic!()
+                            let expression = Expression::new(&tree_node.expression.token, kind);
+                            
+                            tree_node.expression = expression;
+                            *next_expression_index += 1;
+                            break;
+                        }
+
+                        else_ => {
+                            println!("{:?}", tree_node.expression);
+                            panic!()
+                        }
                     }
                 },
 
-                ExpressionNode::ArrayBrackets(array_brackets_node) => match &tree_node.expression_node {
-                    ExpressionNode::Identifier(identifier_node) => {
-                        let node = ExpressionNode::ArrayItemAccess {
-                            token: identifier_node.token.clone(),
-                            array_name: identifier_node.value.clone(),
-                            access_expression: array_brackets_node.expression.clone(),
-                        };
-                        tree_node.expression_node = node;
-                        *next_ast_node_index += 1;
-                        break;
-                    }
+                ExpressionKind::ArrayBrackets(array_indexed_access_expression) => {
+                    //
+                    match &*tree_node.expression.kind {
+                        ExpressionKind::Identifier(identifier_name) => {
+                            let kind = ExpressionKind::ArrayItemAccess {
+                                array_name: identifier_name.clone(),
+                                access_expression: array_indexed_access_expression.clone(),
+                            };
 
-                    else_ => {
-                        println!("{:?}", tree_node.expression_node);
-                        panic!()
+                            let expression = Expression::new(&tree_node.expression.token, kind);
+
+                            tree_node.expression = expression;
+                            *next_expression_index += 1;
+                            break;
+                        }
+
+                        else_ => {
+                            println!("{:?}", tree_node.expression);
+                            panic!()
+                        }
                     }
                 },
 
@@ -882,23 +856,24 @@ impl AstBuilder {
         tree_node
     }
 
-    fn tree_node_to_expression_node(&self, tree_node: &TreeNode) -> AstResult<ExpressionNode> {
-        match &tree_node.expression_node {
-            ExpressionNode::Operator(op) => {
-                let left = self.tree_node_to_expression_node(&tree_node.childs[0])?;
-                let right = self.tree_node_to_expression_node(&tree_node.childs[1])?;
-                let node = ExpressionNode::BinaryOperation(BinaryOperationNode {
-                    token: op.token.clone(),
+    fn tree_node_to_expression(&self, tree_node: &TreeNode) -> AstResult<Expression> {
+        match &*tree_node.expression.kind {
+            ExpressionKind::Operator(op) => {
+                let left = self.tree_node_to_expression(&tree_node.childs[0])?;
+                let right = self.tree_node_to_expression(&tree_node.childs[1])?;
+                let kind = ExpressionKind::BinaryOperation {
                     operation: op.clone(),
-                    left: Box::new(left),
-                    right: Box::new(right),
-                });
-                return Ok(node);
+                    left: left,
+                    right: right,
+                };
+
+                let expression = Expression::new(&tree_node.expression.token, kind);
+                return Ok(expression);
             }
 
             else_ => {
                 //assert!(false, "can't detect type");
-                return Ok(tree_node.expression_node.clone());
+                return Ok(tree_node.expression.clone());
             }
         }
     }
@@ -906,6 +881,6 @@ impl AstBuilder {
 
 #[derive(Debug)]
 struct TreeNode {
-    expression_node: ExpressionNode,
+    expression: Expression,
     childs: Vec<TreeNode>,
 }

@@ -1,21 +1,12 @@
 #![allow(warnings)]
 use std::collections::{HashMap, HashSet};
-use std::collections::hash_map::Entry;
 use std::fmt::Write;
-use std::fs::{read_dir, read_to_string};
-use std::{array, default, fs};
 
 use indexmap::IndexMap;
-use to_vec::ToVec;
 
-use crate::stage01_tokenizer::*;
 use crate::stage02_ast_builder::*;
 
-const OPERATORS_MAP: [(&str, &str); 3] = [
-    ("+", " + "),
-    ("-", " - "),
-    ("=", " == "),
-];
+const OPERATORS_MAP: [(&str, &str); 3] = [("+", " + "), ("-", " - "), ("=", " == ")];
 
 struct CurrentFunctionContext {
     function_node: Function,
@@ -36,7 +27,7 @@ fn convert_type_name_str(ti: &String) -> String {
         "" => "void".to_string(),
         "int" => "long".to_string(),
         "real" => "double".to_string(),
-        _ => ti.clone()
+        _ => ti.clone(),
     }
 }
 
@@ -57,10 +48,10 @@ impl CodeGenerator {
             operators_map.insert(op_from.to_string(), op_to.to_string());
         }
 
-        CodeGenerator { 
-            root_nodes, 
+        CodeGenerator {
+            root_nodes,
             current_function_context: None,
-            operators_map
+            operators_map,
         }
     }
 
@@ -104,19 +95,26 @@ impl CodeGenerator {
     }
 
     fn generate_function_code(&mut self, function_node: &Function, padding: &str) -> String {
-        self.current_function_context = Some(CurrentFunctionContext { function_node: function_node.clone(), iterators: vec![], iterators_count: 0 });
+        self.current_function_context = Some(CurrentFunctionContext {
+            function_node: function_node.clone(),
+            iterators: vec![],
+            iterators_count: 0,
+        });
 
         let fn_params_code = self.generate_function_declaration_params_code(&function_node.decl.params);
         let fn_body_code = self.generate_block_code(&function_node.body, padding);
 
         let mut r = String::new();
-        let return_type_str = 
-            match &function_node.decl.return_type {
-                Some(info) => type_info_to_str(info),
-                None => "void".to_string()
-            };
+        let return_type_str = match &function_node.decl.return_type {
+            Some(info) => type_info_to_str(info),
+            None => "void".to_string(),
+        };
 
-        writeln!(&mut r, "{}{} {}({}) {{", padding, return_type_str, function_node.decl.name, fn_params_code);
+        writeln!(
+            &mut r,
+            "{}{} {}({}) {{",
+            padding, return_type_str, function_node.decl.name, fn_params_code
+        );
 
         for (name, type_info) in &function_node.vars {
             writeln!(&mut r, "    {} {name};", type_info_to_str(type_info));
@@ -202,11 +200,15 @@ impl CodeGenerator {
                 let s = self.generate_comment_code(line_comment, padding);
                 r.push_str(s.as_str());
             }
-            StatementNode::Return((token, expression)) => {
-                writeln!(&mut r, "{}return {};", padding, self.generate_expression_code(&expression));
+            StatementNode::Return(expression) => {
+                writeln!(
+                    &mut r,
+                    "{}return {};",
+                    padding,
+                    self.generate_expression_code(&expression)
+                );
             }
-            StatementNode::VariableDeclaration(_) => {
-            }
+            StatementNode::VariableDeclaration(_) => {}
             StatementNode::Assignment(assignment_node) => {
                 let s = self.generate_assignment_code(assignment_node, padding);
                 r.push_str(s.as_str());
@@ -269,8 +271,12 @@ impl CodeGenerator {
         let mut function_context = self.current_function_context.as_mut().unwrap();
         let index = function_context.iterators_count;
         function_context.iterators_count += 1;
-        let iteratable = function_context.function_node.vars.get(&iteration_node.iteratable_name).unwrap();
-        let iteratable_name = iteration_node.iteratable_name.clone();
+        let iteratable = function_context
+            .function_node
+            .vars
+            .get(&iteration_node.iterable_name)
+            .unwrap();
+        let iteratable_name = iteration_node.iterable_name.clone();
         let it_name = format!("{}__it{}", iteratable_name, index);
         let it_index_name = format!("{}_index", it_name);
         let it_type = iteratable.type_str.clone();
@@ -279,8 +285,21 @@ impl CodeGenerator {
 
         let block = self.generate_block_code(&iteration_node.block, padding);
         writeln!(&mut r, "");
-        writeln!(&mut r, "{0}for (int {1} = 0; {1} < {2}.size(); {1}++) {{", padding, it_index_name, iteratable_name);
-        writeln!(&mut r, "{}{}{} {} = {}[{}];", padding, PADDING, convert_type_name_str(&it_type), it_name, iteratable_name, it_index_name);
+        writeln!(
+            &mut r,
+            "{0}for (int {1} = 0; {1} < {2}.size(); {1}++) {{",
+            padding, it_index_name, iteratable_name
+        );
+        writeln!(
+            &mut r,
+            "{}{}{} {} = {}[{}];",
+            padding,
+            PADDING,
+            convert_type_name_str(&it_type),
+            it_name,
+            iteratable_name,
+            it_index_name
+        );
 
         write!(&mut r, "{}", block);
         writeln!(&mut r, "{}}}", padding);
@@ -294,7 +313,7 @@ impl CodeGenerator {
         let mut r = String::new();
 
         let mut param_names = vec![];
-        for expression in &f.params_group.expressions {
+        for expression in &f.params {
             let s = self.generate_expression_code(&expression);
             param_names.push(s);
         }
@@ -302,35 +321,49 @@ impl CodeGenerator {
         let function_name = f.name.as_str();
         match function_name {
             "log" => {
-                if f.params_group.expressions.is_empty() {
+                if f.params.is_empty() {
                     write!(&mut r, "printf(\"\\n\")");
                 } else {
                     let mut format_parts = vec![];
                     let mut names = vec![];
-                    for (i, expression) in f.params_group.expressions.iter().enumerate() {
+                    for (i, expression) in f.params.iter().enumerate() {
                         let param_name = param_names[i].clone();
-                        match expression.type_str.as_str() {
-//                          match "int" {
-                            "int" => {
-                                format_parts.push("%lld");
-                                names.push(format!("static_cast<long long>({})", param_name));
+                        match &expression.type_info {
+                            Some(type_info) => {
+                                //
+                                match type_info.type_str.as_str() {
+                                    "int" => {
+                                        format_parts.push("%lld");
+                                        names.push(format!("static_cast<long long>({})", param_name));
+                                    }
+                                    "real" => {
+                                        format_parts.push("%f");
+                                        names.push(param_name.clone());
+                                    }
+                                    "str" => {
+                                        format_parts.push("%s");
+                                        names.push(param_name.clone());
+                                    }
+                                    else_ => {
+                                        format_parts.push("%d");
+                                        //names.push(format!("(void *)&{param_name}"));
+                                        names.push(format!("{param_name}"));
+                                    }
+                                }
                             }
-                            "real" => {
-                                format_parts.push("%f");
-                                names.push(param_name.clone());
-                            }
-                            "str" => {
-                                format_parts.push("%s");
-                                names.push(param_name.clone());
-                            }
-                            else_ => {
+                            None => {
                                 format_parts.push("%d");
                                 //names.push(format!("(void *)&{param_name}"));
                                 names.push(format!("{param_name}"));
                             }
                         }
                     }
-                    write!(&mut r, "printf(\"{}\\n\", {})", format_parts.join(" "), names.join(", "));
+                    write!(
+                        &mut r,
+                        "printf(\"{}\\n\", {})",
+                        format_parts.join(" "),
+                        names.join(", ")
+                    );
                 }
             }
 
@@ -348,11 +381,11 @@ impl CodeGenerator {
         r
     }
 
-    fn generate_group_code(&mut self, group: &GroupNode, padding: &str) -> String {
+    fn generate_group_code(&mut self, expressions: &Vec<Expression>, padding: &str) -> String {
         let mut s = String::new();
 
         let mut expression_code_list = vec![];
-        for expression in &group.expressions {
+        for expression in expressions {
             let s = self.generate_expression_code(&expression);
             expression_code_list.push(s);
         }
@@ -368,7 +401,7 @@ impl CodeGenerator {
         s
     }
 
-    fn generate_array_item_access_code(&mut self, array_name: &String, index_expression: &ExpressionNode) -> String {
+    fn generate_array_item_access_code(&mut self, array_name: &String, index_expression: &Expression) -> String {
         let mut s = String::new();
 
         let expression_code = self.generate_expression_code(index_expression);
@@ -397,12 +430,12 @@ impl CodeGenerator {
         result_str
     }
 
-    fn generate_expression_code(&mut self, node: &ExpressionNode) -> String {
+    fn generate_expression_code(&mut self, expression: &Expression) -> String {
         let mut r = String::new();
 
-        match &node {
-            ExpressionNode::Identifier(identifier_node) => {
-                if identifier_node.value == "it" || identifier_node.value == "idx" {
+        match &*expression.kind {
+            ExpressionKind::Identifier(identifier_name) => {
+                if identifier_name == "it" || identifier_name == "idx" {
                     match &self.current_function_context {
                         None => {
                             panic!("it or idx is reserved and allowed only inside iterators inside functions");
@@ -414,7 +447,7 @@ impl CodeGenerator {
                             }
 
                             let (it_name, it_type_str) = iterators.last().unwrap();
-                            match identifier_node.value.as_str() {
+                            match identifier_name.as_str() {
                                 "it" => {
                                     write!(&mut r, "{}", it_name.clone());
                                 }
@@ -426,38 +459,38 @@ impl CodeGenerator {
                         }
                     }
                 } else {
-                    write!(&mut r, "{}", identifier_node.value);
+                    write!(&mut r, "{}", identifier_name);
                 }
             }
-            ExpressionNode::Operator(operator_node) => {
-                write!(&mut r, " {} ", operator_node.value);
+            ExpressionKind::Operator(operator) => {
+                write!(&mut r, " {} ", operator);
             }
-            ExpressionNode::IntegerLiteral(literal) => {
+            ExpressionKind::IntegerLiteral(literal) => {
                 write!(&mut r, "{}", literal);
             }
-            ExpressionNode::RealLiteral(literal) => {
+            ExpressionKind::RealLiteral(literal) => {
                 write!(&mut r, "{}", literal);
             }
-            ExpressionNode::StringLiteral(literal) => {
+            ExpressionKind::StringLiteral(literal) => {
                 write!(&mut r, "\"{}\"", literal);
             }
-            ExpressionNode::BinaryOperation(b) => {
-                let left = self.generate_expression_code(&b.left);
-                let right = self.generate_expression_code(&b.right);
-                let mut op = b.operation.value.clone();
+            ExpressionKind::BinaryOperation { operation, left, right } => {
+                let left = self.generate_expression_code(&left);
+                let right = self.generate_expression_code(&right);
+                let mut op = operation.clone();
                 op = self.operators_map.get(&op).cloned().unwrap_or(op);
                 write!(&mut r, "{left}{op}{right}");
             }
-            ExpressionNode::Group(group) => {
-                let code = self.generate_group_code(group, "");
+            ExpressionKind::Group(group_expressions) => {
+                let code = self.generate_group_code(group_expressions, "");
                 write!(&mut r, "{}", code);
             }
-            ExpressionNode::FunctionCall(function_call_node) => {
-                let code = self.generate_function_call_code(function_call_node);
+            ExpressionKind::FunctionCall(function_call) => {
+                let code = self.generate_function_call_code(&function_call);
                 write!(&mut r, "{}", code);
             }
-            ExpressionNode::ArrayItemAccess { token, array_name, access_expression } => {
-                let code = self.generate_array_item_access_code(array_name, &access_expression);
+            ExpressionKind::ArrayItemAccess {array_name,access_expression} => {
+                let code = self.generate_array_item_access_code(&array_name, &access_expression);
                 write!(&mut r, "{}", code);
             }
             panic_ => {
