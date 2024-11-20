@@ -119,7 +119,7 @@ impl TypeChecker {
             return_type: function.decl.return_type.clone(),
         };
 
-        self.process_block_statements(&function.body)?;
+        self.process_block_statements(&mut function.body)?;
 
         function.vars = std::mem::take(&mut self.ctx.vars);
         function.decl.return_type = std::mem::take(&mut self.ctx.return_type);
@@ -296,20 +296,20 @@ impl TypeChecker {
         }
     }
 
-    fn process_block_statements(&mut self, block: &Block) -> TypeCheckResult<()> {
-        for statement in &block.statements {
+    fn process_block_statements(&mut self, block: &mut Block) -> TypeCheckResult<()> {
+        for statement in &mut block.statements {
             match statement {
                 StatementNode::If(if_statement) => {
-                    for (_, block) in &if_statement.if_blocks {
+                    for (_, block) in &mut if_statement.if_blocks {
                         self.process_block_statements(block);
                     }
 
-                    if let Some(block) = &if_statement.else_block {
-                        self.process_block_statements(&block);
+                    if let Some(block) = &mut if_statement.else_block {
+                        self.process_block_statements(block);
                     }
                 }
                 StatementNode::Loop(loop_statement) => {
-                    self.process_block_statements(&loop_statement.block);
+                    self.process_block_statements(&mut loop_statement.block);
                 }
                 StatementNode::Return(expression) => {
                     let return_type = self.get_expression_type(expression)?;
@@ -389,6 +389,14 @@ impl TypeChecker {
                     }
                 }
                 StatementNode::FunctionCall(function_call) => {
+                    let mut new_params = vec![];
+                    for param in &function_call.params {
+                        let type_info = self.get_expression_type(param)?;
+                        let mut new_param = param.clone();
+                        new_param.type_info = Some(type_info);
+                        new_params.push(new_param);
+                    }
+                    function_call.params = new_params;
                     //todo!();
                 }
 
