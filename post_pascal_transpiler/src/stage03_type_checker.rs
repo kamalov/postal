@@ -299,7 +299,7 @@ impl TypeChecker {
     fn process_block_statements(&mut self, block: &mut Block) -> TypeCheckResult<()> {
         for statement in &mut block.statements {
             match statement {
-                StatementNode::If(if_statement) => {
+                Statement::If(if_statement) => {
                     for (_, block) in &mut if_statement.if_blocks {
                         self.process_block_statements(block);
                     }
@@ -308,10 +308,10 @@ impl TypeChecker {
                         self.process_block_statements(block);
                     }
                 }
-                StatementNode::Loop(loop_statement) => {
+                Statement::Loop(loop_statement) => {
                     self.process_block_statements(&mut loop_statement.block);
                 }
-                StatementNode::Return(expression) => {
+                Statement::Return(expression) => {
                     let return_type = self.get_expression_type(expression)?;
                     match &self.ctx.return_type {
                         Some(current_return_type) => match get_common_type(current_return_type, &return_type) {
@@ -325,9 +325,9 @@ impl TypeChecker {
                         None => self.ctx.return_type = Some(return_type),
                     }
                 }
-                StatementNode::Iteration((token, iteratable_name, block)) => {
+                Statement::Iteration(IterationStatement { token, iterable_name, block }) => {
                     //
-                    match self.get_function_param_or_var_type(iteratable_name) {
+                    match self.get_function_param_or_var_type(iterable_name) {
                         Some(type_info) => {
                             self.ctx.iterator_type_list.push(type_info.clone());
                             let block = self.process_block_statements(block)?;
@@ -336,12 +336,12 @@ impl TypeChecker {
                         None => {
                             return Err(TypeCheckError::new(
                                 token,
-                                format!("unknown iteratable: '{iteratable_name}'"),
+                                format!("unknown iteratable: '{iterable_name}'"),
                             ));
                         }
                     }
                 }
-                StatementNode::VariableAssignment(variable_assignment) => {
+                Statement::VariableAssignment(variable_assignment) => {
                     let name = variable_assignment.name.clone();
                     let var_type = self.get_expression_type(&variable_assignment.rvalue_expression)?;
                     match self.ctx.vars.entry(name) {
@@ -365,7 +365,7 @@ impl TypeChecker {
                         }
                     }
                 }
-                StatementNode::VariableDeclaration((token, name, type_info)) => {
+                Statement::VariableDeclaration((token, name, type_info)) => {
                     match self.get_function_param_or_var_type(&name) {
                         Some(type_info) => {
                             return Err(TypeCheckError::new(
@@ -378,7 +378,7 @@ impl TypeChecker {
                         }
                     }
                 }
-                StatementNode::Assignment(Assignment { token, lvalue, rvalue }) => {
+                Statement::Assignment(Assignment { token, lvalue, rvalue }) => {
                     let left_side_type_info = self.get_expression_type(lvalue)?;
                     let right_side_type_info = self.get_expression_type(rvalue)?;
                     if !can_lift_type_from_to(&right_side_type_info, &left_side_type_info) {
@@ -388,7 +388,7 @@ impl TypeChecker {
                         ));
                     }
                 }
-                StatementNode::FunctionCall(function_call) => {
+                Statement::FunctionCall(function_call) => {
                     let mut new_params = vec![];
                     for param in &function_call.params {
                         let type_info = self.get_expression_type(param)?;
@@ -397,11 +397,10 @@ impl TypeChecker {
                         new_params.push(new_param);
                     }
                     function_call.params = new_params;
-                    //todo!();
                 }
 
-                StatementNode::Break() => {}
-                StatementNode::Comment(_) => {}
+                Statement::Break() => {}
+                Statement::Comment(_) => {}
                 _ => {
                     panic!();
                 }

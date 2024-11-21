@@ -1,10 +1,12 @@
 current: 
-  -- проверка типов
-     -- function params
+  -- строки (cow or immutable?)
+
+
 
 week: 
-  -- строки (cow or immutable?)
   -- hash table
+
+
 
 later:
   -- присваивание значения по индексу массива

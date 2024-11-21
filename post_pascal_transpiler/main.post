@@ -76,26 +76,15 @@ begin
     }
 end
 
-fn all_tests
-begin
-    test_multiple_params(5, 6)
-    test_if()
-    test_loop()
-    test_iterator()
-    test_array_access()
-end
-
 rec Coordinates {
     x: real
     y: int    
 }
 
-fn run
+fn test_rec 
 begin
-    //all_tests()
-
     r: Coordinates
-    r.x = 10
+    r.x = 10 + 10
     r.y = 20
     log(r.x)
     log(r.y)
@@ -104,6 +93,21 @@ begin
     log(r.x*r.y)
     log(a)
     log(r.x*r.y = a)
+end
 
+fn all_tests
+begin
+    test_multiple_params(5, 6)
+    test_if()
+    test_loop()
+    test_iterator()
+    test_array_access()
+    test_rec()
+end
+
+fn run
+begin
+    //all_tests()
+    test_rec()
     log('done')
 end

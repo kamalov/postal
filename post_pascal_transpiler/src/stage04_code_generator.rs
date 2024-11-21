@@ -162,45 +162,39 @@ impl CodeGenerator {
         r
     }
 
-    fn generate_statement_code(&mut self, statement_node: &StatementNode, padding: &str) -> String {
+    fn generate_statement_code(&mut self, statement: &Statement, padding: &str) -> String {
         let mut r = String::new();
 
-        match statement_node {
-            StatementNode::If(st) => {
+        match statement {
+            Statement::If(st) => {
                 let s = self.generate_if_statement_code(st, padding);
                 r.push_str(s.as_str());
             }
-            StatementNode::Loop(st) => {
+            Statement::Loop(st) => {
                 let s = self.generate_loop_statement_code(st, padding);
                 r.push_str(s.as_str());
             }
-            StatementNode::Iteration(st) => {
-                //let s = self.generate_iteration_code(st, padding);
-                //r.push_str(s.as_str());
-                r.push_str("//iteration stub\n");
+            Statement::Iteration(iteration_statement) => {
+                let s = self.generate_iteration_code(iteration_statement, padding);
+                r.push_str(s.as_str());
             }
-            StatementNode::FunctionCall(st) => {
+            Statement::FunctionCall(st) => {
                 let s = self.generate_function_call_code(st);
                 let s = format!("{}{};\n", padding, s);
                 r.push_str(s.as_str());
             }
-            StatementNode::VariableAssignment(v) => {
+            Statement::VariableAssignment(v) => {
                 let s = self.generate_variable_assignment_code(v, padding);
                 r.push_str(s.as_str());
             }
-            // StatementNode::Group(v) => {
-            //     panic!();
-            //     let s = self.generate_group_code(v, padding);
-            //     r.push_str(s.as_str());
-            // }
-            StatementNode::Break() => {
+            Statement::Break() => {
                 writeln!(&mut r, "{}break;", padding);
             }
-            StatementNode::Comment(line_comment) => {
+            Statement::Comment(line_comment) => {
                 let s = self.generate_comment_code(line_comment, padding);
                 r.push_str(s.as_str());
             }
-            StatementNode::Return(expression) => {
+            Statement::Return(expression) => {
                 writeln!(
                     &mut r,
                     "{}return {};",
@@ -208,13 +202,13 @@ impl CodeGenerator {
                     self.generate_expression_code(&expression)
                 );
             }
-            StatementNode::VariableDeclaration(_) => {}
-            StatementNode::Assignment(assignment_node) => {
+            Statement::VariableDeclaration(_) => {}
+            Statement::Assignment(assignment_node) => {
                 let s = self.generate_assignment_code(assignment_node, padding);
                 r.push_str(s.as_str());
             }
             _ => {
-                println!("{:?}", statement_node);
+                println!("{:?}", statement);
                 panic!();
             }
         }
@@ -278,10 +272,9 @@ impl CodeGenerator {
             .unwrap();
         let iteratable_name = iteration_node.iterable_name.clone();
         let it_name = format!("{}__it{}", iteratable_name, index);
-        let it_index_name = format!("{}_index", it_name);
+        let it_index_name = format!("{}__idx", it_name);
         let it_type = iteratable.type_str.clone();
         function_context.iterators.push((it_name.clone(), it_type.clone()));
-        // decls.push((index_variable_name.clone(), "int".to_owned()));
 
         let block = self.generate_block_code(&iteration_node.block, padding);
         writeln!(&mut r, "");
@@ -452,7 +445,7 @@ impl CodeGenerator {
                                     write!(&mut r, "{}", it_name.clone());
                                 }
                                 "idx" => {
-                                    write!(&mut r, "{}", it_name.clone() + "__index");
+                                    write!(&mut r, "{}", it_name.clone() + "__idx");
                                 }
                                 _ => panic!(),
                             }

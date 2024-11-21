@@ -3,6 +3,7 @@ use std::collections::hash_map::Entry;
 use std::collections::{HashMap};
 use std::fmt;
 use std::fmt::Write;
+use std::path::Iter;
 
 use indexmap::IndexMap;
 
@@ -46,7 +47,7 @@ pub struct Record {
 
 #[derive(Debug, Clone)]
 pub struct Block {
-    pub statements: Vec<StatementNode>,
+    pub statements: Vec<Statement>,
 }
 
 #[derive(Debug, Clone)]
@@ -128,10 +129,10 @@ impl Expression {
 }
 
 #[derive(Debug, Clone)]
-pub enum StatementNode {
+pub enum Statement {
     If(IfStatement),
     Loop(LoopStatement),
-    Iteration((Token, String, Block)),
+    Iteration(IterationStatement),
     Break(),
     Return(Expression),
     FunctionCall(FunctionCall),
@@ -506,29 +507,29 @@ impl AstBuilder {
         Ok(Block { statements })
     }
 
-    fn parse_statement(&mut self) -> AstResult<StatementNode> {
+    fn parse_statement(&mut self) -> AstResult<Statement> {
         let token = self.peek_next().clone();
         match token.kind {
             TokenKind::Identifier => {
                 match self.peek_next_next().value.as_str() {
                     "(" => {
                         let f = self.parse_function_call()?;
-                        return Ok(StatementNode::FunctionCall(f));
+                        return Ok(Statement::FunctionCall(f));
                     }
 
                     "=" => {
                         let statement = self.parse_variable_assignment_statement()?;
-                        return Ok(StatementNode::VariableAssignment(statement));
+                        return Ok(Statement::VariableAssignment(statement));
                     }
 
                     ":" => {
                         let statement = self.parse_variable_declaration_statement()?;
-                        return Ok(StatementNode::VariableDeclaration(statement));
+                        return Ok(Statement::VariableDeclaration(statement));
                     }
 
                     ">>" => {
                         let statement = self.parse_iteration_statement()?;
-                        return Ok(StatementNode::Iteration(statement));
+                        return Ok(Statement::Iteration(statement));
                     }
 
                     _ => {}
@@ -537,7 +538,7 @@ impl AstBuilder {
                 let left_side_expression = self.parse_expression_until(&["=", "\n"])?;
                 self.skip_expected("=");
                 let right_side_expression = self.parse_expression_until(&["\n"])?;
-                return Ok(StatementNode::Assignment(Assignment {
+                return Ok(Statement::Assignment(Assignment {
                     token: token.clone(),
                     lvalue: left_side_expression,
                     rvalue: right_side_expression,
@@ -547,20 +548,20 @@ impl AstBuilder {
             TokenKind::Keyword => match token.value.as_str() {
                 "if" => {
                     let f = self.parse_if_statement()?;
-                    return Ok(StatementNode::If(f));
+                    return Ok(Statement::If(f));
                 }
                 "loop" => {
                     let f = self.parse_loop_statement()?;
-                    return Ok(StatementNode::Loop(f));
+                    return Ok(Statement::Loop(f));
                 }
                 "break" => {
                     self.skip_expected("break")?;
-                    return Ok(StatementNode::Break());
+                    return Ok(Statement::Break());
                 }
                 "ret" => {
                     self.skip_expected("ret")?;
                     let expression = self.parse_expression_until(&["\n"])?;
-                    return Ok(StatementNode::Return(expression));
+                    return Ok(Statement::Return(expression));
                 }
                 panic_ => {
                     panic!();
@@ -570,7 +571,7 @@ impl AstBuilder {
             TokenKind::Comment => {
                 let value = token.value.clone();
                 self.skip();
-                Ok(StatementNode::Comment(value))
+                Ok(Statement::Comment(value))
             }
 
             _ => {
@@ -615,17 +616,21 @@ impl AstBuilder {
         Ok(LoopStatement { block })
     }
 
-    fn parse_iteration_statement(&mut self) -> AstResult<(Token, String, Block)> {
+    fn parse_iteration_statement(&mut self) -> AstResult<IterationStatement> {
         let name_token = self.next().clone();
         if name_token.kind != TokenKind::Identifier {
             return Err(AstError::new(&name_token, "identifier expected"));
         }
-        let iteratable_name = name_token.value.clone();
+        let iterable_name = name_token.value.clone();
 
         self.skip_expected(">>")?;
         let block = self.parse_block()?;
 
-        Ok((name_token.clone(), iteratable_name, block))
+        Ok(IterationStatement {
+            token: name_token.clone(),
+            iterable_name,
+            block,
+        })
     }
 
     fn parse_variable_assignment_statement(&mut self) -> AstResult<VariableAssignment> {
@@ -742,7 +747,7 @@ impl AstBuilder {
         let mut index = 1;
         loop {
             if index < expressions.len() {
-                root = self.expressions_to_tree_node(&expressions, &mut index, root, 0);
+                root = self.expressions_to_tree_node(&expressions, &mut index, root, 0)?;
                 //println!("{:?}", root);
             } else {
                 break;
@@ -759,7 +764,7 @@ impl AstBuilder {
         next_expression_index: &mut usize,
         tree_node: TreeNode,
         priority: usize,
-    ) -> TreeNode {
+    ) -> AstResult<TreeNode> {
         let mut tree_node = tree_node;
         let mut priority = priority;
         loop {
@@ -789,7 +794,7 @@ impl AstBuilder {
                         next_expression_index,
                         next_tree_node,
                         next_priority,
-                    );
+                    )?;
 
                     let mut childs = vec![];
                     childs.push(tree_node);
@@ -847,13 +852,12 @@ impl AstBuilder {
                 },
 
                 _ => {
-                    //println!("{:?}", next_op);
-                    todo!();
+                    return Err(AstError::new(&next_expression.token, "unexpected token"));
                 }
             }
         }
 
-        tree_node
+        Ok(tree_node)
     }
 
     fn tree_node_to_expression(&self, tree_node: &TreeNode) -> AstResult<Expression> {
