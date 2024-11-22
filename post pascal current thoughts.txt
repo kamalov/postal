@@ -27,6 +27,7 @@ Phase zero (basic syntax and type checking):
 Phase zero.1:
 -- refcounted memory management
 -- exceptions
+-- ? booleans
 
 Phase one:
 -- multiple source files (modules)

@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <vector>
 #include <windows.h>
+#include <string>
+
+using namespace std::literals;
 
 %GENERATED_CODE%
 

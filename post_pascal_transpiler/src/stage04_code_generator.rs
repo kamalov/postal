@@ -27,6 +27,7 @@ fn convert_type_name_str(ti: &String) -> String {
         "" => "void".to_string(),
         "int" => "long".to_string(),
         "real" => "double".to_string(),
+        "str" => "std::string".to_string(),
         _ => ti.clone(),
     }
 }
@@ -147,14 +148,6 @@ impl CodeGenerator {
             let padding = format!("{}{}", padding, PADDING);
             let statement_code = self.generate_statement_code(statement, padding.as_str());
             s.push(statement_code);
-            // match statement {
-            //     AstNode::FunctionCall(_) | AstNode::VariableDeclaration(_) => {
-            //         s.push(format!("{statement_code};"));
-            //     }
-            //     else_ => {
-            //         s.push(format!("{statement_code}"));
-            //     },
-            // }
         }
         let s = s.join("");
         write!(&mut r, "{s}");
@@ -335,7 +328,7 @@ impl CodeGenerator {
                                     }
                                     "str" => {
                                         format_parts.push("%s");
-                                        names.push(param_name.clone());
+                                        names.push(format!("({}).c_str()", param_name.clone()));
                                     }
                                     else_ => {
                                         format_parts.push("%d");
@@ -465,7 +458,7 @@ impl CodeGenerator {
                 write!(&mut r, "{}", literal);
             }
             ExpressionKind::StringLiteral(literal) => {
-                write!(&mut r, "\"{}\"", literal);
+                write!(&mut r, "\"{}\"s", literal);
             }
             ExpressionKind::BinaryOperation { operation, left, right } => {
                 let left = self.generate_expression_code(&left);
