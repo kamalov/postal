@@ -1,7 +1,7 @@
 #![allow(warnings)]
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap};
-use std::fmt;
+use std::{fmt, vec};
 use std::fmt::Write;
 use std::path::Iter;
 
@@ -27,7 +27,8 @@ type AstResult<T> = Result<T, AstError>;
 
 #[derive(Debug, Clone)]
 pub struct Function {
-    pub decl: FnDeclaration,
+    pub is_external: bool,
+    pub declaration: FnDeclaration,
     pub vars: IndexMap<String, TypeInfo>,
     pub body: Block,
 }
@@ -287,7 +288,7 @@ impl AstBuilder {
                         root_nodes.push(RootNode::Record(record));
                     }
                     else_ => {
-                        return Err(AstError::new(&token, "unexpected token"));
+                        return Err(AstError::new(&token, "unexpected token 1"));
                     }
                 },
                 TokenKind::Comment => {
@@ -296,7 +297,7 @@ impl AstBuilder {
                     root_nodes.push(RootNode::Comment(value));
                 }
                 _ => {
-                    return Err(AstError::new(&token, "unexpected token"));
+                    return Err(AstError::new(&token, "unexpected token 11"));
                 }
             }
         }
@@ -384,13 +385,30 @@ impl AstBuilder {
             self.fn_declarations.insert(fn_name, fn_declaration.clone());
         }
 
-        let fn_body = self.parse_function_body()?;
-
-        Ok(Function {
-            decl: fn_declaration,
-            vars: IndexMap::new(),
-            body: fn_body,
-        })
+        self.skip_line_end_tokens();
+        match self.peek_next().value.as_str() {
+            "external" => {
+                self.skip_expected("external")?;
+                return Ok(Function {
+                    is_external: true,
+                    declaration: fn_declaration,
+                    vars: IndexMap::new(),
+                    body: Block { statements: vec![] },
+                });
+            }
+            "begin" => {
+                let fn_body = self.parse_function_body()?;
+                return Ok(Function {
+                    is_external: false,
+                    declaration: fn_declaration,
+                    vars: IndexMap::new(),
+                    body: fn_body,
+                });
+            }
+            else_ => {
+                Err(AstError::new(&self.peek_next(), "unexpected token 111"))
+            }
+        }
     }
 
     fn parse_function_declaration_params(&mut self) -> AstResult<IndexMap<String, TypeInfo>> {
@@ -444,11 +462,13 @@ impl AstBuilder {
     fn parse_function_return_type(&mut self) -> AstResult<Option<TypeInfo>> {
         self.skip_line_end_tokens();
 
-        if self.peek_next().value == "begin" {
+        let next_possibles = ["external", "begin"];
+
+        if next_possibles.contains(&self.peek_next().value.as_str()) {
             return Ok(None);
         }
 
-        let return_type = self.parse_type_info_until(&["begin"])?;
+        let return_type = self.parse_type_info_until(&next_possibles)?;
 
         Ok(Some(return_type))
     }
@@ -852,7 +872,7 @@ impl AstBuilder {
                 },
 
                 _ => {
-                    return Err(AstError::new(&next_expression.token, "unexpected token"));
+                    return Err(AstError::new(&next_expression.token, "unexpected token 1111"));
                 }
             }
         }

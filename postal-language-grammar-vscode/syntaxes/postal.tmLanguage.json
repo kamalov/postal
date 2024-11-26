@@ -21,7 +21,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.postal",
-				"match": "\\b(if|else|loop|while|for|return|ret|fn|do|begin|end|it|it_index|rec)\\b"
+				"match": "\\b(if|else|loop|while|for|return|ret|fn|do|begin|end|it|idx|rec|external|int|real|str)\\b"
 			}]
 		},
 		"operators": {

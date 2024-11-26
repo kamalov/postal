@@ -112,20 +112,24 @@ impl TypeChecker {
     }
 
     fn process_function(&mut self, function: &mut Function) -> TypeCheckResult<()> {
+        if function.is_external {
+            return Ok(());
+        }
+
         self.ctx = CurrentFunctionContext {
             vars: IndexMap::new(),
-            function_params: function.decl.params.clone(),
+            function_params: function.declaration.params.clone(),
             iterator_type_list: vec![],
-            return_type: function.decl.return_type.clone(),
+            return_type: function.declaration.return_type.clone(),
         };
 
         self.process_block_statements(&mut function.body)?;
 
         function.vars = std::mem::take(&mut self.ctx.vars);
-        function.decl.return_type = std::mem::take(&mut self.ctx.return_type);
+        function.declaration.return_type = std::mem::take(&mut self.ctx.return_type);
 
-        let decl = self.ast_builder.fn_declarations.get_mut(&function.decl.name).unwrap();
-        decl.return_type = function.decl.return_type.clone();
+        let decl = self.ast_builder.fn_declarations.get_mut(&function.declaration.name).unwrap();
+        decl.return_type = function.declaration.return_type.clone();
 
         self.ctx = CurrentFunctionContext::default();
 

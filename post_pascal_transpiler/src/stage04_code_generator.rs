@@ -102,28 +102,36 @@ impl CodeGenerator {
             iterators_count: 0,
         });
 
-        let fn_params_code = self.generate_function_declaration_params_code(&function_node.decl.params);
+        let fn_params_code = self.generate_function_declaration_params_code(&function_node.declaration.params);
         let fn_body_code = self.generate_block_code(&function_node.body, padding);
 
         let mut r = String::new();
-        let return_type_str = match &function_node.decl.return_type {
+        let return_type_str = match &function_node.declaration.return_type {
             Some(info) => type_info_to_str(info),
             None => "void".to_string(),
         };
 
-        writeln!(
-            &mut r,
-            "{}{} {}({}) {{",
-            padding, return_type_str, function_node.decl.name, fn_params_code
-        );
-
-        for (name, type_info) in &function_node.vars {
-            writeln!(&mut r, "    {} {name};", type_info_to_str(type_info));
+        if function_node.is_external {
+            writeln!(
+                &mut r,
+                "{}{} {}({});",
+                padding, return_type_str, function_node.declaration.name, fn_params_code
+            );
+        } else {
+            writeln!(
+                &mut r,
+                "{}{} {}({}) {{",
+                padding, return_type_str, function_node.declaration.name, fn_params_code
+            );
+    
+            for (name, type_info) in &function_node.vars {
+                writeln!(&mut r, "    {} {name};", type_info_to_str(type_info));
+            }
+    
+            write!(&mut r, "{fn_body_code}");
+            writeln!(&mut r, "}}");
+            writeln!(&mut r, "");
         }
-
-        write!(&mut r, "{fn_body_code}");
-        writeln!(&mut r, "}}");
-        writeln!(&mut r, "");
 
         self.current_function_context = None;
 

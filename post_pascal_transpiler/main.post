@@ -103,6 +103,16 @@ begin
     log(sss)
 end
 
+fn read_lines(filename: str) [str] external
+
+fn test_read_lines
+begin
+    lines = read_lines('d:/test.txt')
+    lines >> {
+        log(idx, it)
+    }
+end
+
 fn all_tests
 begin
     test_multiple_params(5, 6)
@@ -112,11 +122,11 @@ begin
     test_array_access()
     test_records()
     test_strings()
+    test_read_lines()
 end
 
 fn run
 begin
     all_tests()
-
     log('done')
 end
