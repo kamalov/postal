@@ -644,7 +644,13 @@ impl AstBuilder {
         let iterable_name = name_token.value.clone();
 
         self.skip_expected(">>")?;
-        let block = self.parse_block()?;
+        
+        let block = if self.peek_next().value != "{" {
+            let statement = self.parse_statement()?;
+            Block { statements: vec![statement] }
+        } else {
+            self.parse_block()?
+        };
 
         Ok(IterationStatement {
             token: name_token.clone(),

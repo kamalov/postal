@@ -187,7 +187,10 @@ impl TypeChecker {
                             ));
                         }
                         let type_info = self.ctx.iterator_type_list.last().unwrap();
-                        return Ok(type_info.clone());
+                        return Ok(TypeInfo {
+                            is_array: false,
+                            type_str: type_info.type_str.clone()
+                        });
                     }
                     "idx" => {
                         return Ok(TypeInfo {
@@ -269,27 +272,30 @@ impl TypeChecker {
                 return Ok(last_type_info);
             }
             ExpressionKind::ArrayItemAccess { array_name, access_expression } => {
-                let type_info = self.get_expression_type(&access_expression)?;
+                let accessor_type_info = self.get_expression_type(&access_expression)?;
 
-                if type_info.is_array || type_info.type_str != "int" {
+                if accessor_type_info.is_array || accessor_type_info.type_str != "int" {
                     return Err(TypeCheckError::new(
                         &expression.token,
-                        format!("incorrect index type '{type_info}'"),
+                        format!("incorrect index type '{accessor_type_info}'"),
                     ));
                 }
 
-                let type_info = match self.get_function_param_or_var_type(&array_name) {
+                let array_type_info = match self.get_function_param_or_var_type(&array_name) {
                     Some(type_info) => type_info,
                     None => {
                         return Err(TypeCheckError::new(&expression.token, format!("undeclared array '{array_name}'")));
                     }
                 };
 
-                if !type_info.is_array {
+                if !array_type_info.is_array {
                     return Err(TypeCheckError::new(&expression.token, format!("not an array: '{array_name}'")));
                 }
 
-                return Ok(type_info.clone());
+                return Ok(TypeInfo {
+                    is_array: false,
+                    type_str: array_type_info.type_str.clone()
+                });
             }
             _ => {
                 //ExpressionNode::ArrayBrackets(array_brackets_node) => panic!(),

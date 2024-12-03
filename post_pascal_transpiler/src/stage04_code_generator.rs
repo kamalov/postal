@@ -25,7 +25,7 @@ const PADDING: &str = "    ";
 fn convert_type_name_str(ti: &String) -> String {
     match ti.as_str() {
         "" => "void".to_string(),
-        "int" => "long".to_string(),
+        "int" => "long long".to_string(),
         "real" => "double".to_string(),
         "str" => "std::string".to_string(),
         _ => ti.clone(),

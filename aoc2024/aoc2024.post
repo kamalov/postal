@@ -1,0 +1,49 @@
+fn read_lines(filename: str) [str] external
+fn split_str(s: str, by: str) [str] external
+fn str_to_int(s: str) int external
+fn sort_int_array(a: [int]) [int] external
+
+fn abs_int(a: int, b: int)
+begin
+    if a > b {
+        ret a - b
+    } else if b > a {
+        ret b - a
+    }
+    ret 0
+end
+
+fn run
+begin
+    lines = read_lines('D:/src/postal/aoc2024/input.txt')
+    left: [int] 
+    right: [int]
+    
+    lines >> {
+        tokens = split_str(it, ' ')
+        push(left, str_to_int(tokens[0]))
+        push(right, str_to_int(tokens[1]))
+    }
+
+    left = sort_int_array(left)
+    right = sort_int_array(right)
+
+    left >> log(it)
+    right >> log(it)
+
+    sum = 0
+    left >> {
+        lvalue = it
+        count = 0
+        right >> {
+            if lvalue = it {
+                count = count + 1
+            }
+        }
+        lvalue = lvalue * count
+        sum = sum + lvalue
+    }
+
+    log()
+    log(sum)
+end

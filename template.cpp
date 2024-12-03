@@ -4,28 +4,9 @@
 #include <string>
 #include <fstream>
 
-using namespace std::literals;
+#include "my_lib.h"
 
-/// lib
-
-std::vector<std::string> read_lines(std::string filename) {
-    std::ifstream infile(filename);
-    if (!infile.is_open()) {
-        throw "invalid file '"s + filename + "'";
-    }
-    std::vector<std::string> lines;
-    std::string line;
-    while (std::getline(infile, line)) {
-        lines.push_back(line);
-    }
-    infile.close();
-    return lines;
-}
-
-/// GENERATED CODE
 %GENERATED_CODE%
-
-/// main
 
 int main()
 {

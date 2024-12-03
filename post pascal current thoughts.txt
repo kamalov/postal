@@ -5,9 +5,9 @@ Goal: syntax like TypeScript, compile time speed like Delphi, runtime memory and
 Priorities (by desc):
 1. Typed 
 2. Memsafe
-3. run time	:: At least C++ runtime performance (speed and memory wise)
-4. compile time :: At least Free/Object Pascal compilation speed
-5. design time  :: At least TypeScript code writing speed (low friction)
+3. Run time	:: At least C++ runtime performance (speed and memory wise)
+4. Compile time :: At least Free/Object Pascal compilation speed
+5. Design time  :: At least TypeScript code writing speed (low friction)
 
 Implementation
 
@@ -27,16 +27,17 @@ Phase zero (basic syntax and type checking):
 Phase zero.1:
 -- refcounted memory management
 -- exceptions
+-- enums
 -- ? booleans
 
 Phase one:
 -- multiple source files (modules)
 -- utf-8 strings
 -- generics
--- enums
 -- nested arrays
 -- function overload
 -- better compile error messages
+-- some kind of dynamic dispatch or discriminated unions (or both)
 
 Phase pre-last (bells and whistles):
 -- first class functions
