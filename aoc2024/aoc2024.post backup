@@ -1,43 +1,98 @@
 fn read_lines(filename: str) [str] external
 fn split_str(s: str, by: str) [str] external
 fn str_to_int(s: str) int external
+fn int_to_str(i: int) str external
 fn sort_int_array(a: [int]) [int] external
+fn int_array_len(a: [int]) int external
 
-fn abs_int(a: int, b: int)
+fn abs_int(a: int) int
 begin
-    if a > b {
-        ret a - b
-    } else if b > a {
-        ret b - a
+    if a < 0 {
+        ret 0 - a
+    } 
+    ret a
+end
+
+rec Report {
+    values: [int]
+}
+
+fn is_any_valid(vals: [int]) 
+begin
+    vals >> {
+        // r = Report {}
+        // skip_index = idx
+        vals >> {
+            // if idx <> skip_index {
+            //     push(r.values, it)
+            // }
+        }
+
+        // if is_valid(r.values) {
+        //     ret 1
+        // }
     }
+
     ret 0
+end
+
+fn is_valid(vals: [int]) 
+begin
+    prev_d = vals[0] - vals[1]
+    if prev_d = 0 or abs_int(prev_d) > 3 {
+        ret 0
+    }
+    i = 2
+    prev = vals[1]
+    loop {
+        v = vals[i]
+        d = prev - v
+        if d = 0 or abs_int(d) > 3 {
+            ret 0
+        }
+        
+        if prev_d < 0 and d > 0 or prev_d > 0 and d < 0 {
+            ret 0
+        }
+
+        prev_d = d
+        prev = v
+
+        i = i + 1
+        if i >= int_array_len(vals) {
+            break
+        }
+    }
+
+    ret 1
 end
 
 fn run
 begin
     lines = read_lines('D:/src/postal/aoc2024/input.txt')
-    left: [int] 
-    right: [int]
+    
+    reports: [Report] 
     
     lines >> {
         tokens = split_str(it, ' ')
-        push(left, str_to_int(tokens[0]))
-        push(right, str_to_int(tokens[1]))
+        report = Report {}
+        tokens >> push(report.values, str_to_int(it))
+        push(reports, report)
     }
 
-    left = sort_int_array(left)
-    right = sort_int_array(right)
-
-    left >> log(it)
-    right >> log(it)
-
-    sum = 0
-    left >> {
-        lvalue = it
-        rvalue = right[idx]
-        distance = abs_int(lvalue, rvalue)
-        sum = sum + distance
+    valid_count = 0
+    reports >> {
+        s = ''
+        values = it.values
+        values >> s = s + ' -> ' + int_to_str(it)
+        log(s)
+        if is_any_valid(values) {
+            valid_count = valid_count + 1
+            log('valid')
+        } else {
+            log('invalid')
+        }
     }
 
-    log(sum)
+    log(valid_count)
 end

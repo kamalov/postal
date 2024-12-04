@@ -1,4 +1,5 @@
 current: 
+  -- if exp do exp (single liner if)
   -- advent of code
 
 
@@ -6,13 +7,13 @@ current:
 to do:
   -- hash table
   -- проверка соответствия формальных и фактических параметров при вызове функции
+  -- унарный минус, унарный NOT
 
 
 
 backlog:
   -- присваивание значения по индексу массива
-  -- унарный минус, унарный NOT
-  -- iteration mapping (a = some >> { it })
+  -- iteration mapping and iteration as expression (a = some >> { it })
 
 
 

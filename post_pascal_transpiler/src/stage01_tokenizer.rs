@@ -37,10 +37,9 @@ const KEYWORDS: [&str; 19] = [
     "not", "and", "or" //
 ];
 
-const SPECIALS: [&str; 18] = [
-    "{", "}", "(", ")", "[", "]", ",", ":", ";", "=", "*", "/", "+", "-", "<", ">",
-    ">>", "."
-    //, "::", "<<", "<=", ">=", "=>", "->"
+const SPECIALS: [&str; 17] = [
+    "{", "}", "(", ")", "[", "]", ",", ":", ";", "=", "*", "/", "+", "-", "<", ">", "."
+    //, "::", "<<", "=>", "->"
 ];
 
 fn is_identifier_char(c: char) -> bool {
@@ -74,23 +73,27 @@ impl Tokenizer {
             t.specials.insert(c.to_string());
         }
 
-        t.priorities.insert(".".to_string(), 20);
-        t.priorities.insert("()".to_string(), 20);
-        t.priorities.insert("[]".to_string(), 20);
+        t.priorities.insert(".".to_string(), 200);
+        t.priorities.insert("()".to_string(), 200);
+        t.priorities.insert("[]".to_string(), 200);
 
-        t.priorities.insert("*".to_string(), 10);
-        t.priorities.insert("/".to_string(), 10);
+        t.priorities.insert("*".to_string(), 100);
+        t.priorities.insert("/".to_string(), 100);
         
-        t.priorities.insert("+".to_string(), 9);
-        t.priorities.insert("-".to_string(), 9);
+        t.priorities.insert("+".to_string(), 90);
+        t.priorities.insert("-".to_string(), 90);
         
-        t.priorities.insert("<".to_string(), 5);
-        t.priorities.insert(">".to_string(), 5);
-        t.priorities.insert("<=".to_string(), 5);
-        t.priorities.insert(">=".to_string(), 5);
+        t.priorities.insert("<".to_string(), 50);
+        t.priorities.insert("<=".to_string(), 50);
+        t.priorities.insert(">".to_string(), 50);
+        t.priorities.insert(">=".to_string(), 50);
 
-        t.priorities.insert("=".to_string(), 4);
-        t.priorities.insert("<>".to_string(), 4);
+        t.priorities.insert("=".to_string(), 40);
+        t.priorities.insert("<>".to_string(), 40);
+
+        t.priorities.insert("and".to_string(), 30);
+
+        t.priorities.insert("or".to_string(), 20);
 
         t.chars = text.chars().to_vec();
 
@@ -165,7 +168,11 @@ impl Tokenizer {
         }
 
         let kind = if self.keywords.contains(&value) {
-            TokenKind::Keyword
+            if ["and", "or", "not", "div", "mod"].contains(&value.as_str()) {
+                TokenKind::SpecialSymbol
+            } else {
+                TokenKind::Keyword
+            }
         } else {
             TokenKind::Identifier
         };
@@ -251,8 +258,19 @@ impl Tokenizer {
         }
     }
 
+    fn add_token(&mut self, s: impl Into<String>) {
+        let t = Token {
+            kind: TokenKind::SpecialSymbol,
+            value: s.into(),
+            char_index: self.char_index,
+        };
+        self.skip();
+        self.skip();
+        self.tokens.push(t);
+    }
+
     fn parse_chars_to_tokens(&mut self) {
-        let mut tokens = vec![];
+        self.tokens = vec![];
 
         loop {
             if self.peek().is_none() {
@@ -268,7 +286,7 @@ impl Tokenizer {
                     char_index: self.char_index,
                 };
                 self.skip();
-                tokens.push(t);
+                self.tokens.push(t);
                 continue;
             }
 
@@ -279,36 +297,44 @@ impl Tokenizer {
 
             if is_identifier_starter_char(c) {
                 let t = self.parse_name();
-                tokens.push(t);
+                self.tokens.push(t);
                 continue;
             }
             if c.is_numeric() {
                 let t = self.parse_number();
-                tokens.push(t);
+                self.tokens.push(t);
                 continue;
             }
 
             if c == '\'' {
                 let t = self.parse_string();
-                tokens.push(t);
+                self.tokens.push(t);
                 continue;
             }
 
             if self.check_next("//") {
                 let t = self.parse_comment();
-                tokens.push(t);
+                self.tokens.push(t);
                 continue;
             }
 
             if self.check_next(">>") {
-                let t = Token {
-                    kind: TokenKind::SpecialSymbol,
-                    value: ">>".to_string(),
-                    char_index: self.char_index,
-                };
-                self.skip();
-                self.skip();
-                tokens.push(t);
+                self.add_token(">>");
+                continue;
+            }
+
+            if self.check_next(">=") {
+                self.add_token(">=");
+                continue;
+            }
+
+            if self.check_next("<=") {
+                self.add_token("<=");
+                continue;
+            }
+
+            if self.check_next("<>") {
+                self.add_token("<>");
                 continue;
             }
 
@@ -319,7 +345,7 @@ impl Tokenizer {
                     char_index: self.char_index,
                 };
                 self.skip();
-                tokens.push(t);
+                self.tokens.push(t);
                 continue;
             }
 
@@ -333,9 +359,7 @@ impl Tokenizer {
             value: String::new(), 
             char_index: self.chars.len() - 1
         };
-        tokens.push(eof);
-
-        self.tokens = tokens;
+        self.tokens.push(eof);
     }
 
     pub fn debug_print_tokens(&self) {

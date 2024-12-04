@@ -297,6 +297,22 @@ impl TypeChecker {
                     type_str: array_type_info.type_str.clone()
                 });
             }
+            ExpressionKind::Object(record_name) => {
+                match self.ast_builder.records.get(record_name) {
+                    Some(record) => {
+                        return Ok(TypeInfo {
+                            type_str: record.name.clone(),
+                            ..TypeInfo::default()
+                        });
+                    }
+                    None => {
+                        return Err(TypeCheckError::new(
+                            &expression.token,
+                            format!("unknown type: '{record_name}'"),
+                        ));
+                    }
+                }
+            }
             _ => {
                 //ExpressionNode::ArrayBrackets(array_brackets_node) => panic!(),
                 //ExpressionNode::Operator(operator_node) => panic!(),
@@ -408,7 +424,6 @@ impl TypeChecker {
                     }
                     function_call.params = new_params;
                 }
-
                 Statement::Break() => {}
                 Statement::Comment(_) => {}
                 _ => {

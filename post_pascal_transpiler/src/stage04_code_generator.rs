@@ -6,7 +6,18 @@ use indexmap::IndexMap;
 
 use crate::stage02_ast_builder::*;
 
-const OPERATORS_MAP: [(&str, &str); 3] = [("+", " + "), ("-", " - "), ("=", " == ")];
+const OPERATORS_MAP: [(&str, &str); 10] = [
+    ("+", " + "),
+    ("-", " - "),
+    ("=", " == "),
+    (">", " > "),
+    (">=", " >= "),
+    ("<", " < "),
+    ("<=", " <= "),
+    ("and", " && "),
+    ("or", " || "),
+    ("<>", " != "),
+];
 
 struct CurrentFunctionContext {
     function_node: Function,
@@ -123,11 +134,11 @@ impl CodeGenerator {
                 "{}{} {}({}) {{",
                 padding, return_type_str, function_node.declaration.name, fn_params_code
             );
-    
+
             for (name, type_info) in &function_node.vars {
                 writeln!(&mut r, "    {} {name};", type_info_to_str(type_info));
             }
-    
+
             write!(&mut r, "{fn_body_code}");
             writeln!(&mut r, "}}");
             writeln!(&mut r, "");
@@ -263,19 +274,25 @@ impl CodeGenerator {
     fn generate_iteration_code(&mut self, iteration_node: &IterationStatement, padding: &str) -> String {
         let mut r = String::new();
 
-        let mut function_context = self.current_function_context.as_mut().unwrap();
-        let index = function_context.iterators_count;
-        function_context.iterators_count += 1;
-        let iteratable = function_context
-            .function_node
-            .vars
-            .get(&iteration_node.iterable_name)
-            .unwrap();
+        let mut ctx = self.current_function_context.as_mut().unwrap();
+        let index = ctx.iterators_count;
+        ctx.iterators_count += 1;
+        let iteratable_type_info = 
+            match ctx.function_node.vars.get(&iteration_node.iterable_name) {
+                Some(type_info) => Some(type_info),
+                None => match ctx.function_node.declaration.params.get(&iteration_node.iterable_name) {
+                    Some(type_info) => Some(type_info),
+                    None => None,
+                },
+            };
+
+        let iteratable_type_info = iteratable_type_info.unwrap();
+
         let iteratable_name = iteration_node.iterable_name.clone();
         let it_name = format!("{}__it{}", iteratable_name, index);
         let it_index_name = format!("{}__idx", it_name);
-        let it_type = iteratable.type_str.clone();
-        function_context.iterators.push((it_name.clone(), it_type.clone()));
+        let it_type_name = iteratable_type_info.type_str.clone();
+        ctx.iterators.push((it_name.clone(), it_type_name.clone()));
 
         let block = self.generate_block_code(&iteration_node.block, padding);
         writeln!(&mut r, "");
@@ -289,7 +306,7 @@ impl CodeGenerator {
             "{}{}{} {} = {}[{}];",
             padding,
             PADDING,
-            convert_type_name_str(&it_type),
+            convert_type_name_str(&it_type_name),
             it_name,
             iteratable_name,
             it_index_name
@@ -424,6 +441,12 @@ impl CodeGenerator {
         result_str
     }
 
+    fn generate_object_code(&mut self, record_name: &str) -> String {
+        let mut result_str = String::new();
+        write!(&mut result_str, "{record_name} {{}}");
+        result_str
+    }
+
     fn generate_expression_code(&mut self, expression: &Expression) -> String {
         let mut r = String::new();
 
@@ -483,8 +506,15 @@ impl CodeGenerator {
                 let code = self.generate_function_call_code(&function_call);
                 write!(&mut r, "{}", code);
             }
-            ExpressionKind::ArrayItemAccess {array_name,access_expression} => {
+            ExpressionKind::ArrayItemAccess {
+                array_name,
+                access_expression,
+            } => {
                 let code = self.generate_array_item_access_code(&array_name, &access_expression);
+                write!(&mut r, "{}", code);
+            }
+            ExpressionKind::Object(record_name) => {
+                let code = self.generate_object_code(&record_name);
                 write!(&mut r, "{}", code);
             }
             panic_ => {

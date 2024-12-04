@@ -19,16 +19,22 @@
     ],
 	"repository": {
 		"keywords": {
-			"patterns": [{
-				"name": "keyword.control.postal",
-				"match": "\\b(if|else|loop|while|for|return|ret|fn|do|begin|end|it|idx|rec|external|int|real|str)\\b"
-			}]
+			"patterns": [
+                {
+				    "name": "keyword.control.postal",
+				    "match": "\\b(if|else|loop|while|for|return|ret|fn|do|begin|end|it|idx|rec|external|int|real|str|var|let|and|or|not|div|mod)\\b"
+			    },
+                {
+                    "name": "keyword.control.postal.iterator",   
+                    "match": "\\>\\>"
+                }
+            ]
 		},
 		"operators": {
 			"patterns": [{
 				"name": "operator.postal",
-				"match_backup": "[<>,.=;:\\+\\-\\/\\*\\[\\]]",
-				"match": "\\b(=|and|or|not|div|mod)\\b"
+				"match_backup": "[>,.=;:\\+\\-\\/\\*\\[\\]]",
+				"match": "\\b(and|or|not|div|mod)\\b"
 			}]
 		},
         "strings": {

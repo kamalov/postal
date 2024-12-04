@@ -26,6 +26,8 @@ Phase zero (basic syntax and type checking):
 
 Phase zero.1:
 -- refcounted memory management
+-- generics
+-- first class functions
 -- exceptions
 -- enums
 -- ? booleans
@@ -33,14 +35,12 @@ Phase zero.1:
 Phase one:
 -- multiple source files (modules)
 -- utf-8 strings
--- generics
 -- nested arrays
 -- function overload
 -- better compile error messages
 -- some kind of dynamic dispatch or discriminated unions (or both)
 
 Phase pre-last (bells and whistles):
--- first class functions
 -- variant data type
 -- IDE support (language server, etc.)
 -- semantic block comment (clojure style)

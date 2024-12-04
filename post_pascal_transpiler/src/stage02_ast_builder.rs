@@ -1,9 +1,9 @@
 #![allow(warnings)]
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap};
-use std::{fmt, vec};
+use std::collections::HashMap;
 use std::fmt::Write;
 use std::path::Iter;
+use std::{fmt, vec};
 
 use indexmap::IndexMap;
 
@@ -102,6 +102,7 @@ pub enum ExpressionKind {
         right: Expression,
     },
     Group(Vec<Expression>),
+    Object(String),
     ArrayItemAccess {
         array_name: String,
         access_expression: Expression,
@@ -110,6 +111,7 @@ pub enum ExpressionKind {
     // todo low: tmp operators, used only on parsing stage, not presented in final tree, needs refactoring
     Operator(String),
     ArrayBrackets(Expression),
+    ObjectLiteral,
 }
 
 #[derive(Debug, Clone)]
@@ -124,7 +126,7 @@ impl Expression {
         Expression {
             token: token.clone(),
             kind: Box::new(kind),
-            type_info: None
+            type_info: None,
         }
     }
 }
@@ -288,7 +290,7 @@ impl AstBuilder {
                         root_nodes.push(RootNode::Record(record));
                     }
                     else_ => {
-                        return Err(AstError::new(&token, "unexpected token 1"));
+                        return Err(AstError::new(&token, "unexpected token"));
                     }
                 },
                 TokenKind::Comment => {
@@ -297,7 +299,7 @@ impl AstBuilder {
                     root_nodes.push(RootNode::Comment(value));
                 }
                 _ => {
-                    return Err(AstError::new(&token, "unexpected token 11"));
+                    return Err(AstError::new(&token, "unexpected token"));
                 }
             }
         }
@@ -405,9 +407,7 @@ impl AstBuilder {
                     body: fn_body,
                 });
             }
-            else_ => {
-                Err(AstError::new(&self.peek_next(), "unexpected token 111"))
-            }
+            else_ => Err(AstError::new(&self.peek_next(), "unexpected token")),
         }
     }
 
@@ -644,10 +644,12 @@ impl AstBuilder {
         let iterable_name = name_token.value.clone();
 
         self.skip_expected(">>")?;
-        
+
         let block = if self.peek_next().value != "{" {
             let statement = self.parse_statement()?;
-            Block { statements: vec![statement] }
+            Block {
+                statements: vec![statement],
+            }
         } else {
             self.parse_block()?
         };
@@ -713,6 +715,14 @@ impl AstBuilder {
         Ok(Expression::new(&token, ExpressionKind::ArrayBrackets(expression)))
     }
 
+    fn parse_object_initializer(&mut self) -> AstResult<Expression> {
+        let token = self.peek_next().clone();
+        self.skip_expected("{")?;
+        self.skip_expected("}")?;
+
+        Ok(Expression::new(&token, ExpressionKind::ObjectLiteral))
+    }
+
     fn parse_expression_until(&mut self, terminators: &[&str]) -> AstResult<Expression> {
         let mut expressions = vec![];
         loop {
@@ -722,16 +732,23 @@ impl AstBuilder {
                     break;
                 }
 
-                if t.value == "(" {
-                    let expression = self.parse_group()?;
-                    expressions.push(expression);
-                    continue;
-                }
-
-                if t.value == "[" {
-                    let expression = self.parse_array_brackets()?;
-                    expressions.push(expression);
-                    continue;
+                match t.value.as_str() {
+                    "(" => {
+                        let expression = self.parse_group()?;
+                        expressions.push(expression);
+                        continue;
+                    }
+                    "[" => {
+                        let expression = self.parse_array_brackets()?;
+                        expressions.push(expression);
+                        continue;
+                    }
+                    "{" => {
+                        let expression = self.parse_object_initializer()?;
+                        expressions.push(expression);
+                        continue;
+                    }
+                    _ => {}
                 }
             }
 
@@ -841,7 +858,7 @@ impl AstBuilder {
                             });
 
                             let expression = Expression::new(&tree_node.expression.token, kind);
-                            
+
                             tree_node.expression = expression;
                             *next_expression_index += 1;
                             break;
@@ -852,7 +869,7 @@ impl AstBuilder {
                             panic!()
                         }
                     }
-                },
+                }
 
                 ExpressionKind::ArrayBrackets(array_indexed_access_expression) => {
                     //
@@ -875,10 +892,28 @@ impl AstBuilder {
                             panic!()
                         }
                     }
-                },
+                }
+
+                ExpressionKind::ObjectLiteral => {
+                    //
+                    match &*tree_node.expression.kind {
+                        ExpressionKind::Identifier(identifier_name) => {
+                            let kind = ExpressionKind::Object(identifier_name.clone());
+                            let expression = Expression::new(&tree_node.expression.token, kind);
+                            tree_node.expression = expression;
+                            *next_expression_index += 1;
+                            break;
+                        }
+
+                        else_ => {
+                            println!("{:?}", tree_node.expression);
+                            panic!()
+                        }
+                    }
+                }
 
                 _ => {
-                    return Err(AstError::new(&next_expression.token, "unexpected token 1111"));
+                    return Err(AstError::new(&next_expression.token, "unexpected token"));
                 }
             }
         }
