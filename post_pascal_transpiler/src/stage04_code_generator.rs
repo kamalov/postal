@@ -6,7 +6,8 @@ use indexmap::IndexMap;
 
 use crate::stage02_ast_builder::*;
 
-const OPERATORS_MAP: [(&str, &str); 10] = [
+const OPERATORS_MAP: [(&str, &str); 11] = [
+    (".", "->"),
     ("+", " + "),
     ("-", " - "),
     ("=", " == "),
@@ -43,14 +44,22 @@ fn convert_type_name_str(ti: &String) -> String {
     }
 }
 
-fn type_info_to_str(ti: &TypeInfo) -> String {
-    let type_name = convert_type_name_str(&ti.type_str);
+fn type_info_to_str(type_info: &TypeInfo) -> String {
+    let type_name = convert_type_name_str(&type_info.type_str);
 
-    if ti.is_array {
-        format!("std::vector<{}>", type_name)
+    if type_info.is_array {
+        if is_custom_type(type_info) {
+            format!("std::vector<{}*>", type_name)
+        } else {
+            format!("std::vector<{}>", type_name)
+        }
     } else {
         type_name
     }
+}
+
+fn is_custom_type(type_info: &TypeInfo) -> bool {
+    !["int", "real", "str"].contains(&type_info.type_str.as_str())
 }
 
 impl CodeGenerator {
@@ -97,7 +106,11 @@ impl CodeGenerator {
 
         for (field_name, type_info) in &record_node.fields {
             let type_info_str = type_info_to_str(type_info);
-            writeln!(&mut result_str, "{padding}{PADDING}{type_info_str} {field_name};");
+            if is_custom_type(type_info) || type_info.is_array {
+                writeln!(&mut result_str, "{padding}{PADDING}{type_info_str}* {field_name};");
+            } else {
+                writeln!(&mut result_str, "{padding}{PADDING}{type_info_str} {field_name};");
+            }
         }
 
         writeln!(&mut result_str, "}};");
@@ -136,7 +149,13 @@ impl CodeGenerator {
             );
 
             for (name, type_info) in &function_node.vars {
-                writeln!(&mut r, "    {} {name};", type_info_to_str(type_info));
+                let generated_type_str = type_info_to_str(type_info);
+                let is_custom_type = is_custom_type(&type_info);
+                if is_custom_type || type_info.is_array{
+                    writeln!(&mut r, "    {generated_type_str}* {name} = new {generated_type_str}();");
+                } else {
+                    writeln!(&mut r, "    {generated_type_str} {name};");
+                }
             }
 
             write!(&mut r, "{fn_body_code}");
@@ -152,7 +171,12 @@ impl CodeGenerator {
     fn generate_function_declaration_params_code(&self, params: &IndexMap<String, TypeInfo>) -> String {
         let mut parts = vec![];
         for (name, type_info) in params {
-            let s = format!("{} {}", type_info_to_str(type_info), name);
+            let generated_type_str = type_info_to_str(type_info);
+            let s = if is_custom_type(type_info) || type_info.is_array {
+                format!("{generated_type_str}* {name}")
+            } else {
+                format!("{generated_type_str} {name}")
+            };
             parts.push(s);
         }
 
@@ -381,7 +405,7 @@ impl CodeGenerator {
             "push" => {
                 let name = &param_names[0];
                 let value = &param_names[1];
-                write!(&mut r, "{}.push_back({})", name, value);
+                write!(&mut r, "{}->push_back({})", name, value);
             }
 
             _ => {
@@ -412,13 +436,11 @@ impl CodeGenerator {
         s
     }
 
-    fn generate_array_item_access_code(&mut self, array_name: &String, index_expression: &Expression) -> String {
+    fn generate_array_item_access_code(&mut self, array_expression: &Expression, index_expression: &Expression) -> String {
         let mut s = String::new();
-
-        let expression_code = self.generate_expression_code(index_expression);
-
-        write!(&mut s, "{}[{}]", array_name, expression_code);
-
+        let array_expression_code = self.generate_expression_code(array_expression);
+        let index_expression_code = self.generate_expression_code(index_expression);
+        write!(&mut s, "{array_expression_code}->at({index_expression_code})");
         s
     }
 
@@ -443,7 +465,7 @@ impl CodeGenerator {
 
     fn generate_object_code(&mut self, record_name: &str) -> String {
         let mut result_str = String::new();
-        write!(&mut result_str, "{record_name} {{}}");
+        write!(&mut result_str, "new {record_name}()");
         result_str
     }
 
@@ -507,10 +529,10 @@ impl CodeGenerator {
                 write!(&mut r, "{}", code);
             }
             ExpressionKind::ArrayItemAccess {
-                array_name,
+                array_expression,
                 access_expression,
             } => {
-                let code = self.generate_array_item_access_code(&array_name, &access_expression);
+                let code = self.generate_array_item_access_code(&array_expression, &access_expression);
                 write!(&mut r, "{}", code);
             }
             ExpressionKind::Object(record_name) => {

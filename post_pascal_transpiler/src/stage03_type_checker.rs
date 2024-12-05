@@ -271,7 +271,20 @@ impl TypeChecker {
 
                 return Ok(last_type_info);
             }
-            ExpressionKind::ArrayItemAccess { array_name, access_expression } => {
+            ExpressionKind::ArrayItemAccess { array_expression, access_expression } => {
+                let array_type_info = self.get_expression_type(&array_expression)?;
+
+                // let array_type_info = match self.get_function_param_or_var_type(&array_name) {
+                //     Some(type_info) => type_info,
+                //     None => {
+                //         return Err(TypeCheckError::new(&expression.token, format!("undeclared array '{array_name}'")));
+                //     }
+                // };
+
+                if !array_type_info.is_array {
+                    return Err(TypeCheckError::new(&expression.token, format!("not an array")));
+                }
+
                 let accessor_type_info = self.get_expression_type(&access_expression)?;
 
                 if accessor_type_info.is_array || accessor_type_info.type_str != "int" {
@@ -279,17 +292,6 @@ impl TypeChecker {
                         &expression.token,
                         format!("incorrect index type '{accessor_type_info}'"),
                     ));
-                }
-
-                let array_type_info = match self.get_function_param_or_var_type(&array_name) {
-                    Some(type_info) => type_info,
-                    None => {
-                        return Err(TypeCheckError::new(&expression.token, format!("undeclared array '{array_name}'")));
-                    }
-                };
-
-                if !array_type_info.is_array {
-                    return Err(TypeCheckError::new(&expression.token, format!("not an array: '{array_name}'")));
                 }
 
                 return Ok(TypeInfo {

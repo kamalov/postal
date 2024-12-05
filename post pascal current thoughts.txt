@@ -28,6 +28,7 @@ Phase zero.1:
 -- refcounted memory management
 -- generics
 -- first class functions
+-- ranges
 -- exceptions
 -- enums
 -- ? booleans

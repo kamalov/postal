@@ -6,10 +6,7 @@ fn sort_int_array(a: [int]) [int] external
 fn int_array_len(a: [int]) int external
 
 fn abs_int(a: int) int
-begin
-    if a < 0 {
-        ret 0 - a
-    } 
+    if a < 0 do ret 0 - a
     ret a
 end
 
@@ -18,57 +15,37 @@ rec Report {
 }
 
 fn is_valid(vals: [int]) 
-begin
     prev_d = vals[0] - vals[1]
-    if prev_d = 0 or abs_int(prev_d) > 3 {
-        ret 0
-    }
+    if prev_d = 0 or abs_int(prev_d) > 3 do ret 0
     i = 2
     prev = vals[1]
     loop {
         v = vals[i]
         d = prev - v
-        if d = 0 or abs_int(d) > 3 {
-            ret 0
-        }
-        
-        if prev_d < 0 and d > 0 or prev_d > 0 and d < 0 {
-            ret 0
-        }
-
+        if d = 0 or abs_int(d) > 3 do ret 0
+        if (prev_d < 0 and d > 0) or (prev_d > 0 and d < 0) do ret 0
         prev_d = d
         prev = v
-
+         
         i = i + 1
-        if i >= int_array_len(vals) {
-            break
-        }
+        if i >= int_array_len(vals) do break
     }
 
     ret 1
 end
 
 fn is_any_valid(vals: [int]) 
-begin
     vals >> {
         r = Report {}
         skip_index = idx
-        vals >> {
-            if idx <> skip_index {
-                push(r.values, it)
-            }
-        }
-
-        if is_valid(r.values) {
-            ret 1
-        }
+        vals >> if idx <> skip_index do push(r.values, it)
+        if is_valid(r.values) do ret 1
     }
 
     ret 0
 end
 
 fn run
-begin
     lines = read_lines('D:/src/postal/aoc2024/input.txt')
     
     reports: [Report] 

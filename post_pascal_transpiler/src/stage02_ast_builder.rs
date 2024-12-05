@@ -104,7 +104,7 @@ pub enum ExpressionKind {
     Group(Vec<Expression>),
     Object(String),
     ArrayItemAccess {
-        array_name: String,
+        array_expression: Expression,
         access_expression: Expression,
     },
 
@@ -387,28 +387,23 @@ impl AstBuilder {
             self.fn_declarations.insert(fn_name, fn_declaration.clone());
         }
 
-        self.skip_line_end_tokens();
-        match self.peek_next().value.as_str() {
-            "external" => {
-                self.skip_expected("external")?;
-                return Ok(Function {
-                    is_external: true,
-                    declaration: fn_declaration,
-                    vars: IndexMap::new(),
-                    body: Block { statements: vec![] },
-                });
-            }
-            "begin" => {
-                let fn_body = self.parse_function_body()?;
-                return Ok(Function {
-                    is_external: false,
-                    declaration: fn_declaration,
-                    vars: IndexMap::new(),
-                    body: fn_body,
-                });
-            }
-            else_ => Err(AstError::new(&self.peek_next(), "unexpected token")),
+        if self.try_skip("external") {
+            self.skip_line_end_tokens();
+            return Ok(Function {
+                is_external: true,
+                declaration: fn_declaration,
+                vars: IndexMap::new(),
+                body: Block { statements: vec![] },
+            });
         }
+        
+        let fn_body = self.parse_function_body()?;
+        return Ok(Function {
+            is_external: false,
+            declaration: fn_declaration,
+            vars: IndexMap::new(),
+            body: fn_body,
+        });
     }
 
     fn parse_function_declaration_params(&mut self) -> AstResult<IndexMap<String, TypeInfo>> {
@@ -460,9 +455,7 @@ impl AstBuilder {
     }
 
     fn parse_function_return_type(&mut self) -> AstResult<Option<TypeInfo>> {
-        self.skip_line_end_tokens();
-
-        let next_possibles = ["external", "begin"];
+        let next_possibles = ["external", "\n"];
 
         if next_possibles.contains(&self.peek_next().value.as_str()) {
             return Ok(None);
@@ -475,7 +468,7 @@ impl AstBuilder {
 
     fn parse_function_body(&mut self) -> AstResult<Block> {
         self.skip_line_end_tokens();
-        self.skip_expected("begin")?;
+        //self.skip_expected("begin")?;
         let mut statements = vec![];
         loop {
             self.skip_line_end_tokens();
@@ -607,7 +600,15 @@ impl AstBuilder {
         let mut if_blocks: Vec<(Expression, Block)> = Vec::new();
         let mut else_block = None;
 
-        let condition = self.parse_expression_until(&["{"])?;
+        let condition = self.parse_expression_until(&["do", "{"])?;
+
+        if self.try_skip("do") {
+            let statement = self.parse_statement()?;
+            let block = Block { statements: vec![statement] };
+            if_blocks.push((condition, block));
+            return Ok(IfStatement { if_blocks, else_block: None })
+        }
+
         let block = self.parse_block()?;
         if_blocks.push((condition, block));
 
@@ -727,11 +728,12 @@ impl AstBuilder {
         let mut expressions = vec![];
         loop {
             let t = self.peek_next();
-            if t.kind == TokenKind::SpecialSymbol {
-                if terminators.contains(&t.value.as_str()) {
-                    break;
-                }
 
+            if terminators.contains(&t.value.as_str()) {
+                break;
+            }
+
+            if t.kind == TokenKind::SpecialSymbol {
                 match t.value.as_str() {
                     "(" => {
                         let expression = self.parse_group()?;
@@ -816,12 +818,13 @@ impl AstBuilder {
             }
 
             let next_expression = &expressions[*next_expression_index];
+            //println!("{next_expression:?}");
 
             match &*next_expression.kind {
                 ExpressionKind::Operator(operator) => {
                     let next_priority = *self.tokenizer.priorities.get(operator).unwrap();
 
-                    if next_priority < priority {
+                    if next_priority <= priority {
                         break;
                     }
 
@@ -872,26 +875,18 @@ impl AstBuilder {
                 }
 
                 ExpressionKind::ArrayBrackets(array_indexed_access_expression) => {
-                    //
-                    match &*tree_node.expression.kind {
-                        ExpressionKind::Identifier(identifier_name) => {
-                            let kind = ExpressionKind::ArrayItemAccess {
-                                array_name: identifier_name.clone(),
-                                access_expression: array_indexed_access_expression.clone(),
-                            };
+                    let next_priority = *self.tokenizer.priorities.get("[]").unwrap();
 
-                            let expression = Expression::new(&tree_node.expression.token, kind);
-
-                            tree_node.expression = expression;
-                            *next_expression_index += 1;
-                            break;
-                        }
-
-                        else_ => {
-                            println!("{:?}", tree_node.expression);
-                            panic!()
-                        }
+                    if next_priority <= priority {
+                        break;
                     }
+
+                    tree_node = TreeNode {
+                        expression: next_expression.clone(),
+                        childs: vec![tree_node]
+                    };
+                    *next_expression_index += 1;
+                    break;
                 }
 
                 ExpressionKind::ObjectLiteral => {
@@ -926,10 +921,23 @@ impl AstBuilder {
             ExpressionKind::Operator(op) => {
                 let left = self.tree_node_to_expression(&tree_node.childs[0])?;
                 let right = self.tree_node_to_expression(&tree_node.childs[1])?;
+                // println!("{:?}", left);
+                // println!("{:?}", right);
                 let kind = ExpressionKind::BinaryOperation {
                     operation: op.clone(),
                     left: left,
                     right: right,
+                };
+
+                let expression = Expression::new(&tree_node.expression.token, kind);
+                return Ok(expression);
+            }
+
+            ExpressionKind::ArrayBrackets(access_expression) => {
+                let array_expression = self.tree_node_to_expression(&tree_node.childs[0])?;
+                let kind = ExpressionKind::ArrayItemAccess { 
+                    array_expression, 
+                    access_expression: access_expression.clone()
                 };
 
                 let expression = Expression::new(&tree_node.expression.token, kind);
