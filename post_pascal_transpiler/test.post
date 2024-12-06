@@ -1,7 +1,15 @@
-rec A {
-   
-}
+fn is_valid(vals: [int]) 
+    ret 1
+end
+
+fn is_any_valid(vals: [int]) 
+   if is_valid(r.values) {
+      ret 1
+   }
+end
 
 fn run
-   a = A {}
+   //a = b.c
+   //log(b.c)
+   //a = test(b.c)
 end
