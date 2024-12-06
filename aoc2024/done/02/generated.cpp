@@ -6,12 +6,12 @@
 
 #include "my_lib.h"
 
-std::vector<std::string> read_lines(std::string filename);
-std::vector<std::string> split_str(std::string s, std::string by);
+std::vector<std::string>* read_lines(std::string filename);
+std::vector<std::string>* split_str(std::string s, std::string by);
 long long str_to_int(std::string s);
 std::string int_to_str(long long i);
-std::vector<long long> sort_int_array(std::vector<long long> a);
-long long int_array_len(std::vector<long long> a);
+// fn sort_int_array(a: [int]) [int] external
+long long int_array_len(std::vector<long long>* a);
 long long abs_int(long long a) {
 
     if (a < 0) {
@@ -21,32 +21,32 @@ long long abs_int(long long a) {
 }
 
 struct Report {
-    std::vector<long long> values;
+    std::vector<long long>* values;
 };
 
-long long is_valid(std::vector<long long> vals) {
+long long is_valid(std::vector<long long>* vals) {
     long long prev_d;
     long long i;
     long long prev;
     long long v;
     long long d;
-    prev_d = vals[0] - vals[1];
+    prev_d = vals->at(0) - vals->at(1);
 
     if (prev_d == 0 || abs_int(prev_d) > 3) {
         return 0;
     };
     i = 2;
-    prev = vals[1];
+    prev = vals->at(1);
 
     for (;;) {
-        v = vals[i];
+        v = vals->at(i);
         d = prev - v;
 
         if (d == 0 || abs_int(d) > 3) {
             return 0;
         };
 
-        if (prev_d < 0 && d > 0 || prev_d > 0 && d < 0) {
+        if ((prev_d < 0 && d > 0) || (prev_d > 0 && d < 0)) {
             return 0;
         };
         prev_d = d;
@@ -60,24 +60,24 @@ long long is_valid(std::vector<long long> vals) {
     return 1;
 }
 
-long long is_any_valid(std::vector<long long> vals) {
-    Report r;
+long long is_any_valid(std::vector<long long>* vals) {
+    std::vector<long long>* values;
     long long skip_index;
 
-    for (int vals__it0__idx = 0; vals__it0__idx < vals.size(); vals__it0__idx++) {
-        long long vals__it0 = vals[vals__it0__idx];
-        r = Report {};
+    for (int vals__it0__idx = 0; vals__it0__idx < vals->size(); vals__it0__idx++) {
+        long long vals__it0 = vals->at(vals__it0__idx);
+        values = new std::vector<long long>();
         skip_index = vals__it0__idx;
 
-        for (int vals__it1__idx = 0; vals__it1__idx < vals.size(); vals__it1__idx++) {
-            long long vals__it1 = vals[vals__it1__idx];
+        for (int vals__it1__idx = 0; vals__it1__idx < vals->size(); vals__it1__idx++) {
+            long long vals__it1 = vals->at(vals__it1__idx);
 
             if (vals__it1__idx != skip_index) {
-                r.values.push_back(vals__it1);
+                values->push_back(vals__it1);
             };
         }
 
-        if (is_valid(r.values)) {
+        if (is_valid(values)) {
             return 1;
         };
     }
@@ -85,35 +85,36 @@ long long is_any_valid(std::vector<long long> vals) {
 }
 
 void run() {
-    std::vector<std::string> lines;
-    std::vector<Report> reports;
-    std::vector<std::string> tokens;
-    Report report;
+    std::vector<std::string>* lines;
+    std::vector<Report*>* reports = new std::vector<Report*>();
+    std::vector<std::string>* tokens;
+    Report* report = new Report();
     long long valid_count;
     std::string s;
-    std::vector<long long> values;
+    std::vector<long long>* values;
     lines = read_lines("D:/src/postal/aoc2024/input.txt"s);
 
-    for (int lines__it0__idx = 0; lines__it0__idx < lines.size(); lines__it0__idx++) {
-        std::string lines__it0 = lines[lines__it0__idx];
+    for (int lines__it0__idx = 0; lines__it0__idx < lines->size(); lines__it0__idx++) {
+        std::string lines__it0 = lines->at(lines__it0__idx);
         tokens = split_str(lines__it0, " "s);
-        report = Report {};
+        report = new Report();
+        report->values = new std::vector<long long>();
 
-        for (int tokens__it1__idx = 0; tokens__it1__idx < tokens.size(); tokens__it1__idx++) {
-            std::string tokens__it1 = tokens[tokens__it1__idx];
-            report.values.push_back(str_to_int(tokens__it1));
+        for (int tokens__it1__idx = 0; tokens__it1__idx < tokens->size(); tokens__it1__idx++) {
+            std::string tokens__it1 = tokens->at(tokens__it1__idx);
+            report->values->push_back(str_to_int(tokens__it1));
         }
-        reports.push_back(report);
+        reports->push_back(report);
     }
     valid_count = 0;
 
-    for (int reports__it2__idx = 0; reports__it2__idx < reports.size(); reports__it2__idx++) {
-        Report reports__it2 = reports[reports__it2__idx];
+    for (int reports__it2__idx = 0; reports__it2__idx < reports->size(); reports__it2__idx++) {
+        Report* reports__it2 = reports->at(reports__it2__idx);
         s = ""s;
-        values = reports__it2.values;
+        values = reports__it2->values;
 
-        for (int values__it3__idx = 0; values__it3__idx < values.size(); values__it3__idx++) {
-            long long values__it3 = values[values__it3__idx];
+        for (int values__it3__idx = 0; values__it3__idx < values->size(); values__it3__idx++) {
+            long long values__it3 = values->at(values__it3__idx);
             s = s + " -> "s + int_to_str(values__it3);
         }
         printf("%s\n", (s).c_str());

@@ -6,31 +6,128 @@
 
 #include "my_lib.h"
 
-struct B {
-    double value;
+std::vector<std::string>* read_lines(std::string filename);
+std::vector<std::string>* split_str(std::string s, std::string by);
+long long str_to_int(std::string s);
+std::string int_to_str(long long i);
+// fn sort_int_array(a: [int]) [int] external
+long long int_array_len(std::vector<long long>* a);
+long long abs_int(long long a) {
+
+    if (a < 0) {
+        return 0 - a;
+    };
+    return a;
+}
+
+struct Report {
+    std::vector<long long>* values;
 };
 
-struct A {
-    std::vector<B*>* b;
-};
+long long is_valid(std::vector<long long>* vals) {
+    long long prev_d;
+    long long i;
+    long long prev;
+    long long v;
+    long long d;
+    prev_d = vals->at(0) - vals->at(1);
+
+    if (prev_d == 0 || abs_int(prev_d) > 3) {
+        return 0;
+    };
+    i = 2;
+    prev = vals->at(1);
+
+    for (;;) {
+        v = vals->at(i);
+        d = prev - v;
+
+        if (d == 0 || abs_int(d) > 3) {
+            return 0;
+        };
+
+        if ((prev_d < 0 && d > 0) || (prev_d > 0 && d < 0)) {
+            return 0;
+        };
+        prev_d = d;
+        prev = v;
+        i = i + 1;
+
+        if (i >= int_array_len(vals)) {
+            break;
+        };
+    }
+    return 1;
+}
+
+long long is_any_valid(std::vector<long long>* vals) {
+    std::vector<long long>* values;
+    long long skip_index;
+
+    for (int vals__it0__idx = 0; vals__it0__idx < vals->size(); vals__it0__idx++) {
+        long long vals__it0 = vals->at(vals__it0__idx);
+        values = new std::vector<long long>();
+        skip_index = vals__it0__idx;
+
+        for (int vals__it1__idx = 0; vals__it1__idx < vals->size(); vals__it1__idx++) {
+            long long vals__it1 = vals->at(vals__it1__idx);
+
+            if (vals__it1__idx != skip_index) {
+                values->push_back(vals__it1);
+            };
+        }
+
+        if (is_valid(values)) {
+            return 1;
+        };
+    }
+    return 0;
+}
 
 void run() {
-    std::vector<long long>* a = new std::vector<long long>();
-    long long b;
-    long long d;
-    A* aa = new A();
-    a->push_back(1);
-    b = a->at(0);
-    printf("%lld\n", static_cast<long long>(b));
-    // a = T {}
-    // push(a.b, 1)
-    // log(a.b[1])
-    d = 1;
-    d = d + d*d;
-    aa = new A();
-    aa->b->push_back(1);
-    aa->b->at(0)->value = 1;
-    printf("%f\n", aa->b->at(0)->value);
+    std::vector<std::string>* lines;
+    std::vector<Report*>* reports = new std::vector<Report*>();
+    std::vector<std::string>* tokens;
+    Report* report = new Report();
+    long long valid_count;
+    std::string s;
+    std::vector<long long>* values;
+    lines = read_lines("D:/src/postal/aoc2024/input.txt"s);
+
+    for (int lines__it0__idx = 0; lines__it0__idx < lines->size(); lines__it0__idx++) {
+        std::string lines__it0 = lines->at(lines__it0__idx);
+        tokens = split_str(lines__it0, " "s);
+        report = new Report();
+        report->values = new std::vector<long long>();
+
+        for (int tokens__it1__idx = 0; tokens__it1__idx < tokens->size(); tokens__it1__idx++) {
+            std::string tokens__it1 = tokens->at(tokens__it1__idx);
+            report->values->push_back(str_to_int(tokens__it1));
+        }
+        reports->push_back(report);
+    }
+    valid_count = 0;
+
+    for (int reports__it2__idx = 0; reports__it2__idx < reports->size(); reports__it2__idx++) {
+        Report* reports__it2 = reports->at(reports__it2__idx);
+        s = ""s;
+        values = reports__it2->values;
+
+        for (int values__it3__idx = 0; values__it3__idx < values->size(); values__it3__idx++) {
+            long long values__it3 = values->at(values__it3__idx);
+            s = s + " -> "s + int_to_str(values__it3);
+        }
+        printf("%s\n", (s).c_str());
+
+        if (is_any_valid(values)) {
+            valid_count = valid_count + 1;
+            printf("%s\n", ("valid"s).c_str());
+        }
+        else {
+            printf("%s\n", ("invalid"s).c_str());
+        };
+    }
+    printf("%lld\n", static_cast<long long>(valid_count));
 }
 
 

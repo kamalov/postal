@@ -3,6 +3,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::fmt::Write;
 use std::path::Iter;
+use std::process::id;
 use std::{fmt, vec};
 
 use indexmap::IndexMap;
@@ -96,19 +97,20 @@ pub enum ExpressionKind {
     RealLiteral(String),
     StringLiteral(String),
     Identifier(String),
+    Group(Vec<Expression>),
+    ObjectInitializer(String),
+    ArrayInitializer(String),
     BinaryOperation {
         operation: String,
         left: Expression,
         right: Expression,
     },
-    Group(Vec<Expression>),
-    Object(String),
     ArrayItemAccess {
         array_expression: Expression,
         access_expression: Expression,
     },
 
-    // todo low: tmp operators, used only on parsing stage, not presented in final tree, needs refactoring
+    // todo (low priority): tmp operators, used only on parsing stage, not presented in final tree, needs refactoring
     Operator(String),
     ArrayBrackets(Expression),
     ObjectLiteral,
@@ -710,7 +712,7 @@ impl AstBuilder {
     fn parse_array_brackets(&mut self) -> AstResult<Expression> {
         let token = self.peek_next().clone();
         self.skip_expected("[")?;
-        let expression = self.parse_expression_until(&[",", "]"])?;
+        let expression = self.parse_expression_until(&["]"])?;
         self.skip_expected("]")?;
 
         Ok(Expression::new(&token, ExpressionKind::ArrayBrackets(expression)))
@@ -724,6 +726,9 @@ impl AstBuilder {
         Ok(Expression::new(&token, ExpressionKind::ObjectLiteral))
     }
 
+    /// stage 1: parse expression tokens into list
+    /// stage 2: convert list into intermediate tree by operation precedence (expressions_to_tree_node)
+    /// stage 3: convert intermediate tree into expression (tree_node_to_expression)
     fn parse_expression_until(&mut self, terminators: &[&str]) -> AstResult<Expression> {
         let mut expressions = vec![];
         loop {
@@ -764,6 +769,10 @@ impl AstBuilder {
                     let expression = Expression::new(token, ExpressionKind::Identifier(value));
                     expressions.push(expression);
                 }
+                TokenKind::Keyword => {
+                    let expression = Expression::new(token, ExpressionKind::Identifier(value));
+                    expressions.push(expression);
+                }
                 TokenKind::SpecialSymbol => {
                     let expression = Expression::new(token, ExpressionKind::Operator(value));
                     expressions.push(expression);
@@ -793,7 +802,6 @@ impl AstBuilder {
         loop {
             if index < expressions.len() {
                 root = self.expressions_to_tree_node(&expressions, &mut index, root, 0)?;
-                //println!("{:?}", root);
             } else {
                 break;
             }
@@ -818,7 +826,6 @@ impl AstBuilder {
             }
 
             let next_expression = &expressions[*next_expression_index];
-            //println!("{next_expression:?}");
 
             match &*next_expression.kind {
                 ExpressionKind::Operator(operator) => {
@@ -893,7 +900,7 @@ impl AstBuilder {
                     //
                     match &*tree_node.expression.kind {
                         ExpressionKind::Identifier(identifier_name) => {
-                            let kind = ExpressionKind::Object(identifier_name.clone());
+                            let kind = ExpressionKind::ObjectInitializer(identifier_name.clone());
                             let expression = Expression::new(&tree_node.expression.token, kind);
                             tree_node.expression = expression;
                             *next_expression_index += 1;
@@ -934,14 +941,27 @@ impl AstBuilder {
             }
 
             ExpressionKind::ArrayBrackets(access_expression) => {
-                let array_expression = self.tree_node_to_expression(&tree_node.childs[0])?;
-                let kind = ExpressionKind::ArrayItemAccess { 
-                    array_expression, 
-                    access_expression: access_expression.clone()
-                };
-
-                let expression = Expression::new(&tree_node.expression.token, kind);
-                return Ok(expression);
+                if tree_node.childs.is_empty() {
+                    match &*access_expression.kind {
+                        ExpressionKind::Identifier(identifier) => {
+                            let kind = ExpressionKind::ArrayInitializer(identifier.clone());
+                            let expression = Expression::new(&tree_node.expression.token, kind);
+                            return Ok(expression);
+                        }
+                        _ => {
+                            return Err(AstError::new(&access_expression.token, "expected identifier in array initializer"));                        
+                        }
+                    }
+                } else {
+                    let array_expression = self.tree_node_to_expression(&tree_node.childs[0])?;
+                    let kind = ExpressionKind::ArrayItemAccess { 
+                        array_expression, 
+                        access_expression: access_expression.clone()
+                    };
+    
+                    let expression = Expression::new(&tree_node.expression.token, kind);
+                    return Ok(expression);
+                }
             }
 
             else_ => {

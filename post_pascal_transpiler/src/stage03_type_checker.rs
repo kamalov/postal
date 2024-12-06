@@ -36,6 +36,14 @@ pub struct TypeChecker {
     ctx: CurrentFunctionContext,
 }
 
+pub const BUILTIN_TYPES: [&str; 3] = [
+    "int", "real", "str" //
+];
+
+pub fn is_builtin_type(type_str: &str) -> bool {
+    BUILTIN_TYPES.contains(&type_str)
+}
+
 fn get_common_type(a: &TypeInfo, b: &TypeInfo) -> Result<TypeInfo, ()> {
     if a.is_array && b.is_array {
         if a.type_str == b.type_str {
@@ -299,7 +307,22 @@ impl TypeChecker {
                     type_str: array_type_info.type_str.clone()
                 });
             }
-            ExpressionKind::Object(record_name) => {
+            ExpressionKind::ArrayInitializer(identifier) => {
+                let type_info = TypeInfo {
+                    is_array: true,
+                    type_str: identifier.clone(),
+                };
+
+                if is_builtin_type(&type_info.type_str) || self.ast_builder.records.contains_key(identifier) {
+                    return Ok(type_info);
+                }
+
+                return Err(TypeCheckError::new(
+                    &expression.token,
+                    format!("unknown type: '{identifier}'"),
+                ));
+            }
+            ExpressionKind::ObjectInitializer(record_name) => {
                 match self.ast_builder.records.get(record_name) {
                     Some(record) => {
                         return Ok(TypeInfo {

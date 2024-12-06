@@ -5,6 +5,7 @@ use std::fmt::Write;
 use indexmap::IndexMap;
 
 use crate::stage02_ast_builder::*;
+use crate::stage03_type_checker::*;
 
 const OPERATORS_MAP: [(&str, &str); 11] = [
     (".", "->"),
@@ -44,11 +45,11 @@ fn convert_type_name_str(ti: &String) -> String {
     }
 }
 
-fn type_info_to_str(type_info: &TypeInfo) -> String {
+fn type_info_to_str1(type_info: &TypeInfo) -> String {
     let type_name = convert_type_name_str(&type_info.type_str);
 
     if type_info.is_array {
-        if is_custom_type(type_info) {
+        if is_custom_type(&type_info.type_str) {
             format!("std::vector<{}*>", type_name)
         } else {
             format!("std::vector<{}>", type_name)
@@ -58,8 +59,28 @@ fn type_info_to_str(type_info: &TypeInfo) -> String {
     }
 }
 
-fn is_custom_type(type_info: &TypeInfo) -> bool {
-    !["int", "real", "str"].contains(&type_info.type_str.as_str())
+fn type_info_to_declaration_str(type_info: &TypeInfo) -> String {
+    let type_str = type_info_to_str1(&type_info);
+
+    if is_custom_type(&type_info.type_str) || type_info.is_array {
+        return format!("{type_str}*");
+    }
+
+    type_str
+}
+
+fn type_info_to_initializer_str(type_info: &TypeInfo) -> String {
+    let type_str = type_info_to_str1(&type_info);
+
+    if is_custom_type(&type_info.type_str) || type_info.is_array {
+        return format!("new {type_str}()",);
+    }
+
+    type_str
+}
+
+fn is_custom_type(type_str: &str) -> bool {
+    !BUILTIN_TYPES.contains(&type_str)
 }
 
 impl CodeGenerator {
@@ -105,12 +126,11 @@ impl CodeGenerator {
         writeln!(&mut result_str, "{padding}struct {} {{", record_node.name);
 
         for (field_name, type_info) in &record_node.fields {
-            let type_info_str = type_info_to_str(type_info);
-            if is_custom_type(type_info) || type_info.is_array {
-                writeln!(&mut result_str, "{padding}{PADDING}{type_info_str}* {field_name};");
-            } else {
-                writeln!(&mut result_str, "{padding}{PADDING}{type_info_str} {field_name};");
-            }
+            let type_declaration_str = type_info_to_declaration_str(type_info);
+            writeln!(
+                &mut result_str,
+                "{padding}{PADDING}{type_declaration_str} {field_name};"
+            );
         }
 
         writeln!(&mut result_str, "}};");
@@ -131,7 +151,7 @@ impl CodeGenerator {
 
         let mut r = String::new();
         let return_type_str = match &function_node.declaration.return_type {
-            Some(info) => type_info_to_str(info),
+            Some(info) => type_info_to_declaration_str(info),
             None => "void".to_string(),
         };
 
@@ -149,12 +169,12 @@ impl CodeGenerator {
             );
 
             for (name, type_info) in &function_node.vars {
-                let generated_type_str = type_info_to_str(type_info);
-                let is_custom_type = is_custom_type(&type_info);
-                if is_custom_type || type_info.is_array{
-                    writeln!(&mut r, "    {generated_type_str}* {name} = new {generated_type_str}();");
+                let type_declaration_str = type_info_to_declaration_str(type_info);
+                if is_custom_type(&type_info.type_str) {
+                    let type_initializer_str = type_info_to_initializer_str(type_info);
+                    writeln!(&mut r, "    {type_declaration_str} {name} = {type_initializer_str};");
                 } else {
-                    writeln!(&mut r, "    {generated_type_str} {name};");
+                    writeln!(&mut r, "    {type_declaration_str} {name};");
                 }
             }
 
@@ -171,12 +191,8 @@ impl CodeGenerator {
     fn generate_function_declaration_params_code(&self, params: &IndexMap<String, TypeInfo>) -> String {
         let mut parts = vec![];
         for (name, type_info) in params {
-            let generated_type_str = type_info_to_str(type_info);
-            let s = if is_custom_type(type_info) || type_info.is_array {
-                format!("{generated_type_str}* {name}")
-            } else {
-                format!("{generated_type_str} {name}")
-            };
+            let type_declaration_str = type_info_to_declaration_str(type_info);
+            let s = format!("{type_declaration_str} {name}");
             parts.push(s);
         }
 
@@ -301,14 +317,13 @@ impl CodeGenerator {
         let mut ctx = self.current_function_context.as_mut().unwrap();
         let index = ctx.iterators_count;
         ctx.iterators_count += 1;
-        let iteratable_type_info = 
-            match ctx.function_node.vars.get(&iteration_node.iterable_name) {
+        let iteratable_type_info = match ctx.function_node.vars.get(&iteration_node.iterable_name) {
+            Some(type_info) => Some(type_info),
+            None => match ctx.function_node.declaration.params.get(&iteration_node.iterable_name) {
                 Some(type_info) => Some(type_info),
-                None => match ctx.function_node.declaration.params.get(&iteration_node.iterable_name) {
-                    Some(type_info) => Some(type_info),
-                    None => None,
-                },
-            };
+                None => None,
+            },
+        };
 
         let iteratable_type_info = iteratable_type_info.unwrap();
 
@@ -322,18 +337,17 @@ impl CodeGenerator {
         writeln!(&mut r, "");
         writeln!(
             &mut r,
-            "{0}for (int {1} = 0; {1} < {2}.size(); {1}++) {{",
+            "{0}for (int {1} = 0; {1} < {2}->size(); {1}++) {{",
             padding, it_index_name, iteratable_name
         );
+        let type_info = TypeInfo {
+            is_array: false,
+            type_str: it_type_name.clone(),
+        };
+        let type_declaration_str = type_info_to_declaration_str(&type_info);
         writeln!(
             &mut r,
-            "{}{}{} {} = {}[{}];",
-            padding,
-            PADDING,
-            convert_type_name_str(&it_type_name),
-            it_name,
-            iteratable_name,
-            it_index_name
+            "{padding}{PADDING}{type_declaration_str} {it_name} = {iteratable_name}->at({it_index_name});"
         );
 
         write!(&mut r, "{}", block);
@@ -436,12 +450,28 @@ impl CodeGenerator {
         s
     }
 
-    fn generate_array_item_access_code(&mut self, array_expression: &Expression, index_expression: &Expression) -> String {
+    fn generate_array_item_access_code(
+        &mut self,
+        array_expression: &Expression,
+        index_expression: &Expression,
+    ) -> String {
         let mut s = String::new();
         let array_expression_code = self.generate_expression_code(array_expression);
         let index_expression_code = self.generate_expression_code(index_expression);
         write!(&mut s, "{array_expression_code}->at({index_expression_code})");
         s
+    }
+
+    fn generate_array_initializer_code(&mut self, type_identifier: &str) -> String {
+        let mut result_str = String::new();
+
+        let type_info = TypeInfo {
+            is_array: true,
+            type_str: type_identifier.to_string(),
+        };
+        let type_initializer_str = type_info_to_initializer_str(&type_info);
+        write!(&mut result_str, "{type_initializer_str}");
+        result_str
     }
 
     fn generate_variable_assignment_code(&mut self, v: &VariableAssignment, padding: &str) -> String {
@@ -463,8 +493,9 @@ impl CodeGenerator {
         result_str
     }
 
-    fn generate_object_code(&mut self, record_name: &str) -> String {
+    fn generate_object_initializer_code(&mut self, record_name: &str) -> String {
         let mut result_str = String::new();
+
         write!(&mut result_str, "new {record_name}()");
         result_str
     }
@@ -535,8 +566,12 @@ impl CodeGenerator {
                 let code = self.generate_array_item_access_code(&array_expression, &access_expression);
                 write!(&mut r, "{}", code);
             }
-            ExpressionKind::Object(record_name) => {
-                let code = self.generate_object_code(&record_name);
+            ExpressionKind::ArrayInitializer(type_identifier) => {
+                let code = self.generate_array_initializer_code(&type_identifier);
+                write!(&mut r, "{}", code);
+            }
+            ExpressionKind::ObjectInitializer(record_name) => {
+                let code = self.generate_object_initializer_code(&record_name);
                 write!(&mut r, "{}", code);
             }
             panic_ => {

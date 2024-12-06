@@ -1,23 +1,7 @@
-rec B {
-   value: real
-}
-
 rec A {
-   b: [B]
+   
 }
 
 fn run
-   a: [int]
-   push(a, 1)
-   b = a[0]
-   log(b)
-   // a = T {}
-   // push(a.b, 1)
-   // log(a.b[1])
-   d = 1
-   d = d + d*d
-   aa = A {}
-   push(aa.b, 1)
-   aa.b[0].value = 1
-   log(aa.b[0].value)
+   a = A {}
 end

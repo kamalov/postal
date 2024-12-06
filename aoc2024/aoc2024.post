@@ -2,7 +2,7 @@ fn read_lines(filename: str) [str] external
 fn split_str(s: str, by: str) [str] external
 fn str_to_int(s: str) int external
 fn int_to_str(i: int) str external
-fn sort_int_array(a: [int]) [int] external
+// fn sort_int_array(a: [int]) [int] external
 fn int_array_len(a: [int]) int external
 
 fn abs_int(a: int) int
@@ -36,40 +36,41 @@ end
 
 fn is_any_valid(vals: [int]) 
     vals >> {
-        r = Report {}
+        values = [int]
         skip_index = idx
-        vals >> if idx <> skip_index do push(r.values, it)
-        if is_valid(r.values) do ret 1
+        vals >> if idx <> skip_index do push(values, it)
+        if is_valid(values) do ret 1
     }
 
     ret 0
 end
 
 fn run
-    lines = read_lines('D:/src/postal/aoc2024/input.txt')
-    
-    reports: [Report] 
-    
-    lines >> {
-        tokens = split_str(it, ' ')
-        report = Report {}
-        tokens >> push(report.values, str_to_int(it))
-        push(reports, report)
-    }
+   lines = read_lines('D:/src/postal/aoc2024/input.txt')
 
-    valid_count = 0
-    reports >> {
-        s = ''
-        values = it.values
-        values >> s = s + ' -> ' + int_to_str(it)
-        log(s)
-        if is_any_valid(values) {
+   reports: [Report] 
+
+   lines >> {
+      tokens = split_str(it, ' ')
+      report = Report {}
+      report.values = [int]
+      tokens >> push(report.values, str_to_int(it))
+      push(reports, report)
+   }
+
+   valid_count = 0
+   reports >> {
+      s = ''
+      values = it.values
+      values >> s = s + ' -> ' + int_to_str(it)
+      log(s)
+      if is_any_valid(values) {
             valid_count = valid_count + 1
             log('valid')
-        } else {
+      } else {
             log('invalid')
-        }
-    }
+      }
+   }
 
-    log(valid_count)
+   log(valid_count)
 end
