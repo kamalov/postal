@@ -30,9 +30,9 @@ impl Token {
     }
 }
 
-const KEYWORDS: [&str; 19] = [
+const KEYWORDS: [&str; 20] = [
     "begin", "end", "do", //
-    "fn", "external", "var", "if", "for", "in", "loop", "break", "ret", //
+    "fn", "external", "var", "if", "for", "in", "loop", "break", "continue", "ret", //
     "int", "real", "str", "rec", //
     "not", "and", "or" //
 ];
@@ -219,12 +219,24 @@ impl Tokenizer {
         let index = self.char_index;
 
         self.skip();
-        while let Some(c) = self.peek() {
-            if c == '\'' {
+        loop {
+            if self.check_next("''") {
                 self.skip();
-                break;
+                self.skip();
+                value.push('\'');
+                continue;
             }
-            value.push(self.get_next_char())
+
+            if let Some(c) = self.peek() {
+                if c == '\'' {
+                    self.skip();
+                    break;
+                }
+                value.push(self.get_next_char());
+                continue;
+            }
+    
+            break;
         }
 
         Token {

@@ -1,15 +1,10 @@
-fn is_valid(vals: [int]) 
-    ret 1
-end
-
-fn is_any_valid(vals: [int]) 
-   if is_valid(r.values) {
-      ret 1
-   }
-end
+fn len<T>(a: [T]) int external
 
 fn run
-   //a = b.c
-   //log(b.c)
-   //a = test(b.c)
+   a = [int]
+   push(a, 1)
+   push(a, 1)
+   push(a, 1)
+   b = len(a)
+   log(b)
 end

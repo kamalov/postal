@@ -40,6 +40,14 @@ pub const BUILTIN_TYPES: [&str; 3] = [
     "int", "real", "str", //
 ];
 
+pub const BUILTIN_FUNCTIONS: [&str; 3] = [
+    "log", "push", "len", //
+];
+
+pub fn is_builtin_function(fn_name: &str) -> bool {
+    BUILTIN_FUNCTIONS.contains(&fn_name)
+}
+
 pub fn is_builtin_type(type_str: &str) -> bool {
     BUILTIN_TYPES.contains(&type_str)
 }
@@ -470,6 +478,7 @@ impl TypeChecker {
                     function_call.params = new_params;
                 }
                 Statement::Break() => {}
+                Statement::Continue() => {}
                 Statement::Comment(_) => {}
                 _ => {
                     panic!();

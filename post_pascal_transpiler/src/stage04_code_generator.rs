@@ -1,6 +1,6 @@
 #![allow(warnings)]
 use std::collections::{HashMap, HashSet};
-use std::fmt::Write;
+use std::fmt::{format, Write};
 
 use indexmap::IndexMap;
 
@@ -146,6 +146,8 @@ impl CodeGenerator {
             iterators_count: 0,
         });
 
+        let fn_generic_params_code =
+            self.generate_function_declaration_generic_params_code(&function_node.declaration.generic_params);
         let fn_params_code = self.generate_function_declaration_params_code(&function_node.declaration.params);
         let fn_body_code = self.generate_block_code(&function_node.body, padding);
 
@@ -158,14 +160,14 @@ impl CodeGenerator {
         if function_node.is_external {
             writeln!(
                 &mut r,
-                "{}{} {}({});",
-                padding, return_type_str, function_node.declaration.name, fn_params_code
+                "{padding}{fn_generic_params_code}{return_type_str} {name}({fn_params_code});",
+                name = function_node.declaration.name
             );
         } else {
             writeln!(
                 &mut r,
-                "{}{} {}({}) {{",
-                padding, return_type_str, function_node.declaration.name, fn_params_code
+                "{padding}{fn_generic_params_code}{return_type_str} {name}({fn_params_code}) {{",
+                name = function_node.declaration.name
             );
 
             for (name, type_info) in &function_node.vars {
@@ -186,6 +188,20 @@ impl CodeGenerator {
         self.current_function_context = None;
 
         r
+    }
+
+    fn generate_function_declaration_generic_params_code(&self, generic_params: &Vec<String>) -> String {
+        if generic_params.is_empty() {
+            return String::new();
+        }
+
+        let mut parts = vec![];
+        for name in generic_params {
+            let s = format!("typename {name}");
+            parts.push(s);
+        }
+
+        format!("template <{}>", parts.join(", "))
     }
 
     fn generate_function_declaration_params_code(&self, params: &IndexMap<String, TypeInfo>) -> String {
@@ -240,7 +256,10 @@ impl CodeGenerator {
                 r.push_str(s.as_str());
             }
             Statement::Break() => {
-                writeln!(&mut r, "{}break;", padding);
+                writeln!(&mut r, "{padding}break;");
+            }
+            Statement::Continue() => {
+                writeln!(&mut r, "{padding}continue;");
             }
             Statement::Comment(line_comment) => {
                 let s = self.generate_comment_code(line_comment, padding);
@@ -420,6 +439,11 @@ impl CodeGenerator {
                 let name = &param_names[0];
                 let value = &param_names[1];
                 write!(&mut r, "{}->push_back({})", name, value);
+            }
+
+            "len" => {
+                let name = &param_names[0];
+                write!(&mut r, "{}->size()", name);
             }
 
             _ => {

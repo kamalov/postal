@@ -37,6 +37,7 @@ pub struct Function {
 #[derive(Debug, Clone)]
 pub struct FnDeclaration {
     pub name: String,
+    pub generic_params: Vec<String>,
     pub params: IndexMap<String, TypeInfo>,
     pub return_type: Option<TypeInfo>,
 }
@@ -139,6 +140,7 @@ pub enum Statement {
     Loop(LoopStatement),
     Iteration(IterationStatement),
     Break(),
+    Continue(),
     Return(Expression),
     FunctionCall(FunctionCall),
     VariableAssignment(VariableAssignment),
@@ -374,11 +376,13 @@ impl AstBuilder {
         }
 
         let fn_name = fn_name_token.value.clone();
+        let fn_generic_params = self.parse_function_declaration_generic_params()?;
         let fn_params = self.parse_function_declaration_params()?;
         let fn_return_type = self.parse_function_return_type()?;
 
         let fn_declaration = FnDeclaration {
             name: fn_name.clone(),
+            generic_params: fn_generic_params,
             params: fn_params,
             return_type: fn_return_type,
         };
@@ -408,6 +412,26 @@ impl AstBuilder {
         });
     }
 
+    fn parse_function_declaration_generic_params(&mut self) -> AstResult<Vec<String>> {
+        let mut params = vec![];
+
+        if !self.try_skip("<") {
+            return Ok(params);
+        }
+
+        loop {
+            let generic_param_name = self.next().value.clone();
+            params.push(generic_param_name);
+            if self.try_skip(">") {
+                break;
+            }
+            self.skip_expected(",");
+        }
+
+        Ok(params)
+    }
+
+
     fn parse_function_declaration_params(&mut self) -> AstResult<IndexMap<String, TypeInfo>> {
         if !self.try_skip("(") {
             return Ok(IndexMap::new());
@@ -419,7 +443,7 @@ impl AstBuilder {
                 break;
             }
 
-            let (name, type_info) = self.parse_function_declaration_param(&[",", ")"])?;
+            let (name, type_info) = self.parse_function_declaration_param_until(&[",", ")"])?;
             params.insert(name, type_info);
 
             self.try_skip(",");
@@ -428,7 +452,7 @@ impl AstBuilder {
         Ok(params)
     }
 
-    fn parse_function_declaration_param(&mut self, terminators: &[&str]) -> AstResult<(String, TypeInfo)> {
+    fn parse_function_declaration_param_until(&mut self, terminators: &[&str]) -> AstResult<(String, TypeInfo)> {
         let name_token = self.next().clone();
         if name_token.kind != TokenKind::Identifier {
             return Err(AstError::new(&name_token, "identifier expected"));
@@ -573,6 +597,10 @@ impl AstBuilder {
                     self.skip_expected("break")?;
                     return Ok(Statement::Break());
                 }
+                "continue" => {
+                    self.skip_expected("continue")?;
+                    return Ok(Statement::Continue());
+                }
                 "ret" => {
                     self.skip_expected("ret")?;
                     let expression = self.parse_expression_until(&["\n"])?;
@@ -692,11 +720,11 @@ impl AstBuilder {
     }
 
     fn parse_group(&mut self) -> AstResult<Expression> {
-        let token = self.peek_next().clone();
+        let group_first_token = self.peek_next().clone();
         self.skip_expected("(")?;
         let mut expressions = vec![];
         loop {
-            if self.try_skip(")") {
+            if self.peek_next().kind != TokenKind::String && self.try_skip(")") {
                 break;
             }
 
@@ -706,7 +734,7 @@ impl AstBuilder {
             self.try_skip(",");
         }
 
-        Ok(Expression::new(&token, ExpressionKind::Group(expressions)))
+        Ok(Expression::new(&group_first_token, ExpressionKind::Group(expressions)))
     }
 
     fn parse_array_brackets(&mut self) -> AstResult<Expression> {
@@ -734,7 +762,7 @@ impl AstBuilder {
         loop {
             let t = self.peek_next();
 
-            if terminators.contains(&t.value.as_str()) {
+            if t.kind != TokenKind::String && terminators.contains(&t.value.as_str()) {
                 break;
             }
 
