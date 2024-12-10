@@ -246,6 +246,10 @@ impl CodeGenerator {
                 let s = self.generate_iteration_code(iteration_statement, padding);
                 r.push_str(s.as_str());
             }
+            Statement::For(for_statement) => {
+                let s = self.generate_for_code(for_statement, padding);
+                r.push_str(s.as_str());
+            }
             Statement::FunctionCall(st) => {
                 let s = self.generate_function_call_code(st);
                 let s = format!("{}{};\n", padding, s);
@@ -371,6 +375,51 @@ impl CodeGenerator {
 
         write!(&mut r, "{}", block);
         writeln!(&mut r, "{}}}", padding);
+
+        self.current_function_context.as_mut().unwrap().iterators.pop();
+
+        r
+    }
+
+    fn generate_for_code(&mut self, for_node: &ForStatement, padding: &str) -> String {
+        let mut r = String::new();
+
+        let mut ctx = self.current_function_context.as_mut().unwrap();
+        let index = ctx.iterators_count;
+        ctx.iterators_count += 1;
+        let iteratable_type_info = for_node.iterable_expression.type_info.clone().unwrap();
+
+        let iteratable_name = match &*for_node.iterable_expression.kind {
+            ExpressionKind::Identifier(identifier) => identifier.clone(),
+            _ => "exp".to_string(),
+        };
+
+        let it_name = format!("{}__it{}", iteratable_name, index);
+        let it_index_name = format!("{}__idx", it_name);
+        let it_type_name = iteratable_type_info.type_str.clone();
+        ctx.iterators.push((it_name.clone(), it_type_name.clone()));
+
+        let iteratable_expression_code = self.generate_expression_code(&for_node.iterable_expression);
+
+        let block = self.generate_block_code(&for_node.block, padding);
+        writeln!(&mut r, "");
+        writeln!(
+            &mut r,
+            "{padding}for (int {0} = 0; {0} < {iteratable_expression_code}->size(); {0}++) {{",
+            it_index_name
+        );
+        let type_info = TypeInfo {
+            is_array: false,
+            type_str: it_type_name.clone(),
+        };
+        let type_declaration_str = type_info_to_declaration_str(&type_info);
+        writeln!(
+            &mut r,
+            "{padding}{PADDING}{type_declaration_str} {it_name} = {iteratable_expression_code}->at({it_index_name});"
+        );
+
+        write!(&mut r, "{}", block);
+        writeln!(&mut r, "{padding}}}");
 
         self.current_function_context.as_mut().unwrap().iterators.pop();
 

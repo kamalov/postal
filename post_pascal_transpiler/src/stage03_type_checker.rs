@@ -274,6 +274,9 @@ impl TypeChecker {
                     let right_side_type_info = self.get_expression_type(&right)?;
                     match get_common_type(&left_side_type_info, &right_side_type_info) {
                         Ok(common_type) => {
+                            if ["<", "<=", ">", ">=", "=", "<>"].contains(&operation.as_str()) {
+                                return Ok(TypeInfo {is_array:false, type_str:"int".to_string()});
+                            }
                             return Ok(common_type);
                         }
                         Err(_) => {
@@ -400,6 +403,7 @@ impl TypeChecker {
                         None => self.ctx.return_type = Some(return_type),
                     }
                 }
+
                 Statement::Iteration(IterationStatement {
                     token,
                     iterable_name,
@@ -419,6 +423,17 @@ impl TypeChecker {
                             ));
                         }
                     }
+                }
+                Statement::For(ForStatement {
+                    iterable_expression,
+                    block,
+                }) => {
+                    //
+                    let type_info = self.get_expression_type(&iterable_expression)?;
+                    iterable_expression.type_info = Some(type_info.clone());
+                    self.ctx.iterator_type_list.push(type_info);
+                    let block = self.process_block_statements(block)?;
+                    self.ctx.iterator_type_list.pop();
                 }
                 Statement::VariableAssignment(variable_assignment) => {
                     let name = variable_assignment.name.clone();

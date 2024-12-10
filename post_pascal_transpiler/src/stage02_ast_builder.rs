@@ -92,6 +92,12 @@ pub struct IterationStatement {
 }
 
 #[derive(Debug, Clone)]
+pub struct ForStatement {
+    pub iterable_expression: Expression,
+    pub block: Block,
+}
+
+#[derive(Debug, Clone)]
 pub enum ExpressionKind {
     FunctionCall(FunctionCall),
     IntegerLiteral(String),
@@ -139,6 +145,7 @@ pub enum Statement {
     If(IfStatement),
     Loop(LoopStatement),
     Iteration(IterationStatement),
+    For(ForStatement),
     Break(),
     Continue(),
     Return(Expression),
@@ -402,7 +409,7 @@ impl AstBuilder {
                 body: Block { statements: vec![] },
             });
         }
-        
+
         let fn_body = self.parse_function_body()?;
         return Ok(Function {
             is_external: false,
@@ -430,7 +437,6 @@ impl AstBuilder {
 
         Ok(params)
     }
-
 
     fn parse_function_declaration_params(&mut self) -> AstResult<IndexMap<String, TypeInfo>> {
         if !self.try_skip("(") {
@@ -555,22 +561,18 @@ impl AstBuilder {
                         let f = self.parse_function_call()?;
                         return Ok(Statement::FunctionCall(f));
                     }
-
                     "=" => {
                         let statement = self.parse_variable_assignment_statement()?;
                         return Ok(Statement::VariableAssignment(statement));
                     }
-
                     ":" => {
                         let statement = self.parse_variable_declaration_statement()?;
                         return Ok(Statement::VariableDeclaration(statement));
                     }
-
                     ">>" => {
                         let statement = self.parse_iteration_statement()?;
                         return Ok(Statement::Iteration(statement));
                     }
-
                     _ => {}
                 }
 
@@ -592,6 +594,10 @@ impl AstBuilder {
                 "loop" => {
                     let f = self.parse_loop_statement()?;
                     return Ok(Statement::Loop(f));
+                }
+                "for" => {
+                    let statement = self.parse_for_statement()?;
+                    return Ok(Statement::For(statement));
                 }
                 "break" => {
                     self.skip_expected("break")?;
@@ -634,9 +640,14 @@ impl AstBuilder {
 
         if self.try_skip("do") {
             let statement = self.parse_statement()?;
-            let block = Block { statements: vec![statement] };
+            let block = Block {
+                statements: vec![statement],
+            };
             if_blocks.push((condition, block));
-            return Ok(IfStatement { if_blocks, else_block: None })
+            return Ok(IfStatement {
+                if_blocks,
+                else_block: None,
+            });
         }
 
         let block = self.parse_block()?;
@@ -688,6 +699,25 @@ impl AstBuilder {
         Ok(IterationStatement {
             token: name_token.clone(),
             iterable_name,
+            block,
+        })
+    }
+
+    fn parse_for_statement(&mut self) -> AstResult<ForStatement> {
+        self.skip_expected("for")?;
+        let iterable_expression = self.parse_expression_until(&["{", "do"])?;
+
+        let block = if self.try_skip("do") {
+            let statement = self.parse_statement()?;
+            Block {
+                statements: vec![statement],
+            }
+        } else {
+            self.parse_block()?
+        };
+
+        Ok(ForStatement {
+            iterable_expression,
             block,
         })
     }
@@ -918,7 +948,7 @@ impl AstBuilder {
 
                     tree_node = TreeNode {
                         expression: next_expression.clone(),
-                        childs: vec![tree_node]
+                        childs: vec![tree_node],
                     };
                     *next_expression_index += 1;
                     break;
@@ -977,16 +1007,19 @@ impl AstBuilder {
                             return Ok(expression);
                         }
                         _ => {
-                            return Err(AstError::new(&access_expression.token, "expected identifier in array initializer"));                        
+                            return Err(AstError::new(
+                                &access_expression.token,
+                                "expected identifier in array initializer",
+                            ));
                         }
                     }
                 } else {
                     let array_expression = self.tree_node_to_expression(&tree_node.childs[0])?;
-                    let kind = ExpressionKind::ArrayItemAccess { 
-                        array_expression, 
-                        access_expression: access_expression.clone()
+                    let kind = ExpressionKind::ArrayItemAccess {
+                        array_expression,
+                        access_expression: access_expression.clone(),
                     };
-    
+
                     let expression = Expression::new(&tree_node.expression.token, kind);
                     return Ok(expression);
                 }

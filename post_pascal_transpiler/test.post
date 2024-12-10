@@ -1,10 +1,17 @@
-fn len<T>(a: [T]) int external
-
+rec B {
+   b: [int]
+}
 fn run
    a = [int]
    push(a, 1)
-   push(a, 1)
-   push(a, 1)
-   b = len(a)
-   log(b)
+   push(a, 2)
+   push(a, 3)
+   b = B {}
+   b.b = a
+   for b.b {
+      log(it)
+      for b.b do log(it)
+   }
+   for b.b do log(it)
+   log('done')
 end
