@@ -7,21 +7,37 @@
 
 using namespace std::literals;
 
-std::vector<std::string>* read_lines(std::string filename) {
-    std::ifstream infile(filename);
-    if (!infile.is_open()) {
-        throw "invalid file '"s + filename + "'";
-    }
-    std::vector<std::string>* lines = new std::vector<std::string>();
-    std::string line;
-    while (std::getline(infile, line)) {
-        lines->push_back(line);
-    }
-    infile.close();
-    return lines;
+
+
+/// dyn array utils
+template <typename T>
+long long len(std::vector<T>* a) { 
+    return a->size();
 }
 
-//std::vector<std::string> str_split(const std::string& s, const std::string& delimiter) {
+template <typename T>
+void set_size(std::vector<T>* a, long long new_size) {
+    a->resize(new_size);
+}
+
+template <typename T>
+void push(std::vector<T>* a, T elem) {
+    a->push_back(elem);
+}
+
+template <typename T>
+void set_value(std::vector<T>* a, long long index, T elem) {
+    (*a)[index] = elem;
+}
+
+template <typename T>
+void sort(std::vector<T>* a) {
+    std::sort(a->begin(), a->end());
+}
+
+
+
+/// string utils
 std::vector<std::string>* split_str(std::string s, std::string delimiter) {
     std::vector<std::string>* tokens = new std::vector<std::string>();
     size_t pos = 0;
@@ -53,9 +69,19 @@ std::string int_to_str(long long i) {
     return s;
 }
 
-std::vector<long long> sort_int_array(std::vector<long long> a) {
-    std::sort(a.begin(), a.end());
-    return a;
+
+
+/// file utils
+std::vector<std::string>* read_lines(std::string filename) {
+    std::ifstream infile(filename);
+    if (!infile.is_open()) {
+        throw "invalid file '"s + filename + "'";
+    }
+    std::vector<std::string>* lines = new std::vector<std::string>();
+    std::string line;
+    while (std::getline(infile, line)) {
+        lines->push_back(line);
+    }
+    infile.close();
+    return lines;
 }
-
-

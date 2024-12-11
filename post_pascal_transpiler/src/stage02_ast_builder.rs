@@ -165,6 +165,7 @@ pub enum RootNode {
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct TypeInfo {
+    pub is_generic: bool,
     pub is_array: bool,
     pub type_str: String,
 }
@@ -332,7 +333,7 @@ impl AstBuilder {
             type_str = self.next().value.clone();
         }
 
-        Ok(TypeInfo { is_array, type_str })
+        Ok(TypeInfo { is_array, type_str, ..TypeInfo::default() })
     }
 
     fn parse_record(&mut self) -> AstResult<Record> {
@@ -481,6 +482,7 @@ impl AstBuilder {
         let type_info = TypeInfo {
             is_array,
             type_str: type_str.clone(),
+            ..TypeInfo::default()
         };
 
         Ok((var_name, type_info))

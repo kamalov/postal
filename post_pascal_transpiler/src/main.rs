@@ -62,12 +62,12 @@ fn main() {
     }
 
     let mut type_checker = TypeChecker::new(ast_builder.clone());
-    let root_nodes = type_checker.build_new_ast_with_types();
+    let ast_with_types = type_checker.build_new_ast_with_types();
 
     let generated_code;
-    match root_nodes {
-        Ok(root_nodes) => {
-            let mut generator = CodeGenerator::new(root_nodes);
+    match ast_with_types {
+        Ok(ast_with_types) => {
+            let mut generator = CodeGenerator::new(ast_with_types);
             generated_code = generator.generate_code();
             println!("\x1b[93m{generated_code}\x1b[0m");
         }

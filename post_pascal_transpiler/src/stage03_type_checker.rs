@@ -40,9 +40,7 @@ pub const BUILTIN_TYPES: [&str; 3] = [
     "int", "real", "str", //
 ];
 
-pub const BUILTIN_FUNCTIONS: [&str; 3] = [
-    "log", "push", "len", //
-];
+pub const BUILTIN_FUNCTIONS: [&str; 1] = ["log"];
 
 pub fn is_builtin_function(fn_name: &str) -> bool {
     BUILTIN_FUNCTIONS.contains(&fn_name)
@@ -70,8 +68,8 @@ fn get_common_type(a: &TypeInfo, b: &TypeInfo) -> Result<TypeInfo, ()> {
 
     if a.type_str == "real" && b.type_str == "int" || a.type_str == "int" && b.type_str == "real" {
         return Ok(TypeInfo {
-            is_array: false,
             type_str: "real".to_string(),
+            ..TypeInfo::default()
         });
     }
 
@@ -102,19 +100,30 @@ impl TypeChecker {
         }
     }
 
-    pub fn build_new_ast_with_types(&mut self) -> TypeCheckResult<Vec<RootNode>> {
-        let mut root_nodes = self.ast_builder.root_nodes.clone();
+    pub fn build_new_ast_with_types(&mut self) -> TypeCheckResult<AstBuilder> {
+        let mut ast_builder = self.ast_builder.clone();
 
-        for root_node in &mut root_nodes {
+        // for root_node in &mut ast_builder.root_nodes {
+        //     match root_node {
+        //         RootNode::Function(function) => {
+        //             self.process_function(function)?;
+        //         }
+        //         _ => {}
+        //     }
+        // }
+
+        for root_node in &mut ast_builder.root_nodes {
             match root_node {
                 RootNode::Function(function) => {
                     self.process_function(function)?;
                 }
-                _ => {}
+                _ => {
+                    println!("{root_node:?}");
+                }
             }
         }
 
-        Ok(root_nodes)
+        Ok(ast_builder)
     }
 
     fn get_function_param_or_var_type(&self, name: &String) -> Option<&TypeInfo> {
@@ -128,6 +137,11 @@ impl TypeChecker {
     }
 
     fn process_function(&mut self, function: &mut Function) -> TypeCheckResult<()> {
+        for (_, type_info) in &mut function.declaration.params {
+            let is_generic = function.declaration.generic_params.contains(&type_info.type_str);
+            type_info.is_generic = is_generic;
+        }
+
         if function.is_external {
             return Ok(());
         }
@@ -144,11 +158,7 @@ impl TypeChecker {
         function.vars = std::mem::take(&mut self.ctx.vars);
         function.declaration.return_type = std::mem::take(&mut self.ctx.return_type);
 
-        let decl = self
-            .ast_builder
-            .fn_declarations
-            .get_mut(&function.declaration.name)
-            .unwrap();
+        let decl = self.ast_builder.fn_declarations.get_mut(&function.declaration.name).unwrap();
         decl.return_type = function.declaration.return_type.clone();
 
         self.ctx = CurrentFunctionContext::default();
@@ -192,9 +202,9 @@ impl TypeChecker {
                             }
                             None => {
                                 return Err(TypeCheckError::new(
-                                &expression.token,
-                                format!("can't figure return type of '{}' function call, please specify return type explicitly",
-                                function_call.name)));
+                                    &expression.token,
+                                    format!("can't figure return type of '{}' function call, please specify return type explicitly", function_call.name),
+                                ));
                             }
                         }
                     }
@@ -208,15 +218,12 @@ impl TypeChecker {
                 match identifier_name.as_str() {
                     "it" => {
                         if self.ctx.iterator_type_list.is_empty() {
-                            return Err(TypeCheckError::new(
-                                &expression.token,
-                                "Keyword 'it' is reserved and can be used only in iterations",
-                            ));
+                            return Err(TypeCheckError::new(&expression.token, "Keyword 'it' is reserved and can be used only in iterations"));
                         }
                         let type_info = self.ctx.iterator_type_list.last().unwrap();
                         return Ok(TypeInfo {
-                            is_array: false,
                             type_str: type_info.type_str.clone(),
+                            ..TypeInfo::default()
                         });
                     }
                     "idx" => {
@@ -249,33 +256,27 @@ impl TypeChecker {
                                 match record.fields.get(field_name) {
                                     Some(type_info) => return Ok(type_info.clone()),
                                     None => {
-                                        return Err(TypeCheckError::new(
-                                            &right.token,
-                                            format!("unknown field: '{field_name}'"),
-                                        ));
+                                        return Err(TypeCheckError::new(&right.token, format!("unknown field: '{field_name}'")));
                                     }
                                 }
                             }
                             None => {
-                                return Err(TypeCheckError::new(
-                                    &expression.token,
-                                    format!("unknown type: '{left_side_type_info}'"),
-                                ));
+                                return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{left_side_type_info}'")));
                             }
                         }
                         Ok(left_side_type_info)
                     } else {
-                        return Err(TypeCheckError::new(
-                            &expression.token,
-                            format!("must be identifier after .: '{right:?}'"),
-                        ));
+                        return Err(TypeCheckError::new(&expression.token, format!("must be identifier after .: '{right:?}'")));
                     }
                 } else {
                     let right_side_type_info = self.get_expression_type(&right)?;
                     match get_common_type(&left_side_type_info, &right_side_type_info) {
                         Ok(common_type) => {
                             if ["<", "<=", ">", ">=", "=", "<>"].contains(&operation.as_str()) {
-                                return Ok(TypeInfo {is_array:false, type_str:"int".to_string()});
+                                return Ok(TypeInfo {
+                                    type_str: "int".to_string(),
+                                    ..TypeInfo::default()
+                                });
                             }
                             return Ok(common_type);
                         }
@@ -301,10 +302,7 @@ impl TypeChecker {
 
                 return Ok(last_type_info);
             }
-            ExpressionKind::ArrayItemAccess {
-                array_expression,
-                access_expression,
-            } => {
+            ExpressionKind::ArrayItemAccess { array_expression, access_expression } => {
                 let array_type_info = self.get_expression_type(&array_expression)?;
 
                 // let array_type_info = match self.get_function_param_or_var_type(&array_name) {
@@ -321,31 +319,26 @@ impl TypeChecker {
                 let accessor_type_info = self.get_expression_type(&access_expression)?;
 
                 if accessor_type_info.is_array || accessor_type_info.type_str != "int" {
-                    return Err(TypeCheckError::new(
-                        &expression.token,
-                        format!("incorrect index type '{accessor_type_info}'"),
-                    ));
+                    return Err(TypeCheckError::new(&expression.token, format!("incorrect index type '{accessor_type_info}'")));
                 }
 
                 return Ok(TypeInfo {
-                    is_array: false,
                     type_str: array_type_info.type_str.clone(),
+                    ..TypeInfo::default()
                 });
             }
             ExpressionKind::ArrayInitializer(identifier) => {
                 let type_info = TypeInfo {
                     is_array: true,
                     type_str: identifier.clone(),
+                    ..TypeInfo::default()
                 };
 
                 if is_builtin_type(&type_info.type_str) || self.ast_builder.records.contains_key(identifier) {
                     return Ok(type_info);
                 }
 
-                return Err(TypeCheckError::new(
-                    &expression.token,
-                    format!("unknown type: '{identifier}'"),
-                ));
+                return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{identifier}'")));
             }
             ExpressionKind::ObjectInitializer(record_name) => match self.ast_builder.records.get(record_name) {
                 Some(record) => {
@@ -355,10 +348,7 @@ impl TypeChecker {
                     });
                 }
                 None => {
-                    return Err(TypeCheckError::new(
-                        &expression.token,
-                        format!("unknown type: '{record_name}'"),
-                    ));
+                    return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{record_name}'")));
                 }
             },
             _ => {
@@ -394,21 +384,14 @@ impl TypeChecker {
                                 self.ctx.return_type = Some(return_type);
                             }
                             Err(_) => {
-                                return Err(TypeCheckError::new(
-                                    &expression.token,
-                                    "return type differs from previous",
-                                ));
+                                return Err(TypeCheckError::new(&expression.token, "return type differs from previous"));
                             }
                         },
                         None => self.ctx.return_type = Some(return_type),
                     }
                 }
 
-                Statement::Iteration(IterationStatement {
-                    token,
-                    iterable_name,
-                    block,
-                }) => {
+                Statement::Iteration(IterationStatement { token, iterable_name, block }) => {
                     //
                     match self.get_function_param_or_var_type(iterable_name) {
                         Some(type_info) => {
@@ -417,17 +400,11 @@ impl TypeChecker {
                             self.ctx.iterator_type_list.pop();
                         }
                         None => {
-                            return Err(TypeCheckError::new(
-                                token,
-                                format!("unknown iteratable: '{iterable_name}'"),
-                            ));
+                            return Err(TypeCheckError::new(token, format!("unknown iteratable: '{iterable_name}'")));
                         }
                     }
                 }
-                Statement::For(ForStatement {
-                    iterable_expression,
-                    block,
-                }) => {
+                Statement::For(ForStatement { iterable_expression, block }) => {
                     //
                     let type_info = self.get_expression_type(&iterable_expression)?;
                     iterable_expression.type_info = Some(type_info.clone());
@@ -447,10 +424,7 @@ impl TypeChecker {
                                     *occupied_entry.get_mut() = new_type
                                 }
                                 Err(_) => {
-                                    return Err(TypeCheckError::new(
-                                        &variable_assignment.token,
-                                        format!("incompatible types: '{current_var_type}' and '{var_type}'"),
-                                    ));
+                                    return Err(TypeCheckError::new(&variable_assignment.token, format!("incompatible types: '{current_var_type}' and '{var_type}'")));
                                 }
                             }
                         }
@@ -459,19 +433,14 @@ impl TypeChecker {
                         }
                     }
                 }
-                Statement::VariableDeclaration((token, name, type_info)) => {
-                    match self.get_function_param_or_var_type(&name) {
-                        Some(type_info) => {
-                            return Err(TypeCheckError::new(
-                                token,
-                                format!("variable already defined: '{name}'"),
-                            ));
-                        }
-                        None => {
-                            self.ctx.vars.insert(name.clone(), type_info.clone());
-                        }
+                Statement::VariableDeclaration((token, name, type_info)) => match self.get_function_param_or_var_type(&name) {
+                    Some(type_info) => {
+                        return Err(TypeCheckError::new(token, format!("variable already defined: '{name}'")));
                     }
-                }
+                    None => {
+                        self.ctx.vars.insert(name.clone(), type_info.clone());
+                    }
+                },
                 Statement::Assignment(Assignment { token, lvalue, rvalue }) => {
                     let left_side_type_info = self.get_expression_type(lvalue)?;
                     let right_side_type_info = self.get_expression_type(rvalue)?;

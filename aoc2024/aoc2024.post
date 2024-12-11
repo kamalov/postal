@@ -1,72 +1,61 @@
+/// array utils
+fn len<T>(a: [T]) int external
+fn set_size<T>(a: [T], new_size: int) external
+fn push<T>(a: [T], elem: T) external
+fn set_value<T>(a: [T], index: int, value: T) external
+fn sort<T>(a: [T]) external
+
+/// file and string utils
 fn read_lines(filename: str) [str] external
 fn split_str(s: str, by: str) [str] external
 fn str_to_int(s: str) int external
 fn int_to_str(i: int) str external
 fn str_to_chars(s: str) [str] external
-// fn sort_int_array(a: [int]) [int] external
-fn len<T>(a: [T]) int external
+fn str_contains_str(s: str, subs: str) [str] external
 
-rec Row {
-   cols: [str]
-}
-
-fn get_cell_value(rows: [Row], row_index: int, col_index: int)
-   rows_count = len(rows)
-   cols_count = len(rows[0].cols)
-   if row_index < 0 or col_index < 0 or row_index >= rows_count or col_index >= cols_count {
-      ret ''
+fn get_pages_rank(pages: [int], rules: [int]) int 
+   for pages {
+      if idx = 0 do continue
+      page_index = idx
+      page = it
+      for pages {
+         if idx >= page_index do break
+         rule = page*100 + it
+         for rules {
+            if rule = it do ret 0
+         }
+      }
    }
-   ret rows[row_index].cols[col_index]
-end
 
-fn try_xmas(rows: [Row], row_index: int, col_index: int, dx: int, dy: int) int
-   x = get_cell_value(rows, row_index, col_index) = 'X'
-   m = get_cell_value(rows, row_index + dy, col_index + dx) = 'M'
-   a = get_cell_value(rows, row_index + dy*2, col_index + dx*2) = 'A'
-   s = get_cell_value(rows, row_index + dy*3, col_index + dx*3) = 'S'
-   if x and m and a and s do ret 1
-   ret 0
-end
-
-fn is_ms(a: str, b: str) int
-   if a = 'M' and b = 'S' or a = 'S' and b = 'M' do ret 1
-   ret 0
-end
-
-fn total_xmas_from_cell(rows: [Row], row_index: int, col_index: int) int
-   c = get_cell_value(rows, row_index, col_index)
-   
-   if c <> 'A' do ret 0
-   
-   top_left = get_cell_value(rows, row_index - 1, col_index - 1)
-   bottom_right = get_cell_value(rows, row_index + 1, col_index + 1)
-   top_right = get_cell_value(rows, row_index + 1, col_index -1)
-   bottom_left = get_cell_value(rows, row_index - 1, col_index + 1)
-   
-   if is_ms(top_left, bottom_right) and is_ms(top_right, bottom_left) do ret 1
-
-   ret 0
+   i = pages[len(pages)/2]
+   ret i
 end
 
 fn run
    lines = read_lines('D:/src/postal/aoc2024/input.txt')
 
-   rows = [Row]
-   for lines {
-      row = Row {}
-      row.cols = str_to_chars(it)
-      push(rows, row)
-   }
+   rules = [int]
+   set_size(rules, 10000)
 
    total = 0
-   for rows {
-      row_index = idx
-      for row.cols {
-         col_index = idx   
-         total = total + total_xmas_from_cell(rows, row_index, col_index)
+   for lines {
+      if it = '' do continue
+      
+      if str_contains_str(it, '|') {
+         parts = split_str(it, '|')
+         rule = str_to_int(parts[0])*100 + str_to_int(parts[1])
+         //push(rules, rule)
+      }
+
+      if str_contains_str(it, ',') {
+         pages = [int]
+         pages_str = split_str(it, ',')
+         for pages_str {
+            push(pages, str_to_int(it))
+         }
+         total = total + get_pages_rank(pages, rules)
       }
    }
 
-   log(total)
-   log('done')
+   log(total, 'done')
 end

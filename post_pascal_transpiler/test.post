@@ -1,17 +1,18 @@
-rec B {
-   b: [int]
-}
+fn len<T>(a: [T]) int external
+fn set_size<T>(a: [T], new_size: int) external
+fn push<T>(a: [T], elem: T) external
+fn set_value<T>(a: [T], index: int, value: T) external
+fn sort<T>(a: [T]) external
+
+rec A {}
+
 fn run
-   a = [int]
-   push(a, 1)
-   push(a, 2)
-   push(a, 3)
-   b = B {}
-   b.b = a
-   for b.b {
-      log(it)
-      for b.b do log(it)
-   }
-   for b.b do log(it)
-   log('done')
+   int_arr = [int]
+   set_size(int_arr, 10)
+   push(int_arr, 11)
+   push(int_arr, 12)
+   set_value(int_arr, 0, 20)
+   sort(int_arr)
+
+   for int_arr do log(it)
 end
