@@ -5,13 +5,13 @@ current:
 
 to do:
   -- ? hash table
+  -- присваивание значения по индексу массива
   -- in generic function call: convert return param generic type to actual type
 
 
 
 backlog:
   -- проверка соответствия формальных и фактических параметров при вызове функции
-  -- присваивание значения по индексу массива
   -- унарный минус, унарный NOT
   -- iteration mapping and iteration as expression (a = some >> { it })
 
