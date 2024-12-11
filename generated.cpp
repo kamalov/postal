@@ -24,8 +24,9 @@ void log_int_array(std::vector<long long>* a) {
     std::string s;
     s = ""s;
 
-    for (int a__it0__idx = 0; a__it0__idx < a->size(); a__it0__idx++) {
-        long long a__it0 = a->at(a__it0__idx);
+    auto _expr0 = a;
+    for (int a__it0__idx = 0; a__it0__idx < _expr0->size(); a__it0__idx++) {
+        long long a__it0 = (*_expr0)[a__it0__idx];
         s = s + " "s + int_to_str(a__it0);
     }
     printf("%s\n", (s).c_str());
@@ -43,9 +44,11 @@ long long get_pages_rank(std::vector<long long>* pages, std::vector<long long>* 
 
     for (;;) {
         swapped = 0ll;
-        i = 0ll;
 
-        for (;;) {
+        auto _expr0 = create_range(0ll, (len(pages) - 2ll));
+        for (int exp__it0__idx = 0; exp__it0__idx < _expr0->size(); exp__it0__idx++) {
+            long long exp__it0 = (*_expr0)[exp__it0__idx];
+            i = exp__it0;
             a = pages->at(i);
             b = pages->at(i + 1ll);
             rule = b*100ll + a;
@@ -54,11 +57,6 @@ long long get_pages_rank(std::vector<long long>* pages, std::vector<long long>* 
                 set_value(pages, i, b);
                 set_value(pages, i + 1ll, a);
                 swapped = 1ll;
-            };
-            i = i + 1ll;
-
-            if (i >= len(pages) - 1ll) {
-                break;
             };
         }
 
@@ -89,8 +87,9 @@ void run() {
     set_size(rules, 10000ll);
     total = 0ll;
 
-    for (int lines__it0__idx = 0; lines__it0__idx < lines->size(); lines__it0__idx++) {
-        std::string lines__it0 = lines->at(lines__it0__idx);
+    auto _expr0 = lines;
+    for (int lines__it0__idx = 0; lines__it0__idx < _expr0->size(); lines__it0__idx++) {
+        std::string lines__it0 = (*_expr0)[lines__it0__idx];
 
         if (lines__it0 == ""s) {
             continue;
@@ -106,8 +105,9 @@ void run() {
             pages = new std::vector<long long>();
             pages_str = split_str(lines__it0, ","s);
 
-            for (int pages_str__it1__idx = 0; pages_str__it1__idx < pages_str->size(); pages_str__it1__idx++) {
-                std::string pages_str__it1 = pages_str->at(pages_str__it1__idx);
+            auto _expr1 = pages_str;
+            for (int pages_str__it1__idx = 0; pages_str__it1__idx < _expr1->size(); pages_str__it1__idx++) {
+                std::string pages_str__it1 = (*_expr1)[pages_str__it1__idx];
                 push(pages, str_to_int(pages_str__it1));
             }
             total = total + get_pages_rank(pages, rules);

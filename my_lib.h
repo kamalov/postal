@@ -37,6 +37,21 @@ void sort(std::vector<T>* a) {
 
 
 
+/// range utils
+std::vector<long long>* create_range(long long from, long long to) {
+    std::vector<long long>* a = new std::vector<long long>();    
+    int size = to - from + 1;
+    if (size > 0) {
+	a->resize(size);
+	for (int i = 0; i < size; i++) {
+	    (*a)[i] = from + i;
+        }
+    }
+    return a;
+}
+
+
+
 /// string utils
 std::vector<std::string>* split_str(std::string s, std::string delimiter) {
     std::vector<std::string>* tokens = new std::vector<std::string>();
@@ -72,6 +87,8 @@ std::string int_to_str(long long i) {
 long long str_contains_str(std::string s, std::string subs) {
     return s.find(subs) != std::string::npos;
 }
+
+
 
 /// file utils
 std::vector<std::string>* read_lines(std::string filename) {

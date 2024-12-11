@@ -47,7 +47,6 @@ fn convert_type_name_str(ti: &String) -> String {
 
 fn type_info_to_str(type_info: &TypeInfo) -> String {
     let type_name = convert_type_name_str(&type_info.type_str);
-
     if type_info.is_array {
         if !type_info.is_generic && is_custom_type(&type_info.type_str) {
             return format!("std::vector<{}*>", type_name);
@@ -55,27 +54,22 @@ fn type_info_to_str(type_info: &TypeInfo) -> String {
             return format!("std::vector<{}>", type_name);
         }
     }
-        
     type_name
 }
 
 fn type_info_to_declaration_str(type_info: &TypeInfo) -> String {
     let type_str = type_info_to_str(&type_info);
-
     if !type_info.is_generic && is_custom_type(&type_info.type_str) || type_info.is_array {
         return format!("{type_str}*");
     }
-
     type_str
 }
 
 fn type_info_to_initializer_str(type_info: &TypeInfo) -> String {
     let type_str = type_info_to_str(&type_info);
-
     if is_custom_type(&type_info.type_str) || type_info.is_array {
         return format!("new {type_str}()",);
     }
-
     type_str
 }
 
@@ -380,6 +374,7 @@ impl CodeGenerator {
 
         let it_name = format!("{}__it{}", iteratable_name, index);
         let it_index_name = format!("{}__idx", it_name);
+        let it_expression_var_name = format!("_expr{index}");
         let it_type_name = iteratable_type_info.type_str.clone();
         ctx.iterators.push((it_name.clone(), it_type_name.clone()));
 
@@ -387,13 +382,14 @@ impl CodeGenerator {
 
         let block = self.generate_block_code(&for_node.block, padding);
         writeln!(&mut r, "");
-        writeln!(&mut r, "{padding}for (int {0} = 0; {0} < {iteratable_expression_code}->size(); {0}++) {{", it_index_name);
+        writeln!(&mut r, "{padding}auto {it_expression_var_name} = {iteratable_expression_code};");
+        writeln!(&mut r, "{padding}for (int {0} = 0; {0} < {it_expression_var_name}->size(); {0}++) {{", it_index_name);
         let type_info = TypeInfo {
             type_str: it_type_name.clone(),
             ..TypeInfo::default()
         };
         let type_declaration_str = type_info_to_declaration_str(&type_info);
-        writeln!(&mut r, "{padding}{PADDING}{type_declaration_str} {it_name} = {iteratable_expression_code}->at({it_index_name});");
+        writeln!(&mut r, "{padding}{PADDING}{type_declaration_str} {it_name} = (*{it_expression_var_name})[{it_index_name}];");
 
         write!(&mut r, "{}", block);
         writeln!(&mut r, "{padding}}}");
@@ -578,9 +574,15 @@ impl CodeGenerator {
             ExpressionKind::BinaryOperation { operation, left, right } => {
                 let left = self.generate_expression_code(&left);
                 let right = self.generate_expression_code(&right);
-                let mut op = operation.clone();
-                op = self.operators_map.get(&op).cloned().unwrap_or(op);
-                write!(&mut r, "{left}{op}{right}");
+                let op_str = self.operators_map.get(operation).cloned().unwrap_or(operation.clone());
+                match operation.as_str() {
+                    ".." => {
+                        write!(&mut r, "create_range({left}, {right})");
+                    }
+                    _ => {
+                        write!(&mut r, "{left}{op_str}{right}");
+                    }
+                }
             }
             ExpressionKind::Group(group_expressions) => {
                 let code = self.generate_group_code(group_expressions, "");

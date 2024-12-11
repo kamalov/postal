@@ -264,28 +264,51 @@ impl TypeChecker {
                                 return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{left_side_type_info}'")));
                             }
                         }
-                        Ok(left_side_type_info)
+                        return Ok(left_side_type_info);
                     } else {
                         return Err(TypeCheckError::new(&expression.token, format!("must be identifier after .: '{right:?}'")));
                     }
-                } else {
-                    let right_side_type_info = self.get_expression_type(&right)?;
-                    match get_common_type(&left_side_type_info, &right_side_type_info) {
-                        Ok(common_type) => {
-                            if ["<", "<=", ">", ">=", "=", "<>"].contains(&operation.as_str()) {
-                                return Ok(TypeInfo {
-                                    type_str: "int".to_string(),
-                                    ..TypeInfo::default()
-                                });
-                            }
-                            return Ok(common_type);
+                }
+
+                let right_side_type_info = self.get_expression_type(&right)?;
+
+                if operation == ".." {
+                    if left_side_type_info.type_str != "int" {
+                        return Err(TypeCheckError::new(
+                            &left.token,
+                            format!("left side of range must be 'int': found '{left_side_type_info}'"),
+                        ));
+                    }
+
+                    if right_side_type_info.type_str != "int" {
+                        return Err(TypeCheckError::new(
+                            &left.token,
+                            format!("right side of range must be 'int': found '{right_side_type_info}'"),
+                        ));
+                    }
+    
+                    return Ok(TypeInfo {
+                        type_str: "int".to_string(),
+                        is_array: true,
+                        ..TypeInfo::default()
+                    });
+                }
+
+                match get_common_type(&left_side_type_info, &right_side_type_info) {
+                    Ok(common_type) => {
+                        if ["<", "<=", ">", ">=", "=", "<>"].contains(&operation.as_str()) {
+                            return Ok(TypeInfo {
+                                type_str: "int".to_string(),
+                                ..TypeInfo::default()
+                            });
                         }
-                        Err(_) => {
-                            return Err(TypeCheckError::new(
-                                &expression.token,
-                                format!("incompatible types: '{left_side_type_info}' and '{right_side_type_info}'"),
-                            ));
-                        }
+                        return Ok(common_type);
+                    }
+                    Err(_) => {
+                        return Err(TypeCheckError::new(
+                            &expression.token,
+                            format!("incompatible types: '{left_side_type_info}' and '{right_side_type_info}'"),
+                        ));
                     }
                 }
             }

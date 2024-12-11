@@ -34,12 +34,11 @@ const KEYWORDS: [&str; 20] = [
     "begin", "end", "do", //
     "fn", "external", "var", "if", "for", "in", "loop", "break", "continue", "ret", //
     "int", "real", "str", "rec", //
-    "not", "and", "or" //
+    "not", "and", "or", //
 ];
 
 const SPECIALS: [&str; 17] = [
-    "{", "}", "(", ")", "[", "]", ",", ":", ";", "=", "*", "/", "+", "-", "<", ">", "."
-    //, "::", "<<", "=>", "->"
+    "{", "}", "(", ")", "[", "]", ",", ":", ";", "=", "*", "/", "+", "-", "<", ">", ".", //, "::", "<<", "=>", "->"
 ];
 
 fn is_identifier_char(c: char) -> bool {
@@ -79,10 +78,12 @@ impl Tokenizer {
 
         t.priorities.insert("*".to_string(), 100);
         t.priorities.insert("/".to_string(), 100);
-        
+
         t.priorities.insert("+".to_string(), 90);
         t.priorities.insert("-".to_string(), 90);
-        
+
+        t.priorities.insert("..".to_string(), 80);
+
         t.priorities.insert("<".to_string(), 50);
         t.priorities.insert("<=".to_string(), 50);
         t.priorities.insert(">".to_string(), 50);
@@ -144,6 +145,14 @@ impl Tokenizer {
         }
     }
 
+    fn peek_second(&mut self) -> Option<char> {
+        if self.char_index < self.chars.len() - 1 {
+            Some(self.chars[self.char_index + 1])
+        } else {
+            None
+        }
+    }
+
     fn check_next(&mut self, s: impl Into<String>) -> bool {
         let s: String = s.into();
         if self.char_index < self.chars.len() - s.len() + 1 {
@@ -177,41 +186,38 @@ impl Tokenizer {
             TokenKind::Identifier
         };
 
-        Token {
-            kind,
-            value,
-            char_index: index,
-        }
+        Token { kind, value, char_index: index }
     }
 
     fn parse_number(&mut self) -> Token {
         let mut value = String::new();
         let index = self.char_index;
 
-        let mut kind = TokenKind::IntegerLiteral;
-        while let Some(c) = self.peek() {
-            if c.is_numeric() || c == '.' {
-                value.push(self.get_next_char());
-                if c == '.' {
-                    if kind == TokenKind::FloatLiteral {
-                        panic!()
-                    }
-                    kind = TokenKind::FloatLiteral;
-                }
-            } 
-            else if c == '_' {
-                self.skip()
-            } 
-            else {
+        let mut has_dot = false;
+        loop {
+            if self.check_next("..") {
                 break;
+            }
+
+            if let Some(c) = self.peek() {
+                if c.is_numeric() {
+                    value.push(self.get_next_char());
+                } else if c == '.' {
+                    if has_dot {
+                        break;
+                    }
+                    has_dot = true;
+                    value.push(self.get_next_char());
+                } else if c == '_' {
+                    self.skip()
+                } else {
+                    break;
+                }
             }
         }
 
-        Token {
-            kind,
-            value,
-            char_index: index,
-        }
+        let mut kind = if has_dot { TokenKind::FloatLiteral } else { TokenKind::IntegerLiteral };
+        Token { kind, value, char_index: index }
     }
 
     fn parse_string(&mut self) -> Token {
@@ -235,7 +241,7 @@ impl Tokenizer {
                 value.push(self.get_next_char());
                 continue;
             }
-    
+
             break;
         }
 
@@ -350,6 +356,11 @@ impl Tokenizer {
                 continue;
             }
 
+            if self.check_next("..") {
+                self.add_token("..");
+                continue;
+            }
+
             if self.specials.contains(&c.to_string()) {
                 let t = Token {
                     kind: TokenKind::SpecialSymbol,
@@ -366,10 +377,10 @@ impl Tokenizer {
             todo!();
         }
 
-        let eof = Token { 
-            kind: TokenKind::Eof, 
-            value: String::new(), 
-            char_index: self.chars.len() - 1
+        let eof = Token {
+            kind: TokenKind::Eof,
+            value: String::new(),
+            char_index: self.chars.len() - 1,
         };
         self.tokens.push(eof);
     }

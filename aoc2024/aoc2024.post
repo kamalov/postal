@@ -27,8 +27,8 @@ fn get_pages_rank(pages: [int], rules: [int]) int
    incorrect = 0
    loop {
       swapped = 0
-      i = 0
-      loop {
+      for 0..(len(pages) - 2) {
+         i = it
          a = pages[i]
          b = pages[i + 1]
          rule = b*100 + a
@@ -37,9 +37,6 @@ fn get_pages_rank(pages: [int], rules: [int]) int
             set_value(pages, i + 1, a)
             swapped = 1
          }
-
-         i = i + 1
-         if i >= len(pages) - 1 do break
       }
 
       if swapped = 0 do break
