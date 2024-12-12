@@ -84,7 +84,7 @@ std::string int_to_str(long long i) {
     return s;
 }
 
-long long str_contains_str(std::string s, std::string subs) {
+long long str_contains(std::string s, std::string subs) {
     return s.find(subs) != std::string::npos;
 }
 

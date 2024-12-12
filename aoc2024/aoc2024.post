@@ -11,7 +11,7 @@ fn split_str(s: str, by: str) [str] external
 fn str_to_int(s: str) int external
 fn int_to_str(i: int) str external
 fn str_to_chars(s: str) [str] external
-fn str_contains_str(s: str, subs: str) int external
+fn str_contains(s: str, subs: str) int external
 
 /// main
 
@@ -27,7 +27,7 @@ fn get_pages_rank(pages: [int], rules: [int]) int
    incorrect = 0
    loop {
       swapped = 0
-      for 0..(len(pages) - 2) {
+      for 0..len(pages) - 2 {
          i = it
          a = pages[i]
          b = pages[i + 1]
@@ -60,13 +60,13 @@ fn run
    for lines {
       if it = '' do continue
       
-      if str_contains_str(it, '|') {
+      if str_contains(it, '|') {
          parts = split_str(it, '|')
          rule = str_to_int(parts[0])*100 + str_to_int(parts[1])
          set_value(rules, rule, 1)
       }
 
-      if str_contains_str(it, ',') {
+      if str_contains(it, ',') {
          pages = [int]
          pages_str = split_str(it, ',')
          for pages_str {

@@ -1,11 +1,11 @@
-// fn len<T>(a: [T]) int external
-// fn set_size<T>(a: [T], new_size: int) external
-// fn push<T>(a: [T], elem: T) external
-// fn set_value<T>(a: [T], index: int, value: T) external
-// fn sort<T>(a: [T]) external
+fn len<T>(a: [T]) int external
 
 fn run
-   for 1..4 {
-      log(idx, it)
-   }
+   a: int
+   b: int
+   c: int 
+   d: [int]
+   //b = a < b*c - a
+   //e = a..d[b*2] - 5
+   e = a..len(d) - 5
 end

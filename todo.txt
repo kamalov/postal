@@ -1,12 +1,13 @@
 current: 
   -- advent of code
+  -- ? hash table
+  -- in generic function call: convert return param generic type to actual type
+  -- переделать парсинг выражения на рекурсивный алгоритм
 
 
 
 to do:
-  -- ? hash table
   -- присваивание значения по индексу массива
-  -- in generic function call: convert return param generic type to actual type
 
 
 

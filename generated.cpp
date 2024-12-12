@@ -18,7 +18,7 @@ std::vector<std::string>* split_str(std::string s, std::string by);
 long long str_to_int(std::string s);
 std::string int_to_str(long long i);
 std::vector<std::string>* str_to_chars(std::string s);
-long long str_contains_str(std::string s, std::string subs);
+long long str_contains(std::string s, std::string subs);
 /// main
 void log_int_array(std::vector<long long>* a) {
     std::string s;
@@ -27,7 +27,7 @@ void log_int_array(std::vector<long long>* a) {
     auto _expr0 = a;
     for (int a__it0__idx = 0; a__it0__idx < _expr0->size(); a__it0__idx++) {
         long long a__it0 = (*_expr0)[a__it0__idx];
-        s = s + " "s + int_to_str(a__it0);
+        s = ((s + " "s) + int_to_str(a__it0));
     }
     printf("%s\n", (s).c_str());
 }
@@ -50,17 +50,17 @@ long long get_pages_rank(std::vector<long long>* pages, std::vector<long long>* 
             long long exp__it0 = (*_expr0)[exp__it0__idx];
             i = exp__it0;
             a = pages->at(i);
-            b = pages->at(i + 1ll);
-            rule = b*100ll + a;
+            b = pages->at((i + 1ll));
+            rule = ((b*100ll) + a);
 
             if (rules->at(rule)) {
                 set_value(pages, i, b);
-                set_value(pages, i + 1ll, a);
+                set_value(pages, (i + 1ll), a);
                 swapped = 1ll;
             };
         }
 
-        if (swapped == 0ll) {
+        if ((swapped == 0ll)) {
             break;
         };
         incorrect = 1ll;
@@ -69,7 +69,7 @@ long long get_pages_rank(std::vector<long long>* pages, std::vector<long long>* 
     printf("\n");
 
     if (incorrect) {
-        return pages->at(len(pages)/2ll);
+        return pages->at((len(pages)/2ll));
     };
     return 0ll;
 }
@@ -91,17 +91,17 @@ void run() {
     for (int lines__it0__idx = 0; lines__it0__idx < _expr0->size(); lines__it0__idx++) {
         std::string lines__it0 = (*_expr0)[lines__it0__idx];
 
-        if (lines__it0 == ""s) {
+        if ((lines__it0 == ""s)) {
             continue;
         };
 
-        if (str_contains_str(lines__it0, "|"s)) {
+        if (str_contains(lines__it0, "|"s)) {
             parts = split_str(lines__it0, "|"s);
-            rule = str_to_int(parts->at(0ll))*100ll + str_to_int(parts->at(1ll));
+            rule = ((str_to_int(parts->at(0ll))*100ll) + str_to_int(parts->at(1ll)));
             set_value(rules, rule, 1ll);
         };
 
-        if (str_contains_str(lines__it0, ","s)) {
+        if (str_contains(lines__it0, ","s)) {
             pages = new std::vector<long long>();
             pages_str = split_str(lines__it0, ","s);
 
@@ -110,7 +110,7 @@ void run() {
                 std::string pages_str__it1 = (*_expr1)[pages_str__it1__idx];
                 push(pages, str_to_int(pages_str__it1));
             }
-            total = total + get_pages_rank(pages, rules);
+            total = (total + get_pages_rank(pages, rules));
         };
     }
     printf("%lld %s\n", static_cast<long long>(total), ("done"s).c_str());

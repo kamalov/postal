@@ -365,6 +365,7 @@ impl CodeGenerator {
         let mut ctx = self.current_function_context.as_mut().unwrap();
         let index = ctx.iterators_count;
         ctx.iterators_count += 1;
+        println!("{:?}", for_node.iterable_expression);
         let iteratable_type_info = for_node.iterable_expression.type_info.clone().unwrap();
 
         let iteratable_name = match &*for_node.iterable_expression.kind {
@@ -580,7 +581,7 @@ impl CodeGenerator {
                         write!(&mut r, "create_range({left}, {right})");
                     }
                     _ => {
-                        write!(&mut r, "{left}{op_str}{right}");
+                        write!(&mut r, "({left}{op_str}{right})");
                     }
                 }
             }

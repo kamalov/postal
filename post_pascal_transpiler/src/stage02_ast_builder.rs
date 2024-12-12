@@ -7,6 +7,7 @@ use std::process::id;
 use std::{fmt, vec};
 
 use indexmap::IndexMap;
+use to_vec::ToVec;
 
 use crate::stage01_tokenizer::*;
 
@@ -853,6 +854,10 @@ impl AstBuilder {
             }
         }
 
+        for exp in &expressions {
+            println!("{exp:?}");
+        }
+
         let mut root = TreeNode {
             expression: expressions[0].clone(),
             childs: vec![],
@@ -874,113 +879,113 @@ impl AstBuilder {
     fn expressions_to_tree_node(
         &mut self,
         expressions: &Vec<Expression>,
-        next_expression_index: &mut usize,
-        tree_node: TreeNode,
-        priority: usize,
+        current_expression_index: &mut usize,
+        prev_tree_node: TreeNode,
+        prev_priority: usize,
     ) -> AstResult<TreeNode> {
-        let mut tree_node = tree_node;
-        let mut priority = priority;
+        let mut prev_tree_node = prev_tree_node;
+        let mut prev_priority = prev_priority;
         loop {
-            if *next_expression_index >= expressions.len() {
+            if *current_expression_index >= expressions.len() {
                 break;
             }
 
-            let next_expression = &expressions[*next_expression_index];
+            let current_expression = &expressions[*current_expression_index];
 
-            match &*next_expression.kind {
+            match &*current_expression.kind {
                 ExpressionKind::Operator(operator) => {
-                    let next_priority = *self.tokenizer.priorities.get(operator).unwrap();
+                    let priority = *self.tokenizer.priorities.get(operator).unwrap();
 
-                    if next_priority <= priority {
+                    if priority <= prev_priority {
                         break;
                     }
 
-                    let next_next_ast_node = &expressions[*next_expression_index + 1];
-                    let mut next_tree_node = TreeNode {
-                        expression: next_next_ast_node.clone(),
+                    let next_expression = &expressions[*current_expression_index + 1];
+                    let tree_node = TreeNode {
+                        expression: next_expression.clone(),
                         childs: vec![],
                     };
 
-                    *next_expression_index += 2;
-                    next_tree_node = self.expressions_to_tree_node(
+                    *current_expression_index += 2;
+                    let next_tree_node = self.expressions_to_tree_node(
                         expressions,
-                        next_expression_index,
-                        next_tree_node,
-                        next_priority,
+                        current_expression_index,
+                        tree_node,
+                        priority,
                     )?;
 
                     let mut childs = vec![];
-                    childs.push(tree_node);
+                    childs.push(prev_tree_node);
                     childs.push(next_tree_node);
-                    tree_node = TreeNode {
-                        expression: next_expression.clone(),
+                    prev_tree_node = TreeNode {
+                        expression: current_expression.clone(),
                         childs,
+                    }
+                }
+
+                ExpressionKind::ArrayBrackets(array_indexed_access_expression) => {
+                    let priority = *self.tokenizer.priorities.get("[]").unwrap();
+
+                    if priority <= prev_priority {
+                        break;
+                    }
+
+                    *current_expression_index += 1;
+
+                    prev_tree_node = TreeNode {
+                        expression: current_expression.clone(),
+                        childs: vec![prev_tree_node],
                     }
                 }
 
                 ExpressionKind::Group(group_expressions) => {
                     //
-                    match &*tree_node.expression.kind {
+                    match &*prev_tree_node.expression.kind {
                         ExpressionKind::Identifier(identifier_name) => {
                             let kind = ExpressionKind::FunctionCall(FunctionCall {
                                 name: identifier_name.clone(),
                                 params: group_expressions.clone(),
                             });
 
-                            let expression = Expression::new(&tree_node.expression.token, kind);
+                            let expression = Expression::new(&prev_tree_node.expression.token, kind);
 
-                            tree_node.expression = expression;
-                            *next_expression_index += 1;
-                            break;
+                            prev_tree_node.expression = expression;
+                            *current_expression_index += 1;
+                            //break;
                         }
 
                         else_ => {
-                            println!("{:?}", tree_node.expression);
+                            println!("{:?}", prev_tree_node.expression);
                             panic!()
                         }
                     }
                 }
 
-                ExpressionKind::ArrayBrackets(array_indexed_access_expression) => {
-                    let next_priority = *self.tokenizer.priorities.get("[]").unwrap();
-
-                    if next_priority <= priority {
-                        break;
-                    }
-
-                    tree_node = TreeNode {
-                        expression: next_expression.clone(),
-                        childs: vec![tree_node],
-                    };
-                    *next_expression_index += 1;
-                    break;
-                }
-
                 ExpressionKind::ObjectLiteral => {
                     //
-                    match &*tree_node.expression.kind {
+                    match &*prev_tree_node.expression.kind {
                         ExpressionKind::Identifier(identifier_name) => {
                             let kind = ExpressionKind::ObjectInitializer(identifier_name.clone());
-                            let expression = Expression::new(&tree_node.expression.token, kind);
-                            tree_node.expression = expression;
-                            *next_expression_index += 1;
+                            let expression = Expression::new(&prev_tree_node.expression.token, kind);
+                            prev_tree_node.expression = expression;
+                            *current_expression_index += 1;
                             break;
                         }
 
                         else_ => {
-                            println!("{:?}", tree_node.expression);
+                            println!("{:?}", prev_tree_node.expression);
                             panic!()
                         }
                     }
                 }
 
                 _ => {
-                    return Err(AstError::new(&next_expression.token, "unexpected token"));
+                    return Err(AstError::new(&current_expression.token, format!("unexpected token kind {:?}", current_expression.kind)));
                 }
             }
         }
 
-        Ok(tree_node)
+        Ok(prev_tree_node)
     }
 
     fn tree_node_to_expression(&self, tree_node: &TreeNode) -> AstResult<Expression> {
@@ -988,8 +993,6 @@ impl AstBuilder {
             ExpressionKind::Operator(op) => {
                 let left = self.tree_node_to_expression(&tree_node.childs[0])?;
                 let right = self.tree_node_to_expression(&tree_node.childs[1])?;
-                // println!("{:?}", left);
-                // println!("{:?}", right);
                 let kind = ExpressionKind::BinaryOperation {
                     operation: op.clone(),
                     left: left,
@@ -1040,3 +1043,11 @@ struct TreeNode {
     expression: Expression,
     childs: Vec<TreeNode>,
 }
+
+// impl fmt::Display for TreeNode {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         let childs_str = self.childs.iter().map(|child| format!("{child}")).to_vec().join(", ");
+//         write!(f, "({:?} {})", self.expression, childs_str)
+//     }
+// }
+

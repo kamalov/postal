@@ -118,7 +118,7 @@ impl TypeChecker {
                     self.process_function(function)?;
                 }
                 _ => {
-                    println!("{root_node:?}");
+                    //println!("{root_node:?}");
                 }
             }
         }
