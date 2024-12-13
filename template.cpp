@@ -17,11 +17,11 @@ int main()
         run();
     } catch (const std::string& ex) {
         SetConsoleTextAttribute(hConsole, 12);
-        printf("%s\n", ex.c_str());
+        printf("error: %s\n", ex.c_str());
         return -1;
-    } catch (...) {
+    } catch (const std::exception& e) {
         SetConsoleTextAttribute(hConsole, 12);
-        printf("exception\n");
+        std::cerr << "Exception caught: " << e.what() << std::endl;
         return -1;
     }
     

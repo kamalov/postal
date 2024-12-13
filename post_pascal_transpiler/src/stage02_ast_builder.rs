@@ -854,10 +854,6 @@ impl AstBuilder {
             }
         }
 
-        for exp in &expressions {
-            println!("{exp:?}");
-        }
-
         let mut root = TreeNode {
             expression: expressions[0].clone(),
             childs: vec![],
@@ -1043,11 +1039,3 @@ struct TreeNode {
     expression: Expression,
     childs: Vec<TreeNode>,
 }
-
-// impl fmt::Display for TreeNode {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         let childs_str = self.childs.iter().map(|child| format!("{child}")).to_vec().join(", ");
-//         write!(f, "({:?} {})", self.expression, childs_str)
-//     }
-// }
-

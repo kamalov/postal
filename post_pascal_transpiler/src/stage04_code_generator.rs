@@ -581,7 +581,7 @@ impl CodeGenerator {
                         write!(&mut r, "create_range({left}, {right})");
                     }
                     _ => {
-                        write!(&mut r, "({left}{op_str}{right})");
+                        write!(&mut r, "{left}{op_str}{right}");
                     }
                 }
             }

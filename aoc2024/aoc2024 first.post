@@ -1,65 +1,160 @@
+/// lib array utils
+fn len<T>(a: [T]) int external
+fn set_array_size<T>(a: [T], new_size: int) external
+fn push<T>(a: [T], elem: T) external
+fn set_array_value<T>(a: [T], index: int, value: T) external
+fn sort<T>(a: [T]) external
+
+/// lib file and string utils
 fn read_lines(filename: str) [str] external
 fn split_str(s: str, by: str) [str] external
 fn str_to_int(s: str) int external
 fn int_to_str(i: int) str external
 fn str_to_chars(s: str) [str] external
-// fn sort_int_array(a: [int]) [int] external
-fn len<T>(a: [T]) int external
+fn str_contains(s: str, subs: str) int external
 
+/// main
 rec Row {
    cols: [str]
 }
 
-fn get_cell_value(rows: [Row], row_index: int, col_index: int)
-   rows_count = len(rows)
-   cols_count = len(rows[0].cols)
-   if row_index < 0 or col_index < 0 or row_index >= rows_count or col_index >= cols_count {
-      ret ''
+rec Field {
+   rows: [Row]
+   max_rows_index: int
+   max_cols_index: int
+   possible_obstacles_count: int
+   ri: int
+   ci: int
+}
+
+fn init_field(lines: [str])
+   field = Field {}
+   field.rows = [Row]
+   for lines {
+      row_index = idx
+      row = Row {}
+      row.cols = [str]
+      row.cols = str_to_chars(it)
+      for row.cols {
+         if it = '<' or it = '>' or it = '^' or it = 'v' {
+            field.ri = row_index
+            field.ci = idx
+         }
+      }
+      push(field.rows, row)
    }
-   ret rows[row_index].cols[col_index]
+   field.max_rows_index = len(field.rows) - 1 
+   field.max_cols_index = len(field.rows[0].cols) - 1
+   
+   ret field
 end
 
-fn try_xmas(rows: [Row], row_index: int, col_index: int, dx: int, dy: int) int
-   x = get_cell_value(rows, row_index, col_index) = 'X'
-   m = get_cell_value(rows, row_index + dy, col_index + dx) = 'M'
-   a = get_cell_value(rows, row_index + dy*2, col_index + dx*2) = 'A'
-   s = get_cell_value(rows, row_index + dy*3, col_index + dx*3) = 'S'
-   if x and m and a and s do ret 1
-   ret 0
+fn print_field(field: Field)
+   for field.rows {
+      s = ''
+      cols = it.cols
+      for cols do s = s + ' ' + it
+      log(s)
+   }
 end
 
-fn total_xmas_from_cell(rows: [Row], row_index: int, col_index: int) int
-   total = 0
-   total = total + try_xmas(rows, row_index, col_index, 1, 0-1)
-   total = total + try_xmas(rows, row_index, col_index, 1, 0)
-   total = total + try_xmas(rows, row_index, col_index, 1, 1)
-   total = total + try_xmas(rows, row_index, col_index, 0-1, 0-1)
-   total = total + try_xmas(rows, row_index, col_index, 0-1, 0)
-   total = total + try_xmas(rows, row_index, col_index, 0-1, 1)
-   total = total + try_xmas(rows, row_index, col_index, 0, 1)
-   total = total + try_xmas(rows, row_index, col_index, 0, 0-1)
-   ret total
+fn get_field_value(f: Field, ri: int, ci: int)
+   if ri < 0 or ci < 0 or ri > f.max_rows_index or ci > f.max_cols_index do ret ''
+   ret f.rows[ri].cols[ci]
+end
+
+fn set_field_value(f: Field, ri: int, ci: int, value: str)
+   set_array_value(f.rows[ri].cols, ci, value)
+end
+
+rec Delta {
+   dr: int
+   dc: int
+}
+
+fn get_delta(dir: str)
+   d = Delta {}
+   d.dr = 0
+   d.dc = 0
+   if dir = '^' {
+      d.dr = 0-1
+   } else if dir = 'v' {
+      d.dr = 1
+   } else if dir = '>' { 
+      d.dc = 1
+   } else if dir = '<' {
+      d.dc = 0-1
+   }
+   ret d
+end
+
+fn rotate(dir: str)
+   if dir = '^' do ret '>'
+   if dir = '>' do ret 'v'
+   if dir = 'v' do ret '<'
+   if dir = '<' do ret '^'
+end
+
+fn try_move_next(f: Field)
+   current_dir = get_field_value(f, f.ri, f.ci)
+   d = get_delta(current_dir)
+   next_ri = f.ri + d.dr
+   next_ci = f.ci + d.dc
+   next_cell_value = get_field_value(f, next_ri, next_ci)
+
+   if next_cell_value = '' {
+      log('zero value at', next_ri, next_ci)
+      ret 0
+   } 
+   
+   if next_cell_value = '#' {
+      current_dir = rotate(current_dir)
+      d = get_delta(current_dir)
+      f.ri = f.ri + d.dr
+      f.ci = f.ci + d.dc
+   } else {
+      f.ri = next_ri
+      f.ci = next_ci
+   }
+
+   next_rotation = rotate(current_dir)
+   next_value = get_field_value(f, f.ri, f.ci)
+   if next_rotation = next_value {
+      log('possible obstacle at', f.ri, f.ci)
+      f.possible_obstacles_count = f.possible_obstacles_count + 1
+   }
+
+   set_field_value(f, f.ri, f.ci, current_dir)
+   
+   ret 1
+end
+
+fn count_visited(f: Field)
+   count = 0
+   for 0..f.max_rows_index {
+      ri = idx
+      for 0..f.max_cols_index {
+         v = get_field_value(f, ri, idx)
+         if v = '#' or v = '.' do continue
+         count = count + 1
+      }
+   }
+   ret count
 end
 
 fn run
    lines = read_lines('D:/src/postal/aoc2024/input.txt')
 
-   rows = [Row]
-   for lines {
-      row = Row {}
-      row.cols = str_to_chars(it)
-      push(rows, row)
-   }
+   field = init_field(lines)
 
-   total = 0
-   for rows {
-      row_index = idx
-      for row.cols {
-         col_index = idx   
-         total = total + total_xmas_from_cell(rows, row_index, col_index)
-      }
-   }
+   print_field(field)
+   log(field.ri, field.ci)
 
-   log(total)
-   log('done')
+   loop {
+      if try_move_next(field) = 0 do break
+   }
+   
+   print_field(field)
+   log(count_visited(field), 'visited')
+   log(field.possible_obstacles_count, 'done')
 end

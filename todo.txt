@@ -2,16 +2,18 @@ current:
   -- advent of code
   -- ? hash table
   -- in generic function call: convert return param generic type to actual type
-  -- переделать парсинг выражения на рекурсивный алгоритм
 
 
 
 to do:
-  -- присваивание значения по индексу массива
+  -- autoinit first level field in struct
+  -- fix 'it' inside for
 
 
 
 backlog:
+  -- переделать парсинг выражения на рекурсивный алгоритм
+  -- присваивание значения по индексу массива
   -- проверка соответствия формальных и фактических параметров при вызове функции
   -- унарный минус, унарный NOT
   -- iteration mapping and iteration as expression (a = some >> { it })
