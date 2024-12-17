@@ -987,6 +987,12 @@ impl AstBuilder {
     fn tree_node_to_expression(&self, tree_node: &TreeNode) -> AstResult<Expression> {
         match &*tree_node.expression.kind {
             ExpressionKind::Operator(op) => {
+                if tree_node.childs.len() < 2 {
+                    return Err(AstError::new(
+                        &tree_node.expression.token,
+                        "binary op error",
+                    ));
+                }
                 let left = self.tree_node_to_expression(&tree_node.childs[0])?;
                 let right = self.tree_node_to_expression(&tree_node.childs[1])?;
                 let kind = ExpressionKind::BinaryOperation {

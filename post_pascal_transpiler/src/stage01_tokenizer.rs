@@ -37,8 +37,10 @@ const KEYWORDS: [&str; 20] = [
     "not", "and", "or", //
 ];
 
-const SPECIALS: [&str; 17] = [
-    "{", "}", "(", ")", "[", "]", ",", ":", ";", "=", "*", "/", "+", "-", "<", ">", ".", //, "::", "<<", "=>", "->"
+const SPECIALS: [&str; 18] = [
+    "{", "}", "(", ")", "[", "]", ",", //
+    ":", ";", "=", "*", "/", "+", "-", "<", ">", ".", //, "::", "<<", "=>", "->"
+    "%"
 ];
 
 fn is_identifier_char(c: char) -> bool {
@@ -78,6 +80,7 @@ impl Tokenizer {
 
         t.priorities.insert("*".to_string(), 100);
         t.priorities.insert("/".to_string(), 100);
+        t.priorities.insert("%".to_string(), 100);
 
         t.priorities.insert("+".to_string(), 90);
         t.priorities.insert("-".to_string(), 90);

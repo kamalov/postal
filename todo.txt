@@ -1,5 +1,8 @@
 current: 
+  -- yes/no for booleans
   -- advent of code
+  -- unary not after 12
+
 
 
 

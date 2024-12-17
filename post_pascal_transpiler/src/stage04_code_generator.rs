@@ -359,13 +359,13 @@ impl CodeGenerator {
         r
     }
 
-    fn generate_for_code(&mut self, for_node: &ForStatement, padding: &str) -> String {
+    fn generate_for_code(&mut self, for_statement: &ForStatement, padding: &str) -> String {
         let mut r = String::new();
 
         let index = self.current_function_context.as_ref().unwrap().iterators_count;
-        let iteratable_type_info = for_node.iterable_expression.type_info.clone().unwrap();
+        let iteratable_type_info = for_statement.iterable_expression.type_info.clone().unwrap();
         let it_expression_var_name = format!("__expr{index}");
-        let iteratable_expression_code = self.generate_expression_code(&for_node.iterable_expression);
+        let iteratable_expression_code = self.generate_expression_code(&for_statement.iterable_expression);
         writeln!(&mut r, "");
         writeln!(&mut r, "{padding}auto {it_expression_var_name} = {iteratable_expression_code};");
 
@@ -373,7 +373,7 @@ impl CodeGenerator {
         let index = ctx.iterators_count;
         ctx.iterators_count += 1;
 
-        let iteratable_name = match &*for_node.iterable_expression.kind {
+        let iteratable_name = match &*for_statement.iterable_expression.kind {
             ExpressionKind::Identifier(identifier) => identifier.clone(),
             _ => "expr".to_string(),
         };
@@ -382,7 +382,7 @@ impl CodeGenerator {
         let it_index_name = format!("{}__idx", it_name);
         let it_type_name = iteratable_type_info.type_str.clone();
         ctx.iterators.push((it_name.clone(), it_type_name.clone()));
-        let block = self.generate_block_code(&for_node.block, padding);
+        let block = self.generate_block_code(&for_statement.block, padding);
         writeln!(&mut r, "{padding}for (int {0} = 0; {0} < {it_expression_var_name}->size(); {0}++) {{", it_index_name);
         let type_info = TypeInfo {
             type_str: it_type_name.clone(),
