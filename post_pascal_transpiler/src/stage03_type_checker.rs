@@ -1,4 +1,3 @@
-#![allow(warnings)]
 use std::vec;
 
 use indexmap::IndexMap;
@@ -274,19 +273,13 @@ impl TypeChecker {
 
                 if operation == ".." {
                     if left_side_type_info.type_str != "int" {
-                        return Err(TypeCheckError::new(
-                            &left.token,
-                            format!("left side of range must be 'int': found '{left_side_type_info}'"),
-                        ));
+                        return Err(TypeCheckError::new(&left.token, format!("left side of range must be 'int': found '{left_side_type_info}'")));
                     }
 
                     if right_side_type_info.type_str != "int" {
-                        return Err(TypeCheckError::new(
-                            &left.token,
-                            format!("right side of range must be 'int': found '{right_side_type_info}'"),
-                        ));
+                        return Err(TypeCheckError::new(&left.token, format!("right side of range must be 'int': found '{right_side_type_info}'")));
                     }
-    
+
                     return Ok(TypeInfo {
                         type_str: "int".to_string(),
                         is_array: true,
@@ -389,15 +382,15 @@ impl TypeChecker {
                 Statement::If(if_statement) => {
                     for (if_expression, block) in &mut if_statement.if_blocks {
                         let expression = self.get_expression_type(&if_expression)?;
-                        self.process_block_statements(block);
+                        self.process_block_statements(block)?;
                     }
 
                     if let Some(block) = &mut if_statement.else_block {
-                        self.process_block_statements(block);
+                        self.process_block_statements(block)?;
                     }
                 }
                 Statement::Loop(loop_statement) => {
-                    self.process_block_statements(&mut loop_statement.block);
+                    self.process_block_statements(&mut loop_statement.block)?;
                 }
                 Statement::Return(expression) => {
                     let return_type = self.get_expression_type(expression)?;
@@ -456,14 +449,17 @@ impl TypeChecker {
                         }
                     }
                 }
-                Statement::VariableDeclaration((token, name, type_info)) => match self.get_function_param_or_var_type(&name) {
-                    Some(type_info) => {
-                        return Err(TypeCheckError::new(token, format!("variable already defined: '{name}'")));
+                Statement::VariableDeclaration((token, name, type_info)) => {
+                    //
+                    match self.get_function_param_or_var_type(&name) {
+                        Some(type_info) => {
+                            return Err(TypeCheckError::new(token, format!("variable already defined: '{name}'")));
+                        }
+                        None => {
+                            self.ctx.vars.insert(name.clone(), type_info.clone());
+                        }
                     }
-                    None => {
-                        self.ctx.vars.insert(name.clone(), type_info.clone());
-                    }
-                },
+                }
                 Statement::Assignment(Assignment { token, lvalue, rvalue }) => {
                     let left_side_type_info = self.get_expression_type(lvalue)?;
                     let right_side_type_info = self.get_expression_type(rvalue)?;

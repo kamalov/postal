@@ -1,4 +1,3 @@
-#![allow(warnings)]
 use std::collections::{HashMap, HashSet};
 use std::fmt::{format, Write};
 

@@ -2,5 +2,10 @@ fn len<T>(a: [T]) int external
 
 fn run
    b = 0
-   a = size - b
+   loop {
+      a = b - b
+      for 0..1 {
+
+      }
+   }
 end

@@ -1,4 +1,3 @@
-#![allow(warnings)]
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::fmt::Write;
