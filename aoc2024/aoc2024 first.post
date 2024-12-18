@@ -5,6 +5,7 @@ fn push<T>(a: [T], elem: T) external
 fn set_array_value<T>(a: [T], index: int, value: T) external
 fn sort_array<T>(a: [T]) external
 fn array_contains<T>(a: [T], value: T) int external
+fn remove_array_element_at<T>(a: [T], index:int) external
 
 /// lib string utils
 fn split_str(s: str, by: str) [str] external
@@ -18,79 +19,110 @@ fn err(s: str) external
 fn read_line_from_console() str external   
 fn read_string_lines_from_file(filename: str) [str] external
 
-fn print_vals(vals: [int])
-   s = ''
-   for vals {
-      if it = 0 {
-         s = s + '.'
-      } else {
-         s = s + int_to_str(it - 1)
-      }
-   }
-   log(s)
+/// main
+rec IntBox {
+   value: int
+}
+
+rec IntField {
+   row_count: int
+   col_count: int
+   values: [int]
+}
+
+fn create_int_field(row_count: int, col_count: int)
+   f = IntField {}
+   f.row_count = row_count
+   f.col_count = col_count
+   f.values = [int]
+   set_array_size(f.values, row_count * col_count)
+   ret f
 end
 
-fn sort(vals: [int])
-   li = 0
-   ri = len(vals) - 1
-   loop {
-      if li >= ri do break
-
-      lv = vals[li]
-      if lv > 0 {
-         li = li + 1
-         continue
-      }
-
-      rv = vals[ri]
-      if rv = 0 {
-         ri = ri - 1
-         continue
-      }
-
-      vals[li] = rv
-      vals[ri] = 0
-      li = li + 1
-      ri = ri - 1
-      // print_vals(vals)
-      // read_line_from_console()
-   }
+fn get_int_field_value(f: IntField, row_index: int, col_index: int) int
+   ret f.values[row_index*f.col_count + col_index]
 end
 
-fn process(line: str)
-   vals = [int]
-   is_file = 1
-   id = 1
-   for str_to_chars(line) {
-      v = str_to_int(it)
-      for 1..v {
-         if is_file {
-            push(vals, id)
-         } else {
-            push(vals, 0)
+fn set_int_field_value(f: IntField, row_index: int, col_index: int, value: int)
+   f.values[row_index*f.col_count + col_index] = value
+end
+
+fn is_valid_field_index(f: IntField, row_index: int, col_index: int)
+   ret row_index >= 0 and row_index < f.row_count and col_index >= 0 and col_index < f.col_count
+end
+
+fn print_int_field(f: IntField)
+   for 0..(f.row_count - 1) {
+      ri = it
+      s = ''
+      for 0..(f.col_count - 1) {
+         ci = it
+         v = get_int_field_value(f, ri, ci)
+         s = s + ' ' + int_to_str(v)
+      }
+      log(s)
+   }
+   log()
+end
+
+fn lines_to_int_field(lines: [str])
+   f = create_int_field(len(lines), len(str_to_chars(lines[0])))
+   for lines {
+      ri = idx
+      for str_to_chars(it) {
+         ci = idx
+         v = str_to_int(it)
+         set_int_field_value(f, ri, ci, v)
+      }
+   }
+   ret f
+end
+
+fn try_visit(f: IntField, ri: int, ci: int, target_value: int, visited: [int]) 
+   if is_valid_field_index(f, ri, ci) = 0 do ret
+   v = get_int_field_value(f, ri, ci)
+   if v <> target_value do ret
+
+   if v = 9 {
+      h = ri*1000 + ci
+      if array_contains(visited, h) = 0 {
+         push(visited, h)
+      }
+      ret
+   }
+
+   try_visit(f, ri - 1, ci, target_value + 1, visited)
+   try_visit(f, ri + 1, ci, target_value + 1, visited)
+   try_visit(f, ri, ci - 1, target_value + 1, visited)
+   try_visit(f, ri, ci + 1, target_value + 1, visited)
+end
+
+fn get_trails_count(f: IntField, ri: int, ci: int) 
+   visited = [int]
+   try_visit(f, ri, ci, 0, visited)
+   ret len(visited)
+end
+
+fn process_field(f: IntField)
+   total = 0
+   for 0..(f.row_count - 1) {
+      ri = it
+      for 0..(f.col_count - 1) {
+         ci = it
+         v = get_int_field_value(f, ri, ci)
+         if v = 0 {
+            total = total + get_trails_count(f, ri, ci)
          }
       }
-      if is_file do id = id + 1
-      is_file = is_file = 0
    }
-
-   //print_vals(vals)
-   sort(vals)
-   log(len(vals))
-   //print_vals(vals)
-
-   total = 0
-   for vals {
-      if it = 0 do continue
-      total = total + (it - 1)*idx
-   }
-
    ret total
 end
 
-/// main
 fn run
    lines = read_string_lines_from_file('D:/src/postal/aoc2024/input.txt')
-   count = process(lines[0])
-   log(count, 'done')
+   f = lines_to_int_field(lines)
+   print_int_field(f)
+   total = process_field(f)
+   
+   log(total, 'done')
 end

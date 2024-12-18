@@ -392,18 +392,23 @@ impl TypeChecker {
                 Statement::Loop(loop_statement) => {
                     self.process_block_statements(&mut loop_statement.block)?;
                 }
-                Statement::Return(expression) => {
-                    let return_type = self.get_expression_type(expression)?;
-                    match &self.ctx.return_type {
-                        Some(current_return_type) => match get_common_type(current_return_type, &return_type) {
-                            Ok(return_type) => {
-                                self.ctx.return_type = Some(return_type);
+                Statement::Return(expression_option) => {
+                    match expression_option {
+                        None => {},
+                        Some(expression) => {
+                            let return_type = self.get_expression_type(expression)?;
+                            match &self.ctx.return_type {
+                                Some(current_return_type) => match get_common_type(current_return_type, &return_type) {
+                                    Ok(return_type) => {
+                                        self.ctx.return_type = Some(return_type);
+                                    }
+                                    Err(_) => {
+                                        return Err(TypeCheckError::new(&expression.token, "return type differs from previous"));
+                                    }
+                                },
+                                None => self.ctx.return_type = Some(return_type),
                             }
-                            Err(_) => {
-                                return Err(TypeCheckError::new(&expression.token, "return type differs from previous"));
-                            }
-                        },
-                        None => self.ctx.return_type = Some(return_type),
+                        }
                     }
                 }
 

@@ -148,7 +148,7 @@ pub enum Statement {
     For(ForStatement),
     Break(),
     Continue(),
-    Return(Expression),
+    Return(Option<Expression>),
     FunctionCall(FunctionCall),
     VariableAssignment(VariableAssignment),
     Assignment(Assignment),
@@ -611,8 +611,12 @@ impl AstBuilder {
                 }
                 "ret" => {
                     self.skip_expected("ret")?;
-                    let expression = self.parse_expression_until(&["\n"])?;
-                    return Ok(Statement::Return(expression));
+                    if self.try_skip("\n") {
+                        return Ok(Statement::Return(None));
+                    } else {
+                        let expression = self.parse_expression_until(&["\n"])?;
+                        return Ok(Statement::Return(Some(expression)));
+                    }
                 }
                 panic_ => {
                     panic!();

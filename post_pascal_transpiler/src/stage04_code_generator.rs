@@ -258,8 +258,15 @@ impl CodeGenerator {
                 let s = self.generate_comment_code(line_comment, padding);
                 r.push_str(s.as_str());
             }
-            Statement::Return(expression) => {
-                writeln!(&mut r, "{}return {};", padding, self.generate_expression_code(&expression));
+            Statement::Return(expression_option) => {
+                match expression_option {
+                    None => {
+                        writeln!(&mut r, "{padding}return;");
+                    }
+                    Some(expression) => {
+                        writeln!(&mut r, "{padding}return {expr};", expr = self.generate_expression_code(&expression));
+                    }
+                }
             }
             Statement::VariableDeclaration(_) => {}
             Statement::Assignment(assignment_node) => {
