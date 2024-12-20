@@ -107,15 +107,8 @@ pub enum ExpressionKind {
     Group(Vec<Expression>),
     ObjectInitializer(String),
     ArrayInitializer(String),
-    BinaryOperation {
-        operation: String,
-        left: Expression,
-        right: Expression,
-    },
-    ArrayItemAccess {
-        array_expression: Expression,
-        access_expression: Expression,
-    },
+    BinaryOperation { operation: String, left: Expression, right: Expression },
+    ArrayItemAccess { array_expression: Expression, access_expression: Expression },
 
     // todo (low priority): tmp operators, used only on parsing stage, not presented in final tree, needs refactoring
     Operator(String),
@@ -333,7 +326,11 @@ impl AstBuilder {
             type_str = self.next().value.clone();
         }
 
-        Ok(TypeInfo { is_array, type_str, ..TypeInfo::default() })
+        Ok(TypeInfo {
+            is_array,
+            type_str,
+            ..TypeInfo::default()
+        })
     }
 
     fn parse_record(&mut self) -> AstResult<Record> {
@@ -358,10 +355,7 @@ impl AstBuilder {
             fields.insert(field_name, type_info);
         }
 
-        let record_node = Record {
-            name: record_name.clone(),
-            fields,
-        };
+        let record_node = Record { name: record_name.clone(), fields };
 
         match self.records.entry(record_name) {
             Entry::Occupied(occupied_entry) => {
@@ -526,10 +520,7 @@ impl AstBuilder {
         let name = token.value.clone();
         let group = self.parse_group()?;
         if let ExpressionKind::Group(expressions) = *group.kind {
-            Ok(FunctionCall {
-                name,
-                params: expressions,
-            })
+            Ok(FunctionCall { name, params: expressions })
         } else {
             panic!();
         }
@@ -630,8 +621,8 @@ impl AstBuilder {
             }
 
             _ => {
-                println!("{token:?}");
-                panic!();
+                //println!("{token:?}");
+                return Err(AstError::new(&token, "unexpected token on expression parsing"));
             }
         }
     }
@@ -646,14 +637,9 @@ impl AstBuilder {
 
         if self.try_skip("do") {
             let statement = self.parse_statement()?;
-            let block = Block {
-                statements: vec![statement],
-            };
+            let block = Block { statements: vec![statement] };
             if_blocks.push((condition, block));
-            return Ok(IfStatement {
-                if_blocks,
-                else_block: None,
-            });
+            return Ok(IfStatement { if_blocks, else_block: None });
         }
 
         let block = self.parse_block()?;
@@ -695,9 +681,7 @@ impl AstBuilder {
 
         let block = if self.peek_next().value != "{" {
             let statement = self.parse_statement()?;
-            Block {
-                statements: vec![statement],
-            }
+            Block { statements: vec![statement] }
         } else {
             self.parse_block()?
         };
@@ -715,17 +699,12 @@ impl AstBuilder {
 
         let block = if self.try_skip("do") {
             let statement = self.parse_statement()?;
-            Block {
-                statements: vec![statement],
-            }
+            Block { statements: vec![statement] }
         } else {
             self.parse_block()?
         };
 
-        Ok(ForStatement {
-            iterable_expression,
-            block,
-        })
+        Ok(ForStatement { iterable_expression, block })
     }
 
     fn parse_variable_assignment_statement(&mut self) -> AstResult<VariableAssignment> {
@@ -875,13 +854,7 @@ impl AstBuilder {
         Ok(node)
     }
 
-    fn expressions_to_tree_node(
-        &mut self,
-        expressions: &Vec<Expression>,
-        current_expression_index: &mut usize,
-        prev_tree_node: TreeNode,
-        prev_priority: usize,
-    ) -> AstResult<TreeNode> {
+    fn expressions_to_tree_node(&mut self, expressions: &Vec<Expression>, current_expression_index: &mut usize, prev_tree_node: TreeNode, prev_priority: usize) -> AstResult<TreeNode> {
         let mut prev_tree_node = prev_tree_node;
         let mut prev_priority = prev_priority;
         loop {
@@ -906,12 +879,7 @@ impl AstBuilder {
                     };
 
                     *current_expression_index += 2;
-                    let next_tree_node = self.expressions_to_tree_node(
-                        expressions,
-                        current_expression_index,
-                        tree_node,
-                        priority,
-                    )?;
+                    let next_tree_node = self.expressions_to_tree_node(expressions, current_expression_index, tree_node, priority)?;
 
                     let mut childs = vec![];
                     childs.push(prev_tree_node);
@@ -991,10 +959,7 @@ impl AstBuilder {
         match &*tree_node.expression.kind {
             ExpressionKind::Operator(op) => {
                 if tree_node.childs.len() < 2 {
-                    return Err(AstError::new(
-                        &tree_node.expression.token,
-                        "binary op error",
-                    ));
+                    return Err(AstError::new(&tree_node.expression.token, "binary op error"));
                 }
                 let left = self.tree_node_to_expression(&tree_node.childs[0])?;
                 let right = self.tree_node_to_expression(&tree_node.childs[1])?;
@@ -1017,10 +982,7 @@ impl AstBuilder {
                             return Ok(expression);
                         }
                         _ => {
-                            return Err(AstError::new(
-                                &access_expression.token,
-                                "expected identifier in array initializer",
-                            ));
+                            return Err(AstError::new(&access_expression.token, "expected identifier in array initializer"));
                         }
                     }
                 } else {
