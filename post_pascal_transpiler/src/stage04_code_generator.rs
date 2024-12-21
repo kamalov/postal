@@ -489,7 +489,7 @@ impl CodeGenerator {
         let mut s = String::new();
         let array_expression_code = self.generate_expression_code(array_expression);
         let index_expression_code = self.generate_expression_code(index_expression);
-        write!(&mut s, "{array_expression_code}->at({index_expression_code})");
+        write!(&mut s, "(*{array_expression_code})[{index_expression_code}]");
         s
     }
 

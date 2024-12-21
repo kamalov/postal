@@ -1,18 +1,18 @@
 /// lib array utils
 fn len<T>(a: [T]) int external
-fn set_array_size<T>(a: [T], new_size: int) external
 fn push<T>(a: [T], elem: T) external
-fn set_array_value<T>(a: [T], index: int, value: T) external
-fn sort_array<T>(a: [T]) external
+fn array_set_len<T>(a: [T], new_len: int) external
+fn array_sort<T>(a: [T]) external
 fn array_contains<T>(a: [T], value: T) int external
-fn remove_array_element_at<T>(a: [T], index:int) external
+fn array_remove_at<T>(a: [T], index:int) external
 
 /// lib string utils
-fn split_str(s: str, by: str) [str] external
+fn str_split(s: str, by: str) [str] external
 fn str_to_int(s: str) int external
-fn int_to_str(i: int) str external
 fn str_to_chars(s: str) [str] external
 fn str_contains(s: str, subs: str) int external
+fn str_len(s: str) int external
+fn int_to_str(i: int) str external
 
 /// lib other utils
 fn err(s: str) external
@@ -20,113 +20,151 @@ fn read_line_from_console() str external
 fn read_string_lines_from_file(filename: str) [str] external
 
 /// main
-rec Val {
-   value: int
-   count: int
+rec StrField {
+   row_count: int
+   col_count: int
+   values: [str]
 }
 
-fn create_new_val(value: int, count: int)
-   v = Val {}
-   v.value = value
-   v.count = count
-   ret v
+rec Cell {
+   ri: int
+   ci: int
+}
+
+fn create_str_field(row_count: int, col_count: int)
+   f = StrField {}
+   f.row_count = row_count
+   f.col_count = col_count
+   f.values = [str]
+   array_set_len(f.values, row_count * col_count)
+   ret f
 end
 
-fn print(vals: [Val])
-   s = ''
-   for vals {
-      if it.count = 0 do continue
-      s = s + ' ' + int_to_str(it.value) + ' (' + int_to_str(it.count) + ')'
-   }
-   log(s)
+fn get_str_field_value(f: StrField, row_index: int, col_index: int) str
+   ret f.values[row_index*f.col_count + col_index]
 end
 
-fn get_new_vals(old_vals: [Val])
-   new_vals = [Val]
-   for old_vals {
-      old_val = it
-      value = it.value
-      count = it.count
-      if count = 0 do continue
-      old_val.count = 0
+fn set_str_field_value(f: StrField, row_index: int, col_index: int, value: str)
+   f.values[row_index*f.col_count + col_index] = value
+end
 
-      if value = 0 {
-         push(new_vals, create_new_val(1, count))
-         continue
-      } 
-      
-      if value = 1 {
-         push(new_vals, create_new_val(2024, count))
-         continue
-      } 
+fn is_valid_field_index(f: StrField, row_index: int, col_index: int)
+   ret row_index >= 0 and row_index < f.row_count and col_index >= 0 and col_index < f.col_count
+end
 
-      size = len(str_to_chars(int_to_str(value)))
-      if size % 2 = 0 {
-         exponent = size / 2
-         divider = 1
-         for 1..exponent do divider = divider*10
-         lv = value / divider
-         rv = value % divider 
-         push(new_vals, create_new_val(lv, count))
-         push(new_vals, create_new_val(rv, count))
-         continue
-      } 
-      
-      new_value = value*2024
-      if new_value < 0 {
-         s = 'overflow at ' + int_to_str(value) + ' ' + int_to_str(new_value)
-         err(s)
+fn print_str_field(f: StrField)
+   for 0..(f.row_count - 1) {
+      ri = it
+      s = ''
+      for 0..(f.col_count - 1) {
+         ci = it
+         v = get_str_field_value(f, ri, ci)
+         s = s + ' ' + v
       }
-      push(new_vals, create_new_val(new_value, count))
+      log(s)
    }
+   log()
+end
 
-   for new_vals {
-      new_val = it
-      found = 0
-      for old_vals {
-         if it.value = new_val.value {
-            it.count = it.count + new_val.count
-            found = 1
-            break
+fn lines_to_str_field(lines: [str])
+   f = create_str_field(len(lines), str_len(lines[0]))
+   for lines {
+      ri = idx
+      for str_to_chars(it) {
+         ci = idx
+         set_str_field_value(f, ri, ci, it)
+      }
+   }
+   ret f
+end
+
+fn set_visited(visited: [int], ri: int, ci: int) 
+   visited[ri*1000 + ci] = 1
+end
+
+fn was_visited(visited: [int], ri: int, ci: int) 
+   ret visited[ri*1000 + ci]
+end
+
+fn fill_farm(f: StrField, visited: [int], letter: str, farm: [Cell], ri: int, ci: int)
+   if is_valid_field_index(f, ri, ci) = 0 do ret
+   if was_visited(visited, ri, ci) do ret
+   v = get_str_field_value(f, ri, ci)
+   if v <> letter do ret
+   cell = Cell {}
+   cell.ri = ri
+   cell.ci = ci
+   push(farm, cell)
+   set_visited(visited, ri, ci)
+
+   fill_farm(f, visited, letter, farm, ri - 1, ci)
+   fill_farm(f, visited, letter, farm, ri + 1, ci)
+   fill_farm(f, visited, letter, farm, ri, ci - 1)
+   fill_farm(f, visited, letter, farm, ri, ci + 1)
+end
+
+fn get_farm(f: StrField, visited: [int], ri: int, ci: int)
+   farm = [Cell]
+   if was_visited(visited, ri, ci) = 1 do ret farm
+   letter = get_str_field_value(f, ri, ci)
+   fill_farm(f, visited, letter, farm, ri, ci)
+   ret farm
+end
+
+fn coord_to_edge(ri: int, ci: int, ri1: int, ci1: int)  
+   ret int_to_str(ri) + ',' + int_to_str(ci) + ',' + int_to_str(ri1) + ',' + int_to_str(ci1)
+end
+
+fn get_cell_edges(f: Cell)
+   edges = [str]
+   push(edges, coord_to_edge(f.ri, f.ci, f.ri, f.ci + 1))
+   push(edges, coord_to_edge(f.ri, f.ci, f.ri + 1, f.ci))
+   push(edges, coord_to_edge(f.ri + 1, f.ci, f.ri + 1, f.ci + 1))
+   push(edges, coord_to_edge(f.ri, f.ci + 1, f.ri + 1, f.ci + 1))
+   ret edges
+end
+
+fn get_perimeter(farm: [Cell])
+   total = 0
+   edges = [str]
+   for farm {
+      for get_cell_edges(it) {
+         if array_contains(edges, it) {
+            total = total - 1
+         } else {
+            push(edges, it)
+            total = total + 1
          }
       }
-      if found = 0 do push(old_vals, create_new_val(new_val.value, new_val.count))
    }
-   ret old_vals
-
-   // new_vals = [Val]
-   // for old_vals {
-   //    if it.count > 0 do push(new_vals, it)
-   // }
-
-   // for new_values {
-   //    push(new_vals, create_new_val(it, 1))
-   // }
-
-   // ret new_vals
+   ret total
 end
 
-fn get_len(vals: [Val])
+fn process(f: StrField)
+   visited = [int]
+   array_set_len(visited, 1000000)
    total = 0
-   for vals {
-      if it.count > 0 do total = total + it.count
+   for 0..(f.row_count - 1) {
+      ri = it
+      for 0..(f.col_count - 1) {
+         ci = it
+         farm = get_farm(f, visited, ri, ci)
+         if len(farm) > 0 {
+            v = get_str_field_value(f, ri, ci)
+            perimeter = get_perimeter(farm)
+            log(v, 'len: ', len(farm), '; perimeter: ', perimeter)
+            total = total + perimeter*len(farm)
+         }
+      }
    }
    ret total
 end
 
 fn run
    lines = read_string_lines_from_file('D:/src/postal/aoc2024/input.txt')
-   vals = [Val]
-   for split_str(lines[0], ' ') {
-      push(vals, create_new_val(str_to_int(it), 1))
-   }
-   print(vals)
-   for 1..75 {
-      vals = get_new_vals(vals)
-      log(it, len(vals), get_len(vals))
-      // print(vals)
-      // read_line_from_console()
-   }
+   f = lines_to_str_field(lines)
+   print_str_field(f)
+   total = process(f)
 
-   log('done', len(vals), get_len(vals))
+   log('total = ', total)
 end

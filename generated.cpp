@@ -2,194 +2,60 @@
 #include <windows.h>
 #include <vector>
 #include <string>
+#include <algorithm> 
 #include <fstream>
+#include <iostream>
+using namespace std::literals;
 
-#include "my_lib.h"
+/// built-in range
+std::vector<long long>* create_range(long long from, long long to);
 
-/// lib array utils
-template <typename T>long long len(std::vector<T>* a);
-template <typename T>void set_array_size(std::vector<T>* a, long long new_size);
-template <typename T>void push(std::vector<T>* a, T elem);
-template <typename T>void set_array_value(std::vector<T>* a, long long index, T value);
-template <typename T>void sort_array(std::vector<T>* a);
+/// generated code
+//fn push<T>(a: [T], elem: T) external
 template <typename T>long long array_contains(std::vector<T>* a, T value);
-template <typename T>void remove_array_element_at(std::vector<T>* a, long long index);
-/// lib string utils
-std::vector<std::string>* split_str(std::string s, std::string by);
-long long str_to_int(std::string s);
-std::string int_to_str(long long i);
-std::vector<std::string>* str_to_chars(std::string s);
-long long str_contains(std::string s, std::string subs);
-/// lib other utils
-void err(std::string s);
-std::string read_line_from_console();
-std::vector<std::string>* read_string_lines_from_file(std::string filename);
-/// main
-struct Val {
-    long long value;
-    long long count;
+template <typename T>void push(std::vector<T>* a, T elem);
+struct A {
+    long long a;
+    std::string b;
 };
 
-Val* create_new_val(long long value, long long count) {
-    Val* v = new Val();
-    v = new Val();
-    v->value = value;
-    v->count = count;
-    return v;
-}
-
-void print(std::vector<Val*>* vals) {
-    std::string s;
-    s = ""s;
-
-    auto __expr0 = vals;
-    for (int vals__it0__idx = 0; vals__it0__idx < __expr0->size(); vals__it0__idx++) {
-        Val* vals__it0 = (*__expr0)[vals__it0__idx];
-
-        if (vals__it0->count == 0ll) {
-            continue;
-        };
-        s = s + " "s + int_to_str(vals__it0->value) + " ("s + int_to_str(vals__it0->count) + ")"s;
-    }
-    printf("%s\n", (s).c_str());
-}
-
-std::vector<Val*>* get_new_vals(std::vector<Val*>* old_vals) {
-    std::vector<Val*>* new_vals = new std::vector<Val*>();
-    Val* old_val = new Val();
-    long long value;
-    long long count;
-    long long size;
-    long long exponent;
-    long long divider;
-    long long lv;
-    long long rv;
-    long long new_value;
-    std::string s;
-    Val* new_val = new Val();
-    long long found;
-    new_vals = new std::vector<Val*>();
-
-    auto __expr0 = old_vals;
-    for (int old_vals__it0__idx = 0; old_vals__it0__idx < __expr0->size(); old_vals__it0__idx++) {
-        Val* old_vals__it0 = (*__expr0)[old_vals__it0__idx];
-        old_val = old_vals__it0;
-        value = old_vals__it0->value;
-        count = old_vals__it0->count;
-
-        if (count == 0ll) {
-            continue;
-        };
-        old_val->count = 0ll;
-
-        if (value == 0ll) {
-            push(new_vals, create_new_val(1ll, count));
-            continue;
-        };
-
-        if (value == 1ll) {
-            push(new_vals, create_new_val(2024ll, count));
-            continue;
-        };
-        size = len(str_to_chars(int_to_str(value)));
-
-        if (size%2ll == 0ll) {
-            exponent = size/2ll;
-            divider = 1ll;
-
-            auto __expr1 = create_range(1ll, exponent);
-            for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
-                long long expr__it1 = (*__expr1)[expr__it1__idx];
-                divider = divider*10ll;
-            }
-            lv = value/divider;
-            rv = value%divider;
-            push(new_vals, create_new_val(lv, count));
-            push(new_vals, create_new_val(rv, count));
-            continue;
-        };
-        new_value = value*2024ll;
-
-        if (new_value < 0ll) {
-            s = "overflow at "s + int_to_str(value) + " "s + int_to_str(new_value);
-            err(s);
-        };
-        push(new_vals, create_new_val(new_value, count));
-    }
-
-    auto __expr2 = new_vals;
-    for (int new_vals__it2__idx = 0; new_vals__it2__idx < __expr2->size(); new_vals__it2__idx++) {
-        Val* new_vals__it2 = (*__expr2)[new_vals__it2__idx];
-        new_val = new_vals__it2;
-        found = 0ll;
-
-        auto __expr3 = old_vals;
-        for (int old_vals__it3__idx = 0; old_vals__it3__idx < __expr3->size(); old_vals__it3__idx++) {
-            Val* old_vals__it3 = (*__expr3)[old_vals__it3__idx];
-
-            if (old_vals__it3->value == new_val->value) {
-                old_vals__it3->count = old_vals__it3->count + new_val->count;
-                found = 1ll;
-                break;
-            };
-        }
-
-        if (found == 0ll) {
-            push(old_vals, create_new_val(new_val->value, new_val->count));
-        };
-    }
-    return old_vals;
-    // new_vals = [Val]
-    // for old_vals {
-    //    if it.count > 0 do push(new_vals, it)
-    // }
-    // for new_values {
-    //    push(new_vals, create_new_val(it, 1))
-    // }
-    // ret new_vals
-}
-
-long long get_len(std::vector<Val*>* vals) {
-    long long total;
-    total = 0ll;
-
-    auto __expr0 = vals;
-    for (int vals__it0__idx = 0; vals__it0__idx < __expr0->size(); vals__it0__idx++) {
-        Val* vals__it0 = (*__expr0)[vals__it0__idx];
-
-        if (vals__it0->count > 0ll) {
-            total = total + vals__it0->count;
-        };
-    }
-    return total;
-}
-
+bool operator==(const A& lhs, const A& rhs) {
+     return lhs.a == rhs.a && lhs.b == rhs.b;
+     return lhs.a == rhs.a;
+ }
 void run() {
-    std::vector<std::string>* lines;
-    std::vector<Val*>* vals = new std::vector<Val*>();
-    lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt"s);
-    vals = new std::vector<Val*>();
-
-    auto __expr0 = split_str(lines->at(0ll), " "s);
-    for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
-        std::string expr__it0 = (*__expr0)[expr__it0__idx];
-        push(vals, create_new_val(str_to_int(expr__it0), 1ll));
-    }
-    print(vals);
-
-    auto __expr1 = create_range(1ll, 75ll);
-    for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
-        long long expr__it1 = (*__expr1)[expr__it1__idx];
-        vals = get_new_vals(vals);
-        printf("%lld %lld %lld\n", static_cast<long long>(expr__it1), static_cast<long long>(len(vals)), static_cast<long long>(get_len(vals)));
-        // print(vals)
-        // read_line_from_console()
-    }
-    printf("%s %lld %lld\n", ("done"s).c_str(), static_cast<long long>(len(vals)), static_cast<long long>(get_len(vals)));
+    A* a = new A();
+    A* b = new A();
+    std::vector<A*>* arr = new std::vector<A*>();
+    long long c;
+    std::vector<std::string>* a1;
+    a = new A();
+    a->a = 5ll;
+    a->b = "6"s;
+    b = new A();
+    b->a = 5ll;
+    b->b = "6"s;
+    arr = new std::vector<A*>();
+    push(arr, a);
+    c = array_contains(arr, b);
+    printf("%lld\n", static_cast<long long>(c));
+    a1 = new std::vector<std::string>();
+    push(a1, "test"s);
+    c = array_contains(a1, "test"s);
+    printf("%lld\n", static_cast<long long>(c));
 }
 
+//  if (std::is_pointer<T>::value) {
+//      printf("is pointer\n");
+// //return true;
+//      return std::find_if(a->begin(), a->end(), [value](T item) { return deref(item) == deref(value); }) != a->end();
+//  } else {
+//      printf("is NOT pointer\n");
+//      return std::find(a->begin(), a->end(), value) != a->end();
+//  }
 
 
+/// template code
 int main()
 {
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -209,4 +75,119 @@ int main()
     
     SetConsoleTextAttribute(hConsole, 7);
     return 0;
+}
+
+/// lib 
+
+/// for postal built-in range 
+std::vector<long long>* create_range(long long from, long long to) {
+    std::vector<long long>* a = new std::vector<long long>();    
+    int size = to - from + 1;
+    if (size > 0) {
+	a->resize(size);
+	for (int i = 0; i < size; i++) {
+	    (*a)[i] = from + i;
+        }
+    }
+    return a;
+}
+
+/// dyn array utils
+template <typename T>
+long long len(std::vector<T>* a) { 
+    return a->size();
+}
+
+template <typename T>
+void push(std::vector<T>* a, T elem) {
+    a->push_back(elem);
+}
+
+template <typename T>
+void array_set_len(std::vector<T>* a, long long new_len) {
+    a->resize(new_len);
+}
+
+template <typename T>
+void array_sort(std::vector<T>* a) {
+    std::sort(a->begin(), a->end());
+}
+
+template <typename T>
+long long array_contains(std::vector<T>* a, T value) {
+    if constexpr (std::is_pointer<T>::value) {
+        return std::find_if(a->begin(), a->end(), [value](T item) { return *item == *value; }) != a->end();
+    } else {
+	return std::find(a->begin(), a->end(), value) != a->end();
+    }
+}
+
+template <typename T>
+void array_remove_at(std::vector<T>* a, long long index) {
+    a->erase(a->begin() + index);
+}
+
+/// string utils
+std::vector<std::string>* str_split(std::string s, std::string delimiter) {
+    std::vector<std::string>* tokens = new std::vector<std::string>();
+    size_t pos = 0;
+    std::string token;
+    while ((pos = s.find(delimiter)) != std::string::npos) {
+        token = s.substr(0, pos);
+        tokens->push_back(token);
+        s.erase(0, pos + delimiter.length());
+    }
+    tokens->push_back(s);
+
+    return tokens;
+}
+
+std::vector<std::string>* str_to_chars(std::string s) {
+    std::vector<std::string>* chars = new std::vector<std::string>();
+    for (char c : s) {
+        chars->push_back(std::string(1, c));
+    }
+    return chars;
+}
+
+long long str_to_int(std::string s) {
+    return std::stoll(s);
+}
+
+std::string int_to_str(long long i) {
+    std::string s = std::to_string(i);
+    return s;
+}
+
+long long str_contains(std::string s, std::string subs) {
+    return s.find(subs) != std::string::npos;
+}
+
+long long str_len(std::string s) {
+    return s.length();
+}
+
+/// misc utils
+[[noreturn]]  void err(std::string s) {
+    throw s;
+}
+
+std::string read_line_from_console() {
+    std::string line;
+    std::getline(std::cin, line);
+    return line;
+}
+
+std::vector<std::string>* read_string_lines_from_file(std::string filename) {
+    std::ifstream infile(filename);
+    if (!infile.is_open()) {
+        throw "invalid file '"s + filename + "'";
+    }
+    std::vector<std::string>* lines = new std::vector<std::string>();
+    std::string line;
+    while (std::getline(infile, line)) {
+        lines->push_back(line);
+    }
+    infile.close();
+    return lines;
 }
