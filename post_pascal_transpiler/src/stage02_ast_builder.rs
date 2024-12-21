@@ -323,7 +323,11 @@ impl AstBuilder {
             self.skip_expected("]")?;
         } else {
             is_array = false;
-            type_str = self.next().value.clone();
+            let next = self.next().clone();
+            if ![TokenKind::Identifier, TokenKind::Keyword].contains(&next.kind) {
+                return Err(AstError::new(&next, "unexpected token when parsing function return type"));
+            }
+            type_str = next.value.clone();
         }
 
         Ok(TypeInfo {
@@ -622,7 +626,7 @@ impl AstBuilder {
 
             _ => {
                 //println!("{token:?}");
-                return Err(AstError::new(&token, "unexpected token on expression parsing"));
+                return Err(AstError::new(&token, "unexpected token when parsing expression"));
             }
         }
     }

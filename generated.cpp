@@ -80,41 +80,41 @@ std::vector<Val*>* get_new_vals(std::vector<Val*>* old_vals) {
         if (count == 0ll) {
             continue;
         };
+        old_val->count = 0ll;
 
         if (value == 0ll) {
             push(new_vals, create_new_val(1ll, count));
-        }
-        else if (value == 1ll) {
-            push(new_vals, create_new_val(2024ll, count));
-        }
-        else {
-            size = len(str_to_chars(int_to_str(value)));
-
-            if (size%2ll == 0ll) {
-                exponent = size/2ll;
-                divider = 1ll;
-
-                auto __expr1 = create_range(1ll, exponent);
-                for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
-                    long long expr__it1 = (*__expr1)[expr__it1__idx];
-                    divider = divider*10ll;
-                }
-                lv = value/divider;
-                rv = value%divider;
-                push(new_vals, create_new_val(lv, count));
-                push(new_vals, create_new_val(rv, count));
-            }
-            else {
-                new_value = value*2024ll;
-
-                if (new_value < 0ll) {
-                    s = "overflow at "s + int_to_str(value) + " "s + int_to_str(new_value);
-                    err(s);
-                };
-                push(new_vals, create_new_val(new_value, count));
-            };
+            continue;
         };
-        old_val->count = 0ll;
+
+        if (value == 1ll) {
+            push(new_vals, create_new_val(2024ll, count));
+            continue;
+        };
+        size = len(str_to_chars(int_to_str(value)));
+
+        if (size%2ll == 0ll) {
+            exponent = size/2ll;
+            divider = 1ll;
+
+            auto __expr1 = create_range(1ll, exponent);
+            for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
+                long long expr__it1 = (*__expr1)[expr__it1__idx];
+                divider = divider*10ll;
+            }
+            lv = value/divider;
+            rv = value%divider;
+            push(new_vals, create_new_val(lv, count));
+            push(new_vals, create_new_val(rv, count));
+            continue;
+        };
+        new_value = value*2024ll;
+
+        if (new_value < 0ll) {
+            s = "overflow at "s + int_to_str(value) + " "s + int_to_str(new_value);
+            err(s);
+        };
+        push(new_vals, create_new_val(new_value, count));
     }
 
     auto __expr2 = new_vals;

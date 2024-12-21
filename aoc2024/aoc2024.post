@@ -48,30 +48,36 @@ fn get_new_vals(old_vals: [Val])
       value = it.value
       count = it.count
       if count = 0 do continue
+      old_val.count = 0
+
       if value = 0 {
          push(new_vals, create_new_val(1, count))
-      } else if value = 1 {
+         continue
+      } 
+      
+      if value = 1 {
          push(new_vals, create_new_val(2024, count))
-      } else {
-         size = len(str_to_chars(int_to_str(value)))
-         if size % 2 = 0 {
-            exponent = size / 2
-            divider = 1
-            for 1..exponent do divider = divider*10
-            lv = value / divider
-            rv = value % divider 
-            push(new_vals, create_new_val(lv, count))
-            push(new_vals, create_new_val(rv, count))
-      } else {
-            new_value = value*2024
-            if new_value < 0 {
-               s = 'overflow at ' + int_to_str(value) + ' ' + int_to_str(new_value)
-               err(s)
-            }
-            push(new_vals, create_new_val(new_value, count))
-         }
+         continue
+      } 
+
+      size = len(str_to_chars(int_to_str(value)))
+      if size % 2 = 0 {
+         exponent = size / 2
+         divider = 1
+         for 1..exponent do divider = divider*10
+         lv = value / divider
+         rv = value % divider 
+         push(new_vals, create_new_val(lv, count))
+         push(new_vals, create_new_val(rv, count))
+         continue
+      } 
+      
+      new_value = value*2024
+      if new_value < 0 {
+         s = 'overflow at ' + int_to_str(value) + ' ' + int_to_str(new_value)
+         err(s)
       }
-      old_val.count = 0
+      push(new_vals, create_new_val(new_value, count))
    }
 
    for new_vals {

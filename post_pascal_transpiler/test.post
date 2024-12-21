@@ -1,11 +1,6 @@
-fn len<T>(a: [T]) int external
+fn test {
+
+end
 
 fn run
-   b = 0
-   loop {
-      a = b - b
-      for 0..1 {
-
-      }
-   }
 end
