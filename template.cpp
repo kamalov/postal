@@ -95,8 +95,10 @@ void array_remove_at(std::vector<T>* a, long long index) {
 }
 
 template <typename T>
-T array_last(std::vector<T>* a) {
-    return a->back();
+T pop(std::vector<T>* a) {
+    T last = a->back();
+    a->pop_back();
+    return last;
 }
 
 /// string utils

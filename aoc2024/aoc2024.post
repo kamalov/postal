@@ -1,26 +1,3 @@
-/// lib array utils
-fn len<T>(a: [T]) int external
-fn push<T>(a: [T], elem: T) external
-fn array_set_len<T>(a: [T], new_len: int) external
-fn array_sort<T>(a: [T]) external
-fn array_contains<T>(a: [T], value: T) int external
-fn array_remove_at<T>(a: [T], index: int) external
-fn array_remove<T>(a: [T], value: T) external
-
-/// lib string utils
-fn str_split(s: str, by: str) [str] external
-fn str_to_int(s: str) int external
-fn str_to_chars(s: str) [str] external
-fn str_contains(s: str, subs: str) int external
-fn str_len(s: str) int external
-fn int_to_str(i: int) str external
-
-/// lib other utils
-fn err(s: str) external
-fn read_line_from_console() str external   
-fn read_string_lines_from_file(filename: str) [str] external
-
-/// main
 rec StrField {
    row_count: int
    col_count: int

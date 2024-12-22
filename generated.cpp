@@ -11,10 +11,26 @@ using namespace std::literals;
 std::vector<long long>* create_range(long long from, long long to);
 
 /// generated code
-// fn len<T>(a: [T]) int external
+/// lib array utils
+template <typename T>long long len(std::vector<T>* a);
 template <typename T>void push(std::vector<T>* a, T elem);
-// fn array_contains<T>(a: [T], value: T) int external
-template <typename T>T array_last(std::vector<T>* a);
+template <typename T>T pop(std::vector<T>* a);
+template <typename T>void array_set_len(std::vector<T>* a, long long new_len);
+template <typename T>void array_sort(std::vector<T>* a);
+template <typename T>long long array_contains(std::vector<T>* a, T value);
+template <typename T>void array_remove_at(std::vector<T>* a, long long index);
+template <typename T>void array_remove(std::vector<T>* a, T value);
+/// lib string utils
+std::vector<std::string>* str_split(std::string s, std::string by);
+long long str_to_int(std::string s);
+std::vector<std::string>* str_to_chars(std::string s);
+long long str_contains(std::string s, std::string subs);
+long long str_len(std::string s);
+std::string int_to_str(long long i);
+/// lib other utils
+void err(std::string s);
+std::string read_line_from_console();
+std::vector<std::string>* read_string_lines_from_file(std::string filename);
 long long test() {
     return 1ll;
 }
@@ -26,9 +42,11 @@ void run() {
     a = new std::vector<std::string>();
     push(a, "one"s);
     push(a, "two"s);
-    b = array_last(a);
+    b = pop(a);
     c = test();
-    printf("%s %lld\n", (b).c_str(), static_cast<long long>(c));
+    printf("%lld\n", static_cast<long long>(len(a)));
+    printf("%s\n", (b).c_str());
+    printf("%lld\n", static_cast<long long>(len(a)));
 }
 
 
@@ -115,8 +133,10 @@ void array_remove_at(std::vector<T>* a, long long index) {
 }
 
 template <typename T>
-T array_last(std::vector<T>* a) {
-    return a->back();
+T pop(std::vector<T>* a) {
+    T last = a->back();
+    a->pop_back();
+    return last;
 }
 
 /// string utils
