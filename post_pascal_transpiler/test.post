@@ -1,24 +1,21 @@
 //fn push<T>(a: [T], elem: T) external
+fn len<T>(a: [T]) int external
 fn array_contains<T>(a: [T], value: T) int external
 fn push<T>(a: [T], elem: T) external
+fn array_remove<T>(a: [T], value: T) external
 
 rec A {
    a: int
    b: str
 }
 
-// friend bool operator==(const A& lhs, const A& rhs) {
-//     //return lhs.a == rhs.a && lhs.b == rhs.b;
-//     return lhs.a == rhs.a;
-// }
-
-fn run
+fn test
    a = A {}
    a.a = 5
    a.b = '5'
    b = A {}
    b.a = 5
-   b.b = '6'
+   b.b = '5'
    arr = [A]
    push(arr, a)
    c = array_contains(arr, b)
@@ -30,23 +27,20 @@ fn run
    log(c)
 end
 
-   //  if (std::is_pointer<T>::value) {
-   //      printf("is pointer\n");
-	// //return true;
-   //      return std::find_if(a->begin(), a->end(), [value](T item) { return deref(item) == deref(value); }) != a->end();
-   //  } else {
-   //      printf("is NOT pointer\n");
-   //      return std::find(a->begin(), a->end(), value) != a->end();
-   //  }
+fn run
+   arr = [A]
+   a = A {}
+   a.a = 5
+   push(arr, a)
+   push(arr, a)
+   b = A {}
+   b.a = 5
+   array_remove(arr, b)
+   log(len(arr))
 
-/// c++ voodoo magic trait spells
-// template <typename T>
-// auto deref_trait(T arg) -> std::enable_if_t<std::is_pointer<T>::value, std::remove_pointer_t<T>> {
-//     return *arg;
-// }
-
-// template <typename T>
-// auto deref_trait(T arg) -> std::enable_if_t<!std::is_pointer<T>::value, T> {
-//     return arg;
-// }
-
+   a1 = [int]
+   push(a1, 5)
+   push(a1, 6)
+   array_remove(a1, 6)
+   log(len(a1))
+end

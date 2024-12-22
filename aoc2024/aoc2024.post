@@ -4,7 +4,8 @@ fn push<T>(a: [T], elem: T) external
 fn array_set_len<T>(a: [T], new_len: int) external
 fn array_sort<T>(a: [T]) external
 fn array_contains<T>(a: [T], value: T) int external
-fn array_remove_at<T>(a: [T], index:int) external
+fn array_remove_at<T>(a: [T], index: int) external
+fn array_remove<T>(a: [T], value: T) external
 
 /// lib string utils
 fn str_split(s: str, by: str) [str] external
@@ -111,12 +112,23 @@ fn get_farm(f: StrField, visited: [int], ri: int, ci: int)
    ret farm
 end
 
+rec Edge {
+   ri: int
+   ci: int
+   ri1: int
+   ci1: int
+}
 fn coord_to_edge(ri: int, ci: int, ri1: int, ci1: int)  
-   ret int_to_str(ri) + ',' + int_to_str(ci) + ',' + int_to_str(ri1) + ',' + int_to_str(ci1)
+   e = Edge {}
+   e.ri = ri
+   e.ci = ci
+   e.ri1 = ri1
+   e.ci1 = ci1
+   ret e
 end
 
 fn get_cell_edges(f: Cell)
-   edges = [str]
+   edges = [Edge]
    push(edges, coord_to_edge(f.ri, f.ci, f.ri, f.ci + 1))
    push(edges, coord_to_edge(f.ri, f.ci, f.ri + 1, f.ci))
    push(edges, coord_to_edge(f.ri + 1, f.ci, f.ri + 1, f.ci + 1))
@@ -124,20 +136,18 @@ fn get_cell_edges(f: Cell)
    ret edges
 end
 
-fn get_perimeter(farm: [Cell])
-   total = 0
-   edges = [str]
-   for farm {
+fn get_perimeter(cells: [Cell])
+   edges = [Edge]
+   for cells {
       for get_cell_edges(it) {
          if array_contains(edges, it) {
-            total = total - 1
+            array_remove(edges, it)
          } else {
             push(edges, it)
-            total = total + 1
          }
       }
    }
-   ret total
+   ret len(edges)
 end
 
 fn process(f: StrField)

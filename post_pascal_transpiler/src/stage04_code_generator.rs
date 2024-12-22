@@ -123,9 +123,27 @@ impl CodeGenerator {
             writeln!(&mut result_str, "{padding}{PADDING}{type_declaration_str} {field_name};");
         }
 
+        let op = self.generate_record_equality_operator(record_node, format!("{padding}{PADDING}").as_str());
+        
+        write!(&mut result_str, "{op}");
         writeln!(&mut result_str, "}};");
         writeln!(&mut result_str, "");
 
+        result_str
+    }
+
+    fn generate_record_equality_operator(&mut self, record_node: &Record, padding: &str) -> String {
+        let mut result_str = String::new();
+        writeln!(&mut result_str, "{padding}friend bool operator==(const {0}& l, const {0}& r) {{", record_node.name);
+        let mut parts = vec![];
+        for (field_name, type_info) in &record_node.fields {
+            if type_info.is_array || type_info.is_generic || is_custom_type(&type_info.type_str) {
+                continue;
+            }
+            parts.push(format!("(l.{0} == r.{0})", field_name));
+        }
+        writeln!(&mut result_str, "{padding}{PADDING}return {};", parts.to_vec().join(" && "));
+        writeln!(&mut result_str, "{padding}}}");
         result_str
     }
 

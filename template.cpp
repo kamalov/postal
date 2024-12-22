@@ -50,17 +50,6 @@ std::vector<long long>* create_range(long long from, long long to) {
     return a;
 }
 
-/// c++ voodoo magic trait spells
-//template <typename T>
-//auto deref_trait(T arg) -> std::enable_if_t<std::is_pointer<T>::value, std::remove_pointer_t<T>> {
-//    return *arg;
-//}
-
-//template <typename T>
-//auto deref_trait(T arg) -> std::enable_if_t<!std::is_pointer<T>::value, T> {
-//    return arg;
-//}
-
 /// dyn array utils
 template <typename T>
 long long len(std::vector<T>* a) { 
@@ -91,10 +80,14 @@ long long array_contains(std::vector<T>* a, T value) {
     }
 }
 
-//template <typename T>
-//long long array_contains(std::vector<T>* a, T value) {
-//    return std::find_if(a->begin(), a->end(), [value](T item) { return deref_trait(item) == deref_trait(value); }) != a->end();
-//}
+template <typename T>
+void array_remove(std::vector<T>* a, T value) {
+    if constexpr (std::is_pointer<T>::value) {
+	a->erase(std::remove_if(a->begin(), a->end(), [value](T item){ return *item == *value; }), a->end());
+    } else {
+	a->erase(std::remove_if(a->begin(), a->end(), [value](T item){ return item == value; }), a->end());
+    }
+}
 
 template <typename T>
 void array_remove_at(std::vector<T>* a, long long index) {

@@ -1,16 +1,15 @@
 current: 
-  -- yes/no for booleans
-  -- unary not after 12
-  -- проверка соответствия формальных и фактических параметров при вызове функции
-  -- object initializer
+  -- hash table
+  -- in generic function call: convert return generic type to actual type
   -- advent of code
 
 
 
-
 to do:
-  -- ? hash table
-  -- in generic function call: convert return generic type to actual type
+  -- yes/no for booleans
+  -- unary not after 12
+  -- проверка соответствия формальных и фактических параметров при вызове функции
+  -- object initializer
 
 
 
