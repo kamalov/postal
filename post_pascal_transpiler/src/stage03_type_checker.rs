@@ -102,8 +102,9 @@ impl TypeChecker {
     }
 
     pub fn build_new_ast_with_types(&mut self) -> TypeCheckResult<AstBuilder> {
-        let mut nodes = self.ast_builder.root_nodes.clone();
-        for (idx, root_node) in nodes.iter_mut().enumerate() {
+        let mut ast_builder = self.ast_builder.clone();
+        
+        for (idx, root_node) in ast_builder.root_nodes.iter_mut().enumerate() {
             match root_node {
                 RootNode::Function(function) => {
                     self.preprocess_function(function, idx)?;
@@ -112,7 +113,7 @@ impl TypeChecker {
             }
         }
 
-        for root_node in &mut nodes {
+        for root_node in &mut ast_builder.root_nodes {
             match root_node {
                 RootNode::Function(function) => {
                     self.process_function(function)?;
@@ -120,9 +121,8 @@ impl TypeChecker {
                 _ => {}
             }
         }
-
-        self.ast_builder.root_nodes = nodes;
-        Ok(self.ast_builder.clone())
+        
+        Ok(ast_builder)
     }
 
     fn preprocess_function(&mut self, fun: &mut Function, idx: usize) -> TypeCheckResult<()> {
