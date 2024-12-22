@@ -94,6 +94,11 @@ void array_remove_at(std::vector<T>* a, long long index) {
     a->erase(a->begin() + index);
 }
 
+template <typename T>
+T array_last(std::vector<T>* a) {
+    return a->back();
+}
+
 /// string utils
 std::vector<std::string>* str_split(std::string s, std::string delimiter) {
     std::vector<std::string>* tokens = new std::vector<std::string>();

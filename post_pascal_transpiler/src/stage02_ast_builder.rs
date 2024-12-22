@@ -36,6 +36,7 @@ pub struct Function {
 
 #[derive(Debug, Clone)]
 pub struct FnDeclaration {
+    pub token: Token,
     pub name: String,
     pub generic_params: Vec<String>,
     pub params: IndexMap<String, TypeInfo>,
@@ -177,7 +178,6 @@ pub struct AstBuilder {
     pub tokenizer: Tokenizer,
     pub tokens: Vec<Token>,
     pub records: HashMap<String, Record>,
-    pub fn_declarations: HashMap<String, FnDeclaration>,
 }
 
 impl AstBuilder {
@@ -187,8 +187,7 @@ impl AstBuilder {
             root_nodes: vec![],
             tokenizer: tokenizer.clone(),
             tokens: tokenizer.tokens.clone(),
-            records: HashMap::new(),
-            fn_declarations: HashMap::new(),
+            records: HashMap::new()
         }
     }
 
@@ -387,17 +386,12 @@ impl AstBuilder {
         let fn_return_type = self.parse_function_return_type()?;
 
         let fn_declaration = FnDeclaration {
+            token: fn_name_token.clone(),
             name: fn_name.clone(),
             generic_params: fn_generic_params,
             params: fn_params,
             return_type: fn_return_type,
         };
-
-        if self.fn_declarations.contains_key(&fn_name) {
-            return Err(AstError::new(&fn_name_token, "duplicate function name"));
-        } else {
-            self.fn_declarations.insert(fn_name, fn_declaration.clone());
-        }
 
         if self.try_skip("external") {
             self.skip_line_end_tokens();

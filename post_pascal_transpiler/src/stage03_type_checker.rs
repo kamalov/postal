@@ -1,6 +1,8 @@
 use std::vec;
 
 use indexmap::IndexMap;
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 
 use crate::stage01_tokenizer::*;
 use crate::stage02_ast_builder::*;
@@ -32,12 +34,11 @@ struct CurrentFunctionContext {
 
 pub struct TypeChecker {
     pub ast_builder: AstBuilder,
+    pub fn_declarations: HashMap<String, FnDeclaration>,
     ctx: CurrentFunctionContext,
 }
 
-pub const BUILTIN_TYPES: [&str; 3] = [
-    "int", "real", "str", //
-];
+pub const BUILTIN_TYPES: [&str; 3] = ["int", "real", "str"];
 
 pub const BUILTIN_FUNCTIONS: [&str; 1] = ["log"];
 
@@ -95,52 +96,57 @@ impl TypeChecker {
     pub fn new(ast_builder: AstBuilder) -> TypeChecker {
         TypeChecker {
             ast_builder,
+            fn_declarations: HashMap::new(),
             ctx: CurrentFunctionContext::default(),
         }
     }
 
     pub fn build_new_ast_with_types(&mut self) -> TypeCheckResult<AstBuilder> {
-        let mut ast_builder = self.ast_builder.clone();
+        let mut nodes = self.ast_builder.root_nodes.clone();
+        for (idx, root_node) in nodes.iter_mut().enumerate() {
+            match root_node {
+                RootNode::Function(function) => {
+                    self.preprocess_function(function, idx)?;
+                }
+                _ => {}
+            }
+        }
 
-        // for root_node in &mut ast_builder.root_nodes {
-        //     match root_node {
-        //         RootNode::Function(function) => {
-        //             self.process_function(function)?;
-        //         }
-        //         _ => {}
-        //     }
-        // }
-
-        for root_node in &mut ast_builder.root_nodes {
+        for root_node in &mut nodes {
             match root_node {
                 RootNode::Function(function) => {
                     self.process_function(function)?;
                 }
-                _ => {
-                    //println!("{root_node:?}");
-                }
+                _ => {}
             }
         }
 
-        Ok(ast_builder)
+        self.ast_builder.root_nodes = nodes;
+        Ok(self.ast_builder.clone())
     }
 
-    fn get_function_param_or_var_type(&self, name: &String) -> Option<&TypeInfo> {
-        match self.ctx.function_params.get(name) {
-            Some(type_info) => Some(type_info),
-            None => match self.ctx.vars.get(name) {
-                Some(type_info) => Some(type_info),
-                None => None,
-            },
-        }
-    }
-
-    fn process_function(&mut self, function: &mut Function) -> TypeCheckResult<()> {
-        for (_, type_info) in &mut function.declaration.params {
-            let is_generic = function.declaration.generic_params.contains(&type_info.type_str);
+    fn preprocess_function(&mut self, fun: &mut Function, idx: usize) -> TypeCheckResult<()> {
+        for (_, type_info) in &mut fun.declaration.params {
+            let is_generic = fun.declaration.generic_params.contains(&type_info.type_str);
             type_info.is_generic = is_generic;
         }
 
+        if let Some(ref mut type_info) = fun.declaration.return_type {
+            let is_generic = fun.declaration.generic_params.contains(&type_info.type_str);
+            type_info.is_generic = is_generic;
+        }
+
+        let fn_name = &fun.declaration.name;
+        if self.fn_declarations.contains_key(fn_name) {
+            return Err(TypeCheckError::new(&fun.declaration.token, "duplicate function name"));
+        } else {
+            self.fn_declarations.insert(fn_name.clone(), fun.declaration.clone());
+        }
+
+        Ok(())
+    }
+
+    fn process_function(&mut self, function: &mut Function) -> TypeCheckResult<()> {
         if function.is_external {
             return Ok(());
         }
@@ -157,12 +163,34 @@ impl TypeChecker {
         function.vars = std::mem::take(&mut self.ctx.vars);
         function.declaration.return_type = std::mem::take(&mut self.ctx.return_type);
 
-        let decl = self.ast_builder.fn_declarations.get_mut(&function.declaration.name).unwrap();
-        decl.return_type = function.declaration.return_type.clone();
+        if function.declaration.return_type.is_some() {
+            let decl = self.fn_declarations.get_mut(&function.declaration.name).unwrap();
+            if decl.return_type.is_none() {
+                decl.return_type = function.declaration.return_type.clone();
+            }
+        }
 
         self.ctx = CurrentFunctionContext::default();
 
         Ok(())
+    }
+
+    fn get_function_declaration(&self, name: &String) -> Option<&FnDeclaration> {
+        if let Some(decl) = self.fn_declarations.get(name) {
+            return Some(decl);
+        } else {
+            return None;
+        }
+    }
+
+    fn get_function_param_or_var_type(&self, name: &String) -> Option<&TypeInfo> {
+        match self.ctx.function_params.get(name) {
+            Some(type_info) => Some(type_info),
+            None => match self.ctx.vars.get(name) {
+                Some(type_info) => Some(type_info),
+                None => None,
+            },
+        }
     }
 
     fn get_expression_type(&self, expression: &Expression) -> TypeCheckResult<TypeInfo> {
@@ -186,31 +214,45 @@ impl TypeChecker {
                 })
             }
             ExpressionKind::FunctionCall(function_call) => {
-                // todo: check formal and actual params compatibility
-
+                let mut actual_param_types = vec![];
                 for param in &function_call.params {
                     let type_info = self.get_expression_type(param)?;
+                    actual_param_types.push(type_info);
                 }
 
-                match self.ast_builder.fn_declarations.get(&function_call.name) {
-                    Some(fn_declaration) => {
-                        //
-                        match &fn_declaration.return_type {
-                            Some(return_type) => {
-                                return Ok(return_type.clone());
-                            }
-                            None => {
-                                return Err(TypeCheckError::new(
-                                    &expression.token,
-                                    format!("can't figure return type of '{}' function call, please specify return type explicitly", function_call.name),
-                                ));
-                            }
+                let decl = if let Some(decl) = self.get_function_declaration(&function_call.name) {
+                    decl
+                } else {
+                    return Err(TypeCheckError::new(&expression.token, "no such function"));
+                };
+
+                if decl.params.len() != actual_param_types.len() {
+                    return Err(TypeCheckError::new(&expression.token, "wrong number of parameters in function call"));
+                }
+                // todo: check formal and actual params compatibility
+
+                if let Some(return_type) = &decl.return_type {
+                    if !return_type.is_generic {
+                        return Ok(return_type.clone());
+                    }
+
+                    println!("{return_type:?}");
+                    for (idx, (_, param_type)) in decl.params.iter().enumerate() {
+                        println!("{param_type:?}");
+                        if param_type.type_str == return_type.type_str {
+                            let actual_param_type = &actual_param_types[idx];
+                            return Ok(TypeInfo {
+                                type_str: actual_param_type.type_str.clone(),
+                                ..return_type.clone()
+                            });
                         }
                     }
-                    None => {
-                        return Err(TypeCheckError::new(&expression.token, "no such function"));
-                    }
                 }
+
+                return Err(TypeCheckError::new(
+                    &expression.token,
+                    format!("can't figure return type of '{}' function call, please specify return type explicitly", function_call.name),
+                ));
             }
             ExpressionKind::Identifier(identifier_name) => {
                 //
@@ -356,17 +398,20 @@ impl TypeChecker {
 
                 return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{identifier}'")));
             }
-            ExpressionKind::ObjectInitializer(record_name) => match self.ast_builder.records.get(record_name) {
-                Some(record) => {
-                    return Ok(TypeInfo {
-                        type_str: record.name.clone(),
-                        ..TypeInfo::default()
-                    });
+            ExpressionKind::ObjectInitializer(record_name) => {
+                //
+                match self.ast_builder.records.get(record_name) {
+                    Some(record) => {
+                        return Ok(TypeInfo {
+                            type_str: record.name.clone(),
+                            ..TypeInfo::default()
+                        });
+                    }
+                    None => {
+                        return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{record_name}'")));
+                    }
                 }
-                None => {
-                    return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{record_name}'")));
-                }
-            },
+            }
             _ => {
                 //ExpressionNode::ArrayBrackets(array_brackets_node) => panic!(),
                 //ExpressionNode::Operator(operator_node) => panic!(),
@@ -393,8 +438,9 @@ impl TypeChecker {
                     self.process_block_statements(&mut loop_statement.block)?;
                 }
                 Statement::Return(expression_option) => {
+                    //
                     match expression_option {
-                        None => {},
+                        None => {}
                         Some(expression) => {
                             let return_type = self.get_expression_type(expression)?;
                             match &self.ctx.return_type {
@@ -411,7 +457,6 @@ impl TypeChecker {
                         }
                     }
                 }
-
                 Statement::Iteration(IterationStatement { token, iterable_name, block }) => {
                     //
                     match self.get_function_param_or_var_type(iterable_name) {
@@ -488,9 +533,7 @@ impl TypeChecker {
                 Statement::Break() => {}
                 Statement::Continue() => {}
                 Statement::Comment(_) => {}
-                _ => {
-                    panic!();
-                }
+                _ => panic!()
             }
         }
 

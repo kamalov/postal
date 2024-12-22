@@ -1,46 +1,17 @@
-//fn push<T>(a: [T], elem: T) external
-fn len<T>(a: [T]) int external
-fn array_contains<T>(a: [T], value: T) int external
+// fn len<T>(a: [T]) int external
 fn push<T>(a: [T], elem: T) external
-fn array_remove<T>(a: [T], value: T) external
-
-rec A {
-   a: int
-   b: str
-}
+// fn array_contains<T>(a: [T], value: T) int external
+fn array_last<T>(a: [T]) T external
 
 fn test
-   a = A {}
-   a.a = 5
-   a.b = '5'
-   b = A {}
-   b.a = 5
-   b.b = '5'
-   arr = [A]
-   push(arr, a)
-   c = array_contains(arr, b)
-   log(c)
-
-   a1 = [str]
-   push(a1, 'test')
-   c = array_contains(a1, 'test')
-   log(c)
+   ret 1
 end
 
 fn run
-   arr = [A]
-   a = A {}
-   a.a = 5
-   push(arr, a)
-   push(arr, a)
-   b = A {}
-   b.a = 5
-   array_remove(arr, b)
-   log(len(arr))
-
-   a1 = [int]
-   push(a1, 5)
-   push(a1, 6)
-   array_remove(a1, 6)
-   log(len(a1))
+   a = [str]
+   push(a, 'one')
+   push(a, 'two')
+   b = array_last(a)
+   c = test()
+   log(b, c)
 end

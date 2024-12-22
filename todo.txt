@@ -1,21 +1,19 @@
 current: 
   -- hash table
-  -- in generic function call: convert return generic type to actual type
-  -- advent of code
+  -- yes/no for booleans
+  -- unary not after 12
 
 
 
 to do:
-  -- yes/no for booleans
-  -- unary not after 12
-  -- проверка соответствия формальных и фактических параметров при вызове функции
-  -- object initializer
 
 
 
 backlog:
   -- унарный минус, унарный NOT (+ если потребуется, переделать парсинг выражения на рекурсивный алгоритм)
   -- iteration mapping and iteration as expression (a = some >> { it })
+  -- проверка соответствия формальных и фактических параметров при вызове функции
+  -- object initializer
 
 
 
