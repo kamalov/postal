@@ -4,10 +4,10 @@ use std::fmt::Write;
 use std::path::Iter;
 use std::process::id;
 use std::{fmt, vec};
-
 use indexmap::IndexMap;
 use to_vec::ToVec;
 
+use crate::type_info::*;
 use crate::stage01_tokenizer::*;
 
 pub struct AstError {
@@ -157,17 +157,14 @@ pub enum RootNode {
     Comment(String),
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
-pub struct TypeInfo {
-    pub is_generic: bool,
-    pub is_array: bool,
-    pub type_str: String,
-}
-
 impl fmt::Display for TypeInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let array_qualifier = if self.is_array { "[]" } else { "" };
-        write!(f, "{}{}", self.type_str, array_qualifier)
+        let s = match &self.kind {
+            TypeInfoKind::Map(key_type, value_type) => format!("#[{key_type}, {value_type}]"),
+            TypeInfoKind::Array(item_type) => format!("#[{item_type}]"),
+            TypeInfoKind::Scalar(scalar_type) => format!("{scalar_type}")
+        };
+        write!(f, "{s}")
     }
 }
 
@@ -312,28 +309,33 @@ impl AstBuilder {
         Ok(())
     }
 
-    fn parse_type_info_until(&mut self, terminators: &[&str]) -> AstResult<TypeInfo> {
+    fn parse_type_info(&mut self) -> AstResult<TypeInfo> {
         let mut is_array = false;
         let mut type_str: String;
-        if self.peek_next().value == "[" {
-            is_array = true;
-            self.skip_expected("[")?;
-            type_str = self.next().value.clone();
-            self.skip_expected("]")?;
-        } else {
-            is_array = false;
-            let next = self.next().clone();
-            if ![TokenKind::Identifier, TokenKind::Keyword].contains(&next.kind) {
-                return Err(AstError::new(&next, "unexpected token when parsing function return type"));
+        let next = self.next().clone();
+        let kind = match next.value.as_str() {
+            "#" => {
+                self.skip_expected("[")?;
+                let key = self.next().value.clone();
+                self.skip_expected(",")?;
+                let value = self.next().value.clone();
+                self.skip_expected("]")?;
+                TypeInfoKind::Map(key, value)
             }
-            type_str = next.value.clone();
-        }
+            "[" => {
+                let value = self.next().value.clone();
+                self.skip_expected("]")?;
+                TypeInfoKind::Array(value)
+            }
+            _ => {
+                if ![TokenKind::Identifier, TokenKind::Keyword].contains(&next.kind) {
+                    return Err(AstError::new(&next, "unexpected token when parsing function return type"));
+                }
+                TypeInfoKind::Scalar(next.value.clone())
+            }
+        };
 
-        Ok(TypeInfo {
-            is_array,
-            type_str,
-            ..TypeInfo::default()
-        })
+        Ok(TypeInfo::new(kind))
     }
 
     fn parse_record(&mut self) -> AstResult<Record> {
@@ -346,15 +348,12 @@ impl AstBuilder {
         let mut fields = IndexMap::new();
         loop {
             self.skip_line_end_tokens();
-
             if self.try_skip("}") {
                 break;
             }
-
             let field_name = self.need_next_identifier_token()?.value.clone();
             self.skip_expected(":")?;
-            let type_info = self.parse_type_info_until(&["\n"])?;
-
+            let type_info = self.parse_type_info()?;
             fields.insert(field_name, type_info);
         }
 
@@ -458,37 +457,16 @@ impl AstBuilder {
         }
         let var_name = name_token.value.clone();
         self.skip_expected(":")?;
-
-        let mut is_array: bool;
-        let mut type_str: String;
-        if self.peek_next().value == "[" {
-            is_array = true;
-            self.skip_expected("[")?;
-            type_str = self.next().value.clone();
-            self.skip_expected("]")?;
-        } else {
-            is_array = false;
-            type_str = self.next().value.clone();
-        }
-
-        let type_info = TypeInfo {
-            is_array,
-            type_str: type_str.clone(),
-            ..TypeInfo::default()
-        };
-
+        let type_info = self.parse_type_info()?;
         Ok((var_name, type_info))
     }
 
     fn parse_function_return_type(&mut self) -> AstResult<Option<TypeInfo>> {
         let next_possibles = ["external", "\n"];
-
         if next_possibles.contains(&self.peek_next().value.as_str()) {
             return Ok(None);
         }
-
-        let return_type = self.parse_type_info_until(&next_possibles)?;
-
+        let return_type = self.parse_type_info()?;
         Ok(Some(return_type))
     }
 
@@ -726,9 +704,7 @@ impl AstBuilder {
         }
         let var_name = name_token.value.clone();
         self.skip_expected(":")?;
-
-        let type_info = self.parse_type_info_until(&["\n", ""])?;
-
+        let type_info = self.parse_type_info()?;
         Ok((name_token.clone(), var_name, type_info))
     }
 

@@ -1,9 +1,9 @@
 use std::vec;
-
 use indexmap::IndexMap;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-
+use crate::utils::*;
+use crate::type_info::*;
 use crate::stage01_tokenizer::*;
 use crate::stage02_ast_builder::*;
 
@@ -38,60 +38,6 @@ pub struct TypeChecker {
     ctx: CurrentFunctionContext,
 }
 
-pub const BUILTIN_TYPES: [&str; 3] = ["int", "real", "str"];
-
-pub const BUILTIN_FUNCTIONS: [&str; 1] = ["log"];
-
-pub fn is_builtin_function(fn_name: &str) -> bool {
-    BUILTIN_FUNCTIONS.contains(&fn_name)
-}
-
-pub fn is_builtin_type(type_str: &str) -> bool {
-    BUILTIN_TYPES.contains(&type_str)
-}
-
-fn get_common_type(a: &TypeInfo, b: &TypeInfo) -> Result<TypeInfo, ()> {
-    if a.is_array && b.is_array {
-        if a.type_str == b.type_str {
-            return Ok(a.clone());
-        }
-        return Err(());
-    }
-
-    if a.is_array != b.is_array {
-        return Err(());
-    }
-
-    if a.type_str == b.type_str {
-        return Ok(a.clone());
-    }
-
-    if a.type_str == "real" && b.type_str == "int" || a.type_str == "int" && b.type_str == "real" {
-        return Ok(TypeInfo {
-            type_str: "real".to_string(),
-            ..TypeInfo::default()
-        });
-    }
-
-    return Err(());
-}
-
-fn can_lift_type_from_to(from: &TypeInfo, to: &TypeInfo) -> bool {
-    if from == to {
-        return true;
-    }
-
-    if from.is_array != to.is_array {
-        return false;
-    }
-
-    if from.type_str == "int" && to.type_str == "real" {
-        return true;
-    }
-
-    return false;
-}
-
 impl TypeChecker {
     pub fn new(ast_builder: AstBuilder) -> TypeChecker {
         TypeChecker {
@@ -121,18 +67,18 @@ impl TypeChecker {
                 _ => {}
             }
         }
-        
+
         Ok(ast_builder)
     }
 
     fn preprocess_function(&mut self, fun: &mut Function, idx: usize) -> TypeCheckResult<()> {
         for (_, type_info) in &mut fun.declaration.params {
-            let is_generic = fun.declaration.generic_params.contains(&type_info.type_str);
+            let is_generic = intersects(&fun.declaration.generic_params, &type_info.get_type_str_list());
             type_info.is_generic = is_generic;
         }
 
         if let Some(ref mut type_info) = fun.declaration.return_type {
-            let is_generic = fun.declaration.generic_params.contains(&type_info.type_str);
+            let is_generic = intersects(&fun.declaration.generic_params, &type_info.get_type_str_list());
             type_info.is_generic = is_generic;
         }
 
@@ -196,22 +142,13 @@ impl TypeChecker {
     fn get_expression_type(&self, expression: &Expression) -> TypeCheckResult<TypeInfo> {
         match &*expression.kind {
             ExpressionKind::IntegerLiteral(..) => {
-                return Ok(TypeInfo {
-                    type_str: "int".to_string(),
-                    ..TypeInfo::default()
-                })
+                return Ok(TypeInfo::new_scalar("int"));
             }
             ExpressionKind::RealLiteral(..) => {
-                return Ok(TypeInfo {
-                    type_str: "real".to_string(),
-                    ..TypeInfo::default()
-                })
+                return Ok(TypeInfo::new_scalar("real"));
             }
             ExpressionKind::StringLiteral(..) => {
-                return Ok(TypeInfo {
-                    type_str: "str".to_string(),
-                    ..TypeInfo::default()
-                })
+                return Ok(TypeInfo::new_scalar("str"));
             }
             ExpressionKind::FunctionCall(function_call) => {
                 let mut actual_param_types = vec![];
@@ -236,16 +173,14 @@ impl TypeChecker {
                         return Ok(return_type.clone());
                     }
 
-                    println!("{return_type:?}");
+                    todo!();
                     for (idx, (_, param_type)) in decl.params.iter().enumerate() {
-                        println!("{param_type:?}");
-                        if param_type.type_str == return_type.type_str {
-                            let actual_param_type = &actual_param_types[idx];
-                            return Ok(TypeInfo {
-                                type_str: actual_param_type.type_str.clone(),
-                                ..return_type.clone()
-                            });
-                        }
+                        let types = param_type.get_type_str_list();
+                        let type_str = if types.len() >= 2 {
+                            todo!()
+                        } else {
+                            types[0]
+                        };
                     }
                 }
 
@@ -262,16 +197,10 @@ impl TypeChecker {
                             return Err(TypeCheckError::new(&expression.token, "Keyword 'it' is reserved and can be used only in iterations"));
                         }
                         let type_info = self.ctx.iterator_type_list.last().unwrap();
-                        return Ok(TypeInfo {
-                            type_str: type_info.type_str.clone(),
-                            ..TypeInfo::default()
-                        });
+                        return Ok(TypeInfo::new_scalar(type_info.get_array_type_str()));
                     }
                     "idx" => {
-                        return Ok(TypeInfo {
-                            type_str: String::from("int"),
-                            ..TypeInfo::default()
-                        })
+                        return Ok(TypeInfo::new_scalar("int"));
                     }
                     else_ => {
                         //
@@ -291,7 +220,7 @@ impl TypeChecker {
 
                 if operation == "." {
                     if let ExpressionKind::Identifier(right_identifier_name) = &*right.kind {
-                        match self.ast_builder.records.get(&left_side_type_info.type_str) {
+                        match self.ast_builder.records.get(left_side_type_info.get_scalar_type_str()) {
                             Some(record) => {
                                 let field_name = right_identifier_name;
                                 match record.fields.get(field_name) {
@@ -314,28 +243,21 @@ impl TypeChecker {
                 let right_side_type_info = self.get_expression_type(&right)?;
 
                 if operation == ".." {
-                    if left_side_type_info.type_str != "int" {
+                    if !left_side_type_info.is_scalar_type_str("int") {
                         return Err(TypeCheckError::new(&left.token, format!("left side of range must be 'int': found '{left_side_type_info}'")));
                     }
 
-                    if right_side_type_info.type_str != "int" {
+                    if !right_side_type_info.is_scalar_type_str("int") {
                         return Err(TypeCheckError::new(&left.token, format!("right side of range must be 'int': found '{right_side_type_info}'")));
                     }
 
-                    return Ok(TypeInfo {
-                        type_str: "int".to_string(),
-                        is_array: true,
-                        ..TypeInfo::default()
-                    });
+                    return Ok(TypeInfo::new_array("int"));
                 }
 
                 match get_common_type(&left_side_type_info, &right_side_type_info) {
                     Ok(common_type) => {
                         if ["<", "<=", ">", ">=", "=", "<>"].contains(&operation.as_str()) {
-                            return Ok(TypeInfo {
-                                type_str: "int".to_string(),
-                                ..TypeInfo::default()
-                            });
+                            return Ok(TypeInfo::new_scalar("int"));
                         }
                         return Ok(common_type);
                     }
@@ -363,49 +285,31 @@ impl TypeChecker {
             ExpressionKind::ArrayItemAccess { array_expression, access_expression } => {
                 let array_type_info = self.get_expression_type(&array_expression)?;
 
-                // let array_type_info = match self.get_function_param_or_var_type(&array_name) {
-                //     Some(type_info) => type_info,
-                //     None => {
-                //         return Err(TypeCheckError::new(&expression.token, format!("undeclared array '{array_name}'")));
-                //     }
-                // };
-
-                if !array_type_info.is_array {
+                if !array_type_info.is_array() {
                     return Err(TypeCheckError::new(&expression.token, format!("not an array")));
                 }
 
                 let accessor_type_info = self.get_expression_type(&access_expression)?;
 
-                if accessor_type_info.is_array || accessor_type_info.type_str != "int" {
+                if !accessor_type_info.is_scalar_type_str("int") {
                     return Err(TypeCheckError::new(&expression.token, format!("incorrect index type '{accessor_type_info}'")));
                 }
 
-                return Ok(TypeInfo {
-                    type_str: array_type_info.type_str.clone(),
-                    ..TypeInfo::default()
-                });
+                return Ok(TypeInfo::new_scalar(array_type_info.get_array_type_str()));
             }
             ExpressionKind::ArrayInitializer(identifier) => {
-                let type_info = TypeInfo {
-                    is_array: true,
-                    type_str: identifier.clone(),
-                    ..TypeInfo::default()
-                };
-
-                if is_builtin_type(&type_info.type_str) || self.ast_builder.records.contains_key(identifier) {
+                let type_str = identifier; 
+                let type_info = TypeInfo::new_array(type_str);
+                if is_builtin_type(&type_str) || self.ast_builder.records.contains_key(type_str) {
                     return Ok(type_info);
                 }
-
-                return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{identifier}'")));
+                return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{type_str}'")));
             }
             ExpressionKind::ObjectInitializer(record_name) => {
                 //
                 match self.ast_builder.records.get(record_name) {
                     Some(record) => {
-                        return Ok(TypeInfo {
-                            type_str: record.name.clone(),
-                            ..TypeInfo::default()
-                        });
+                        return Ok(TypeInfo::new_scalar(&record.name));
                     }
                     None => {
                         return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{record_name}'")));

@@ -1,5 +1,7 @@
 #![allow(warnings)]
 
+mod utils;
+mod type_info;
 mod stage01_tokenizer;
 mod stage02_ast_builder;
 mod stage03_type_checker;
@@ -10,18 +12,11 @@ use std::fmt::Write;
 use std::fs::{read_dir, read_to_string};
 use std::{array, default, fs};
 use std::path::Path;
-
 use to_vec::ToVec;
-
 use stage01_tokenizer::*;
 use stage02_ast_builder::*;
 use stage03_type_checker::*;
 use stage04_code_generator::*;
-
-pub fn readln() {
-    let mut guess = String::new();
-    std::io::stdin().read_line(&mut guess).unwrap();
-}
 
 fn hadle_error(token: Token, expected: &String, text: &String, tokenizer: &Tokenizer) {
     let lines = text.lines().to_vec();
@@ -45,8 +40,8 @@ fn hadle_error(token: Token, expected: &String, text: &String, tokenizer: &Token
 }
 
 fn main() {
-    let filename = Path::new("./test.post");
-    //let filename = Path::new("./../aoc2024/aoc2024.post");
+    //let filename = Path::new("./test.post");
+    let filename = Path::new("./../aoc2024/aoc2024.post");
     let prelude = include_str!("./../prelude.post");
     let text = read_to_string(filename).unwrap();
     let text = format!("{}\n{}", prelude, text);

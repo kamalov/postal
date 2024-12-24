@@ -4,7 +4,7 @@ current:
 
 
 to do:
-  -- yes/no for booleans
+  -- yes/no for booleans, div/mod for integers
   -- unary not after 12
 
 
