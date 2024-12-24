@@ -108,6 +108,7 @@ pub enum ExpressionKind {
     Group(Vec<Expression>),
     ObjectInitializer(String),
     ArrayInitializer(String),
+    HashMapInitializer(String, String),
     BinaryOperation { operation: String, left: Expression, right: Expression },
     ArrayItemAccess { array_expression: Expression, access_expression: Expression },
 
@@ -160,7 +161,7 @@ pub enum RootNode {
 impl fmt::Display for TypeInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match &self.kind {
-            TypeInfoKind::Map(key_type, value_type) => format!("#[{key_type}, {value_type}]"),
+            TypeInfoKind::HashMap(key_type, value_type) => format!("#[{key_type}, {value_type}]"),
             TypeInfoKind::Array(item_type) => format!("#[{item_type}]"),
             TypeInfoKind::Scalar(scalar_type) => format!("{scalar_type}")
         };
@@ -320,7 +321,7 @@ impl AstBuilder {
                 self.skip_expected(",")?;
                 let value = self.next().value.clone();
                 self.skip_expected("]")?;
-                TypeInfoKind::Map(key, value)
+                TypeInfoKind::HashMap(key, value)
             }
             "[" => {
                 let value = self.next().value.clone();
@@ -735,6 +736,23 @@ impl AstBuilder {
         Ok(Expression::new(&token, ExpressionKind::ArrayBrackets(expression)))
     }
 
+    fn parse_hashmap_initializer(&mut self) -> AstResult<Expression> {
+        let token = self.peek_next().clone();
+        let type_info = self.parse_type_info()?;
+        match type_info.kind {
+            TypeInfoKind::HashMap(k, v) => {
+                return Ok(Expression::new(&token, ExpressionKind::HashMapInitializer(k, v)));
+            }
+            _ => return Err(AstError::new(&token, format!("error parsing hash map type")))
+        }
+        let token = self.peek_next().clone();
+        self.skip_expected("[")?;
+        let expression = self.parse_expression_until(&["]"])?;
+        self.skip_expected("]")?;
+
+        Ok(Expression::new(&token, ExpressionKind::ArrayBrackets(expression)))
+    }
+
     fn parse_object_initializer(&mut self) -> AstResult<Expression> {
         let token = self.peek_next().clone();
         self.skip_expected("{")?;
@@ -764,6 +782,11 @@ impl AstBuilder {
                     }
                     "[" => {
                         let expression = self.parse_array_brackets()?;
+                        expressions.push(expression);
+                        continue;
+                    }
+                    "#" => {
+                        let expression = self.parse_hashmap_initializer()?;
                         expressions.push(expression);
                         continue;
                     }
@@ -892,7 +915,6 @@ impl AstBuilder {
 
                             prev_tree_node.expression = expression;
                             *current_expression_index += 1;
-                            //break;
                         }
 
                         else_ => {

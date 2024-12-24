@@ -40,11 +40,11 @@ fn hadle_error(token: Token, expected: &String, text: &String, tokenizer: &Token
 }
 
 fn main() {
-    //let filename = Path::new("./test.post");
-    let filename = Path::new("./../aoc2024/aoc2024.post");
-    let prelude = include_str!("./../prelude.post");
+    let filename = Path::new("./test.post");
+    //let filename = Path::new("./../aoc2024/aoc2024.post");
     let text = read_to_string(filename).unwrap();
-    let text = format!("{}\n{}", prelude, text);
+    //let prelude = include_str!("./../prelude.post");
+    //let text = format!("{}\n{}", prelude, text);
     let mut tokenizer = stage01_tokenizer::Tokenizer::create_and_parse(&text);
     println!("tokenized");
 

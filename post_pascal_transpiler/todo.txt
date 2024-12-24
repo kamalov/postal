@@ -1,7 +1,0 @@
-чт, пт: массивы
-
-
-
--- records
--- record types
-

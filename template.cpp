@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <windows.h>
-#include <vector>
 #include <string>
+#include <vector>
+#include <unordered_map>
 #include <algorithm> 
 #include <fstream>
 #include <iostream>
@@ -35,6 +36,8 @@ int main()
     return 0;
 }
 
+
+
 /// lib 
 
 /// for postal built-in range 
@@ -49,6 +52,8 @@ std::vector<long long>* create_range(long long from, long long to) {
     }
     return a;
 }
+
+
 
 /// dyn array utils
 template <typename T>
@@ -101,6 +106,24 @@ T pop(std::vector<T>* a) {
     return last;
 }
 
+
+
+/// hashmap utils
+template <typename K, typename V>
+void add(std::unordered_map<K, V>* hashmap, K key, V value) {
+    auto result = hashmap->insert(std::make_pair(key, value));
+    if (!result.second) {
+        throw "Key already exists"s;
+    }
+}
+
+template <typename K, typename V>
+long long has(std::unordered_map<K, V>* h, K key) {
+    return h->find(key) != h->end();
+}
+
+
+
 /// string utils
 std::vector<std::string>* str_split(std::string s, std::string delimiter) {
     std::vector<std::string>* tokens = new std::vector<std::string>();
@@ -141,8 +164,10 @@ long long str_len(std::string s) {
     return s.length();
 }
 
+
+
 /// misc utils
-[[noreturn]]  void err(std::string s) {
+[[noreturn]] void err(std::string s) {
     throw s;
 }
 

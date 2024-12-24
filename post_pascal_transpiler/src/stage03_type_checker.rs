@@ -24,7 +24,7 @@ impl TypeCheckError {
 
 type TypeCheckResult<T> = Result<T, TypeCheckError>;
 
-#[derive(Clone, Default)]
+#[derive(Default)]
 struct CurrentFunctionContext {
     vars: IndexMap<String, TypeInfo>,
     function_params: IndexMap<String, TypeInfo>,
@@ -304,6 +304,13 @@ impl TypeChecker {
                     return Ok(type_info);
                 }
                 return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{type_str}'")));
+            }
+            ExpressionKind::HashMapInitializer(key_type_str, value_type_str) => {
+                if !is_builtin_type(key_type_str) && !self.ast_builder.records.contains_key(key_type_str) {
+                    return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{key_type_str}'")));
+                }
+                let type_info = TypeInfo::new_hashmap(key_type_str.clone(), value_type_str.clone());
+                return Ok(type_info);
             }
             ExpressionKind::ObjectInitializer(record_name) => {
                 //

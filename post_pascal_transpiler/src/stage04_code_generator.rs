@@ -475,6 +475,15 @@ impl CodeGenerator {
         result_str
     }
 
+    fn generate_hashmap_initializer_code(&mut self, key_type_str: &str, value_type_str: &str) -> String {
+        let mut result_str = String::new();
+
+        let type_info = TypeInfo::new_hashmap(key_type_str, value_type_str);
+        let type_initializer_str = type_info.to_initializer_string();
+        write!(&mut result_str, "{type_initializer_str}");
+        result_str
+    }
+
     fn generate_variable_assignment_code(&mut self, v: &VariableAssignment, padding: &str) -> String {
         let mut r = String::new();
 
@@ -572,6 +581,10 @@ impl CodeGenerator {
             }
             ExpressionKind::ArrayInitializer(type_identifier) => {
                 let code = self.generate_array_initializer_code(&type_identifier);
+                write!(&mut r, "{}", code);
+            }
+            ExpressionKind::HashMapInitializer(k, v) => {
+                let code = self.generate_hashmap_initializer_code(&k, &v);
                 write!(&mut r, "{}", code);
             }
             ExpressionKind::ObjectInitializer(record_name) => {
