@@ -1,14 +1,11 @@
-fn test
-   ret 1
-end
+fn add<K, V>(map: #[K, V], key: K, value: V) external
+fn get<K, V>(map: #[K, V], key: K) V external
+//fn has<K, V>(map: #[K, V], key: K) int external
 
 fn run
-   a = [str]
-   push(a, 'one')
-   push(a, 'two')
-   b = pop(a)
-   c = test()
-   log(len(a))
+   a = #[str, int]
+   add(a, 'one', 1)
+   add(a, 'two', 2)
+   b = get(a, 'one')
    log(b)
-   log(len(a))
 end

@@ -1,19 +1,19 @@
 current: 
   -- hash table
+
+
+
+to do:
   -- yes/no for booleans
   -- unary not after 12
 
 
 
-to do:
-
-
-
 backlog:
+  -- object initializer
+  -- проверка соответствия формальных и фактических параметров при вызове функции
   -- унарный минус, унарный NOT (+ если потребуется, переделать парсинг выражения на рекурсивный алгоритм)
   -- iteration mapping and iteration as expression (a = some >> { it })
-  -- проверка соответствия формальных и фактических параметров при вызове функции
-  -- object initializer
 
 
 

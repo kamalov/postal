@@ -45,13 +45,12 @@ fn hadle_error(token: Token, expected: &String, text: &String, tokenizer: &Token
 }
 
 fn main() {
-    let prelude = include_str!("./../prelude.post");
     let filename = Path::new("./test.post");
     //let filename = Path::new("./../aoc2024/aoc2024.post");
+    let prelude = include_str!("./../prelude.post");
     let text = read_to_string(filename).unwrap();
-    let text = format!("{}{}", prelude, text);
+    let text = format!("{}\n{}", prelude, text);
     let mut tokenizer = stage01_tokenizer::Tokenizer::create_and_parse(&text);
-    //tokenizer.print_tokens();
     println!("tokenized");
 
     let mut ast_builder = AstBuilder::new(&tokenizer);
@@ -64,23 +63,22 @@ fn main() {
     }
 
     let mut type_checker = TypeChecker::new(ast_builder.clone());
-    let ast_with_types = type_checker.build_new_ast_with_types();
-
-    let generated_code;
-    match ast_with_types {
-        Ok(ast_with_types) => {
-            let mut generator = CodeGenerator::new(ast_with_types);
-            generated_code = generator.generate_code();
-            println!("\x1b[93m{generated_code}\x1b[0m");
-        }
+    let ast_with_types_result = type_checker.build_new_ast_with_types();
+    
+    let ast = match ast_with_types_result {
+        Ok(ast) => ast,
         Err(err) => {
             hadle_error(err.token, &err.expected, &text, &tokenizer);
             return;
         }
-    }
+    };
 
+    let mut generator = CodeGenerator::new(ast);
+    let generated_code = generator.generate_code();
+    println!("\x1b[93m{generated_code}\x1b[0m");
     let filename = Path::new("./../template.cpp");
     let text = read_to_string(filename).unwrap();
     let text = text.replace("%GENERATED_CODE%", &generated_code);
     fs::write("./../generated.cpp", text);
+
 }
