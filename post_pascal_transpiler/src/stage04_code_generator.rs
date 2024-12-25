@@ -1,9 +1,9 @@
-use std::collections::{HashMap, HashSet};
-use std::fmt::{format, Write};
-use indexmap::IndexMap;
-use crate::type_info::*;
 use crate::stage02_ast_builder::*;
 use crate::stage03_type_checker::*;
+use crate::type_info::*;
+use indexmap::IndexMap;
+use std::collections::{HashMap, HashSet};
+use std::fmt::{format, Write};
 
 const OPERATORS_MAP: [(&str, &str); 11] = [
     (".", "->"),
@@ -52,7 +52,7 @@ impl CodeGenerator {
         for n in &self.ast_builder.root_nodes.clone() {
             match n {
                 RootNode::Record(record_node) => {
-                    let code = self.generate_record_code(record_node, "");
+                    let code = self.generate_record_code(record_node);
                     r.push_str(code.as_str());
                 }
                 RootNode::Function(function_node) => {
@@ -70,21 +70,23 @@ impl CodeGenerator {
         r
     }
 
-    fn generate_record_code(&mut self, record_node: &Record, padding: &str) -> String {
+    fn generate_record_code(&mut self, record_node: &Record) -> String {
         let mut result_str = String::new();
 
-        writeln!(&mut result_str, "{padding}struct {} {{", record_node.name);
+        writeln!(&mut result_str, "struct {} {{", record_node.name);
 
         for (field_name, type_info) in &record_node.fields {
             let type_declaration_str = type_info.to_declaration_string();
-            writeln!(&mut result_str, "{padding}{PADDING}{type_declaration_str} {field_name};");
+            writeln!(&mut result_str, "{PADDING}{type_declaration_str} {field_name};");
         }
 
-        let op = self.generate_record_equality_operator(record_node, format!("{padding}{PADDING}").as_str());
+        let op = self.generate_record_equality_operator(record_node, PADDING);
+        let hash_code = self.generate_record_hash_code(record_node);
 
         write!(&mut result_str, "{op}");
         writeln!(&mut result_str, "}};");
         writeln!(&mut result_str, "");
+        writeln!(&mut result_str, "{hash_code}");
 
         result_str
     }
@@ -97,7 +99,7 @@ impl CodeGenerator {
             if type_info.is_generic {
                 continue;
             }
-            
+
             if type_info.is_scalar() {
                 let type_str = type_info.get_scalar_type_str();
                 if !is_custom_type(&type_str) {
@@ -107,6 +109,38 @@ impl CodeGenerator {
         }
         writeln!(&mut result_str, "{padding}{PADDING}return {};", parts.to_vec().join(" && "));
         writeln!(&mut result_str, "{padding}}}");
+        result_str
+    }
+
+    fn generate_record_hash_code(&mut self, record_node: &Record) -> String {
+        let mut result_str = String::new();
+        
+        writeln!(&mut result_str, "namespace std {{");
+        writeln!(&mut result_str, "{PADDING}template<>");
+        writeln!(&mut result_str, "{PADDING}struct hash<{}> {{", record_node.name);
+        writeln!(&mut result_str, "{PADDING}{PADDING}std::size_t operator()(const {}& rec) const {{", record_node.name);
+        writeln!(&mut result_str, "{PADDING}{PADDING}{PADDING}size_t h = 0;");
+
+        for (field_name, type_info) in &record_node.fields {
+            if type_info.is_generic {
+                continue;
+            }
+
+            if type_info.is_scalar() {
+                let type_str = type_info.get_scalar_type_str();
+                if !is_custom_type(&type_str) {
+                    let cpp_type_str = type_info.to_cpp_type_string();
+                    //writeln!(&mut result_str, "{PADDING}{PADDING}{PADDING}h = combine_hash(h, rec.{field_name});");
+                    writeln!(&mut result_str, "{PADDING}{PADDING}{PADDING}h ^= std::hash<{cpp_type_str}>{{}}(rec.{field_name}) + 0x9e3779b9 + (h << 6) + (h >> 2);");
+                }
+            }
+        }
+
+        writeln!(&mut result_str, "{PADDING}{PADDING}{PADDING}return h;");
+        writeln!(&mut result_str, "{PADDING}{PADDING}}}");
+        writeln!(&mut result_str, "{PADDING}}};");
+        writeln!(&mut result_str, "}}");
+
         result_str
     }
 
@@ -146,7 +180,7 @@ impl CodeGenerator {
                 //     let type_initializer_str = type_info_to_initializer_str(type_info);
                 //     writeln!(&mut r, "    {type_declaration_str} {name} = {type_initializer_str};");
                 // } else {
-                    writeln!(&mut r, "{padding}{PADDING}{type_declaration_str} {name};");
+                writeln!(&mut r, "{padding}{PADDING}{type_declaration_str} {name};");
                 // }
             }
 
