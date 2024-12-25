@@ -37,20 +37,18 @@ namespace std {
 void run() {
     universal_hashmap<A*, long long>* amap;
     A* key;
+    universal_hashmap<std::string, long long>* vmap;
     amap = new universal_hashmap<A*, long long>();
     key = new A();
     key->a = 1ll;
-    key->b = "b"s;
     add(amap, key, 1ll);
     printf("%lld\n", static_cast<long long>(has(amap, key)));
-    //key = A {}
     key->a = 2ll;
-    key->b = "b"s;
     printf("%lld\n", static_cast<long long>(has(amap, key)));
-    // add(a, 'one', 1)
-    // add(a, 'two', 2)
-    // b = get(a, 'one')
-    // log(b)
+    vmap = new universal_hashmap<std::string, long long>();
+    add(vmap, "one"s, 1ll);
+    printf("%lld\n", static_cast<long long>(has(vmap, "one"s)));
+    printf("%lld\n", static_cast<long long>(has(vmap, "two"s)));
 }
 
 

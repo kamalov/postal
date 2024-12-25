@@ -143,7 +143,7 @@ impl TypeInfo {
             TypeInfoKind::HashMap(key_type_str, value_type_str) => {
                 let key_cpp_type_str = type_str_to_cpp_type_str(key_type_str);
                 let value_cpp_type_str = type_str_to_cpp_type_str(value_type_str);
-                if !self.is_generic && is_custom_type(key_cpp_type_str.as_str()) {
+                if !self.is_generic && is_custom_type(key_type_str.as_str()) {
                     return format!("universal_hashmap<{key_cpp_type_str}*, {value_cpp_type_str}>");
                 } else {
                     return format!("universal_hashmap<{key_cpp_type_str}, {value_cpp_type_str}>");

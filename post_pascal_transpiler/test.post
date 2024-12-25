@@ -1,6 +1,6 @@
 fn add<K, V>(hashmap: #[K, V], key: K, value: V) external
 fn has<K, V>(hashmap: #[K, V], key: K) int external
-//fn get<K, V>(map: #[K, V], key: K) V external
+fn get<K, V>(map: #[K, V], key: K) V external
 
 rec A {
    a: int
@@ -8,18 +8,17 @@ rec A {
 }
 
 fn run
-   amap = #[A, int]
-   key = A {}
-   key.a = 1
-   key.b = 'b'
-   add(amap, key, 1)
-   log(has(amap, key))
-   //key = A {}
-   key.a = 2
-   key.b = 'b'
-   log(has(amap, key))
-   // add(a, 'one', 1)
-   // add(a, 'two', 2)
-   // b = get(a, 'one')
-   // log(b)
+   // amap = #[A, int]
+   // key = A {}
+   // key.a = 1
+   // add(amap, key, 1)
+   // log(has(amap, key))
+   // key.a = 2
+   // log(has(amap, key))
+
+   vmap = #[str, int]
+   add(vmap, 'one', 1)
+   log(has(vmap, 'one'))
+   b = get(vmap, 'one')
+   //log(has(vmap, 'two'))
 end

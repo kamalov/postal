@@ -12,20 +12,13 @@
 using namespace std::literals;
 
 /// hash utils
-template <class T>
-std::size_t combine_hash(size_t h, const T& builtin_value_type) {
-    std::hash<T> hasher;
-    h ^= hasher(builtin_value_type) + 0x9e3779b9 + (h << 6) + (h >> 2);
-    return h;
-}
-
 template <typename T>
 struct UniversalHash {
     std::size_t operator()(const T obj) const {
         if constexpr (std::is_pointer_v<T>) {
             using TValue = std::remove_pointer_t<T>;
             std::hash<TValue> hasher;
-            std::cout << hasher(*obj) << std::endl;
+            //std::cout << hasher(*obj) << std::endl;
             return hasher(*obj);
         }
         else {
@@ -42,7 +35,7 @@ struct UniversalEquals {
             return *l == *r;
         }
         else {
-            return l == r
+            return l == r;
         }
     }
 };
