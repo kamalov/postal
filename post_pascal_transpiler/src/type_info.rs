@@ -152,13 +152,18 @@ impl TypeInfo {
 
         match &self.kind {
             TypeInfoKind::HashMap(key_type_str, value_type_str) => {
-                let key_cpp_type_str = type_str_to_cpp_type_str(key_type_str);
-                let value_cpp_type_str = type_str_to_cpp_type_str(value_type_str);
-                if !self.is_generic && is_custom_type(key_type_str.as_str()) {
-                    return format!("universal_hashmap<{key_cpp_type_str}*, {value_cpp_type_str}>");
-                } else {
-                    return format!("universal_hashmap<{key_cpp_type_str}, {value_cpp_type_str}>");
+                let mut key_cpp_type_str = type_str_to_cpp_type_str(key_type_str);
+                let mut value_cpp_type_str = type_str_to_cpp_type_str(value_type_str);
+                if !self.is_generic {
+                    if is_custom_type(key_type_str.as_str()) {
+                        key_cpp_type_str.push('*'); 
+                    }
+
+                    if is_custom_type(value_type_str.as_str()) {
+                        value_cpp_type_str.push('*'); 
+                    }
                 }
+                return format!("universal_hashmap<{key_cpp_type_str}, {value_cpp_type_str}>");
             }
             TypeInfoKind::Array(type_str) => {
                 let cpp_type_str = type_str_to_cpp_type_str(&type_str);

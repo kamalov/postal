@@ -107,7 +107,11 @@ impl CodeGenerator {
                 }
             }
         }
-        writeln!(&mut result_str, "{padding}{PADDING}return {};", parts.to_vec().join(" && "));
+        if parts.len() > 0 {
+            writeln!(&mut result_str, "{padding}{PADDING}return {};", parts.to_vec().join(" && "));
+        } else {
+            writeln!(&mut result_str, "{padding}{PADDING}return true;");
+        }
         writeln!(&mut result_str, "{padding}}}");
         result_str
     }
@@ -162,11 +166,11 @@ impl CodeGenerator {
         };
 
         if function_node.is_external {
-            writeln!(
-                &mut r,
-                "{padding}{fn_generic_params_code}{return_type_str} {name}({fn_params_code});",
-                name = function_node.declaration.name
-            );
+            // writeln!(
+            //     &mut r,
+            //     "{padding}/// external {fn_generic_params_code}{return_type_str} {name}({fn_params_code});",
+            //     name = function_node.declaration.name
+            // );
         } else {
             writeln!(
                 &mut r,

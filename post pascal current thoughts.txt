@@ -1,6 +1,6 @@
 Postal (POST pascAL) programming language
 
-Goal: syntax like TypeScript, compile time speed like Delphi, runtime memory and speed like C++
+Goal: easy syntax like TypeScript, compilation time speed like Delphi, runtime memory and speed like C++
 
 Priorities (by desc):
 1. Typed 
@@ -18,11 +18,12 @@ Phase zero (basic syntax and type checking):
    -- C++/Pascal hybrid syntax
    -- built-in dyn array and hash table
    -- only structs (no oop)
--- phase limitations:
+-- limitations:
    -- transpilation to C++
    -- no memory management
    -- single source file
    -- ansi strings
+   -- no nested built-in collections (i.e array of array, hash of array, etc.)
 
 Phase zero.1:
 -- refcounted memory management
@@ -37,8 +38,8 @@ Phase one:
 -- utf-8 strings
 -- nested arrays
 -- function overload
--- better compile error messages
 -- some kind of dynamic dispatch or discriminated unions (or both)
+-- better compile error messages
 
 Phase pre-last (bells and whistles):
 -- variant data type
