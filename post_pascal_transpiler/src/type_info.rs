@@ -1,8 +1,8 @@
-use std::vec;
+use crate::utils::*;
+use indexmap::IndexMap;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use indexmap::IndexMap;
-use crate::utils::*;
+use std::vec;
 
 pub const BUILTIN_TYPES: [&str; 3] = ["int", "real", "str"];
 
@@ -32,7 +32,7 @@ pub fn get_common_type(a: &TypeInfo, b: &TypeInfo) -> Result<TypeInfo, ()> {
             }
         }
     }
-    
+
     return Err(());
 }
 
@@ -48,15 +48,15 @@ pub fn can_lift_type_from_to(from: &TypeInfo, to: &TypeInfo) -> bool {
             }
         }
     }
-    
+
     return false;
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TypeInfoKind {
-    HashMap(String, String),
-    Array(String),
     Scalar(String),
+    Array(String),
+    HashMap(String, String),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -68,6 +68,10 @@ pub struct TypeInfo {
 impl TypeInfo {
     pub fn new(kind: TypeInfoKind) -> TypeInfo {
         TypeInfo { kind, is_generic: false }
+    }
+
+    pub fn kind_discriminant(&self) -> std::mem::Discriminant<TypeInfoKind> {
+        std::mem::discriminant(&self.kind)
     }
 
     pub fn new_scalar(s: impl Into<String>) -> TypeInfo {
@@ -87,7 +91,14 @@ impl TypeInfo {
             TypeInfoKind::HashMap(t1, t2) => vec![t1.clone(), t2.clone()],
             TypeInfoKind::Array(t) => vec![t.clone()],
             TypeInfoKind::Scalar(t) => vec![t.clone()],
-        }
+        };
+    }
+
+    pub fn get_hashmap_type_str_list(&self) -> Vec<String> {
+        return match &self.kind {
+            TypeInfoKind::HashMap(t1, t2) => vec![t1.clone(), t2.clone()],
+            _ => panic!()
+        };
     }
 
     pub fn is_scalar(&self) -> bool {
@@ -135,7 +146,7 @@ impl TypeInfo {
                 "int" => "long long".to_string(),
                 "real" => "double".to_string(),
                 "str" => "std::string".to_string(),
-                _ => s.clone()
+                _ => s.clone(),
             }
         }
 
@@ -166,19 +177,19 @@ impl TypeInfo {
 
     pub fn to_declaration_string(&self) -> String {
         let cpp_type_str = self.to_cpp_type_string();
-        
+
         match &self.kind {
             TypeInfoKind::HashMap(_, _) => {
-                return format!("{cpp_type_str}*");    
+                return format!("{cpp_type_str}*");
             }
             TypeInfoKind::Array(_) => {
-                return format!("{cpp_type_str}*");    
+                return format!("{cpp_type_str}*");
             }
             TypeInfoKind::Scalar(type_str) => {
                 if !self.is_generic && is_custom_type(type_str) {
-                    return format!("{cpp_type_str}*");    
+                    return format!("{cpp_type_str}*");
                 } else {
-                    return format!("{cpp_type_str}");    
+                    return format!("{cpp_type_str}");
                 }
             }
         }

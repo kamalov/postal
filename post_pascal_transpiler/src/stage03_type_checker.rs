@@ -166,21 +166,91 @@ impl TypeChecker {
                 if decl.params.len() != actual_param_types.len() {
                     return Err(TypeCheckError::new(&expression.token, "wrong number of parameters in function call"));
                 }
-                // todo: check formal and actual params compatibility
+
+                let mut generic_type_str_to_actual_type_str = HashMap::<String, String>::new();
+                
+                for (idx, (formal_param_name, formal_param_type_info)) in decl.params.iter().enumerate() {
+                    let actual_param_type_info = &actual_param_types[idx];
+                    
+                    if actual_param_type_info.kind_discriminant() != formal_param_type_info.kind_discriminant() {
+                        return Err(TypeCheckError::new(
+                            &expression.token,
+                            format!("incompatible param types for function {}, field {}", function_call.name, formal_param_name),
+                        ));
+                    }
+                    
+                    let is_generic = formal_param_type_info.is_generic;
+                    let fn_name = function_call.name.clone();
+
+                    let mut check_type_str = |formal_type_str: &String, actual_type_str: &String| {
+                        if is_generic {
+                            match generic_type_str_to_actual_type_str.entry(formal_type_str.to_string()) {
+                                Entry::Occupied(occupied_entry) => {
+                                    let found_type_str = occupied_entry.get();
+                                    if found_type_str != actual_type_str {
+                                        return Err(TypeCheckError::new(
+                                            &expression.token,
+                                            format!("Ambigous generic type {formal_type_str}, field {formal_param_name}: {found_type_str}, {actual_type_str}"),
+                                        ));
+                                    }
+                                }
+                                Entry::Vacant(vacant_entry) => {
+                                    vacant_entry.insert(actual_type_str.clone());
+                                }
+                            }
+                        } else {
+                            if formal_type_str != actual_type_str {
+                                return Err(TypeCheckError::new(
+                                    &expression.token,
+                                    format!("incompatible param types for field {formal_param_name}: expected {formal_type_str}, found {actual_type_str}")
+                                ));
+                            }
+                        }
+                        
+                        Ok(())
+                    };
+
+                    match &formal_param_type_info.kind {
+                        TypeInfoKind::Scalar(scalar_type_str) => {
+                            check_type_str(scalar_type_str, actual_param_type_info.get_scalar_type_str())?;
+                        }
+                        TypeInfoKind::Array(array_type_str) => {
+                            check_type_str(array_type_str, actual_param_type_info.get_array_type_str())?;
+                        }
+                        TypeInfoKind::HashMap(formal_key_type_str, formal_value_type_str) => {
+                            let actual_type_str_list = actual_param_type_info.get_hashmap_type_str_list();
+                            check_type_str(formal_key_type_str, &actual_type_str_list[0])?;
+                            check_type_str(formal_value_type_str, &actual_type_str_list[1])?;
+                        }
+                    }
+                }
+                
+                for generic_type_str in &decl.generic_params {
+                    if !generic_type_str_to_actual_type_str.contains_key(generic_type_str) {
+                        return Err(TypeCheckError::new(
+                            &expression.token,
+                            format!("can't infer generic param {generic_type_str}")
+                        ));
+                    }
+                }
 
                 if let Some(return_type) = &decl.return_type {
                     if !return_type.is_generic {
                         return Ok(return_type.clone());
                     }
 
-                    todo!();
-                    for (idx, (_, param_type)) in decl.params.iter().enumerate() {
-                        let types = param_type.get_type_str_list();
-                        let type_str = if types.len() >= 2 {
-                            todo!()
-                        } else {
-                            types[0]
-                        };
+                    match &return_type.kind {
+                        TypeInfoKind::Scalar(generic_type_str) => {
+                            let actual_type_str = generic_type_str_to_actual_type_str.get(generic_type_str).unwrap();
+                            return Ok(TypeInfo::new_scalar(actual_type_str));
+                        }
+                        TypeInfoKind::Array(generic_type_str) => {
+                            let actual_type_str = generic_type_str_to_actual_type_str.get(generic_type_str).unwrap();
+                            return Ok(TypeInfo::new_array(actual_type_str));
+                        }
+                        TypeInfoKind::HashMap(key_generic_type_str, value_generic_type_str) => {
+
+                        }
                     }
                 }
 

@@ -23,11 +23,15 @@ int main()
         run();
     } catch (const std::string& ex) {
         SetConsoleTextAttribute(hConsole, 12);
-        printf("error: %s\n", ex.c_str());
+        printf("Exception: %s\n", ex.c_str());
         return -1;
     } catch (const std::exception& e) {
         SetConsoleTextAttribute(hConsole, 12);
         std::cerr << "Exception caught: " << e.what() << std::endl;
+        return -1;
+    } catch (...) {
+        SetConsoleTextAttribute(hConsole, 12);
+        std::cerr << "Unknown exception" << std::endl;
         return -1;
     }
     

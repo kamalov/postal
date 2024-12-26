@@ -11,9 +11,10 @@
 using namespace std::literals;
 
 /// generated code
-template <typename K, typename V>void add(universal_hashmap<K, V>* hashmap, K key, V value);
-template <typename K, typename V>long long has(universal_hashmap<K, V>* hashmap, K key);
-//fn get<K, V>(map: #[K, V], key: K) V external
+template <typename K, typename V>void hashmap_add(universal_hashmap<K, V>* hashmap, K key, V value);
+template <typename K, typename V>void hashmap_add_or_update(universal_hashmap<K, V>* hashmap, K key, V value);
+template <typename K, typename V>long long hashmap_has_key(universal_hashmap<K, V>* hashmap, K key);
+template <typename K, typename V>V hashmap_get_value(universal_hashmap<K, V>* map, K key);
 struct A {
     long long a;
     std::string b;
@@ -35,20 +36,24 @@ namespace std {
 }
 
 void run() {
-    universal_hashmap<A*, long long>* amap;
+    universal_hashmap<A*, std::string>* amap;
     A* key;
-    universal_hashmap<std::string, long long>* vmap;
-    amap = new universal_hashmap<A*, long long>();
+    universal_hashmap<long long, long long>* vmap;
+    long long b;
+    amap = new universal_hashmap<A*, std::string>();
     key = new A();
     key->a = 1ll;
-    add(amap, key, 1ll);
-    printf("%lld\n", static_cast<long long>(has(amap, key)));
+    hashmap_add(amap, key, "one"s);
+    printf("%s\n", (hashmap_get_value(amap, key)).c_str());
+    hashmap_add_or_update(amap, key, "two"s);
     key->a = 2ll;
-    printf("%lld\n", static_cast<long long>(has(amap, key)));
-    vmap = new universal_hashmap<std::string, long long>();
-    add(vmap, "one"s, 1ll);
-    printf("%lld\n", static_cast<long long>(has(vmap, "one"s)));
-    printf("%lld\n", static_cast<long long>(has(vmap, "two"s)));
+    printf("%s\n", (hashmap_get_value(amap, key)).c_str());
+    vmap = new universal_hashmap<long long, long long>();
+    hashmap_add(vmap, 1ll, 2ll);
+    //log(has(vmap, 'one'))
+    b = hashmap_get_value(vmap, 1ll);
+    printf("%lld\n", static_cast<long long>(b));
+    //log(has(vmap, 'two'))
 }
 
 
@@ -63,11 +68,15 @@ int main()
         run();
     } catch (const std::string& ex) {
         SetConsoleTextAttribute(hConsole, 12);
-        printf("error: %s\n", ex.c_str());
+        printf("Exception: %s\n", ex.c_str());
         return -1;
     } catch (const std::exception& e) {
         SetConsoleTextAttribute(hConsole, 12);
         std::cerr << "Exception caught: " << e.what() << std::endl;
+        return -1;
+    } catch (...) {
+        SetConsoleTextAttribute(hConsole, 12);
+        std::cerr << "Unknown exception" << std::endl;
         return -1;
     }
     

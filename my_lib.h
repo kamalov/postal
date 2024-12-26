@@ -44,7 +44,7 @@ template<typename K,typename V>
 using universal_hashmap = std::unordered_map<K, V, UniversalHash<K>, UniversalEquals<K>>;
 
 template <typename K, typename V>
-void add(universal_hashmap<K, V>* hashmap, K key, V value) {
+void hashmap_add(universal_hashmap<K, V>* hashmap, K key, V value) {
     K new_key = key;
     
     if constexpr (std::is_pointer_v<K>) {
@@ -55,13 +55,35 @@ void add(universal_hashmap<K, V>* hashmap, K key, V value) {
 
     auto result = hashmap->insert(std::make_pair(new_key, value));
     if (!result.second) {
-        throw "Key already exists"s;
+        throw "Error adding to hashmap: key already exist"s;
     }
 }
 
 template <typename K, typename V>
-long long has(universal_hashmap<K, V>* h, K key) {
+void hashmap_add_or_update(universal_hashmap<K, V>* hashmap, K key, V value) {
+    K new_key = key;
+    
+    if constexpr (std::is_pointer_v<K>) {
+        using KV = std::remove_pointer_t<K>;
+        new_key = new KV();
+        std::memcpy(new_key, key, sizeof(KV));
+    }
+
+    (*hashmap)[new_key] = value;
+}
+
+template <typename K, typename V>
+long long hashmap_has_key(universal_hashmap<K, V>* h, K key) {
     return h->find(key) != h->end();
+}
+
+template <typename K, typename V>
+V hashmap_get_value(universal_hashmap<K, V>* h, K key) {
+    auto it = h->find(key);
+    if (it != h->end()) {
+        return it->second;
+    }
+    throw "Error getting value from hashmap: key not found"s;
 }
 
 /// for postal built-in range 
