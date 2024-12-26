@@ -11,10 +11,31 @@
 using namespace std::literals;
 
 /// generated code
+/// lib array utils
+template <typename T>long long len(std::vector<T>* a);
+template <typename T>void push(std::vector<T>* a, T elem);
+template <typename T>T pop(std::vector<T>* a);
+template <typename T>void array_set_len(std::vector<T>* a, long long new_len);
+template <typename T>void array_sort(std::vector<T>* a);
+template <typename T>long long array_contains(std::vector<T>* a, T value);
+template <typename T>void array_remove_at(std::vector<T>* a, long long index);
+template <typename T>void array_remove(std::vector<T>* a, T value);
+/// lib hashmap utils
 template <typename K, typename V>void hashmap_add(universal_hashmap<K, V>* hashmap, K key, V value);
 template <typename K, typename V>void hashmap_add_or_update(universal_hashmap<K, V>* hashmap, K key, V value);
 template <typename K, typename V>long long hashmap_has_key(universal_hashmap<K, V>* hashmap, K key);
-template <typename K, typename V>V hashmap_get_value(universal_hashmap<K, V>* map, K key);
+template <typename K, typename V>V hashmap_get_value(universal_hashmap<K, V>* hashmap, K key);
+/// lib string utils
+std::vector<std::string>* str_split(std::string s, std::string by);
+long long str_to_int(std::string s);
+std::vector<std::string>* str_to_chars(std::string s);
+long long str_contains(std::string s, std::string subs);
+long long str_len(std::string s);
+std::string int_to_str(long long i);
+/// lib other utils
+void err(std::string s);
+std::string read_line_from_console();
+std::vector<std::string>* read_string_lines_from_file(std::string filename);
 struct A {
     long long a;
     std::string b;
@@ -46,8 +67,8 @@ void run() {
     hashmap_add(amap, key, "one"s);
     printf("%s\n", (hashmap_get_value(amap, key)).c_str());
     hashmap_add_or_update(amap, key, "two"s);
-    key->a = 2ll;
-    printf("%s\n", (hashmap_get_value(amap, key)).c_str());
+    key->b = "one"s;
+    printf("%lld\n", static_cast<long long>(hashmap_has_key(amap, key)));
     vmap = new universal_hashmap<long long, long long>();
     hashmap_add(vmap, 1ll, 2ll);
     //log(has(vmap, 'one'))

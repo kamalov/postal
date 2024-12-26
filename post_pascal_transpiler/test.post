@@ -1,8 +1,3 @@
-fn hashmap_add<K, V>(hashmap: #[K, V], key: K, value: V) external
-fn hashmap_add_or_update<K, V>(hashmap: #[K, V], key: K, value: V) external
-fn hashmap_has_key<K, V>(hashmap: #[K, V], key: K) int external
-fn hashmap_get_value<K, V>(map: #[K, V], key: K) V external
-
 rec A {
    a: int
    b: str
@@ -15,10 +10,10 @@ fn run
    hashmap_add(amap, key, 'one')
    log(hashmap_get_value(amap, key))
    hashmap_add_or_update(amap, key, 'two')
-   key.a = 2
-   log(hashmap_get_value(amap, key))
+   key.b = 'one'
+   log(hashmap_has_key(amap, key))
 
-   vmap = #[int, int]
+   amap = #[int, int]
    hashmap_add(vmap, 1, 2)
    //log(has(vmap, 'one'))
    b = hashmap_get_value(vmap, 1)

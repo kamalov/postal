@@ -8,6 +8,12 @@ fn array_contains<T>(a: [T], value: T) int external
 fn array_remove_at<T>(a: [T], index: int) external
 fn array_remove<T>(a: [T], value: T) external
 
+/// lib hashmap utils
+fn hashmap_add<K, V>(hashmap: #[K, V], key: K, value: V) external
+fn hashmap_add_or_update<K, V>(hashmap: #[K, V], key: K, value: V) external
+fn hashmap_has_key<K, V>(hashmap: #[K, V], key: K) int external
+fn hashmap_get_value<K, V>(hashmap: #[K, V], key: K) V external
+
 /// lib string utils
 fn str_split(s: str, by: str) [str] external
 fn str_to_int(s: str) int external
