@@ -95,6 +95,7 @@ rec Edge {
    ri1: int
    ci1: int
 }
+
 fn coord_to_edge(ri: int, ci: int, ri1: int, ci1: int)  
    e = Edge {}
    e.ri = ri
@@ -114,17 +115,17 @@ fn get_cell_edges(f: Cell)
 end
 
 fn get_perimeter(cells: [Cell])
-   edges = [Edge]
+   edges = #[Edge, int]
    for cells {
       for get_cell_edges(it) {
-         if array_contains(edges, it) {
-            array_remove(edges, it)
+         if hashmap_has_key(edges, it) {
+            hashmap_remove(edges, it)
          } else {
-            push(edges, it)
+            hashmap_add(edges, it, 0)
          }
       }
    }
-   ret len(edges)
+   ret hashmap_len(edges)
 end
 
 fn process(f: StrField)

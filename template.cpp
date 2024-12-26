@@ -6,9 +6,7 @@
 #include <algorithm> 
 #include <fstream>
 #include <iostream>
-#include "my_lib.h"
-
-using namespace std::literals;
+#include "prelude.h"
 
 /// generated code
 %GENERATED_CODE%

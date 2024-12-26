@@ -13,6 +13,8 @@ fn hashmap_add<K, V>(hashmap: #[K, V], key: K, value: V) external
 fn hashmap_add_or_update<K, V>(hashmap: #[K, V], key: K, value: V) external
 fn hashmap_has_key<K, V>(hashmap: #[K, V], key: K) int external
 fn hashmap_get_value<K, V>(hashmap: #[K, V], key: K) V external
+fn hashmap_remove<K, V>(hashmap: #[K, V], key: K) external
+fn hashmap_len<K, V>(hashmap: #[K, V]) int external
 
 /// lib string utils
 fn str_split(s: str, by: str) [str] external

@@ -1,6 +1,6 @@
 rec A {
    a: int
-   b: str
+   b: [str]
 }
 
 fn run
@@ -8,15 +8,16 @@ fn run
    key = A {}
    key.a = 1
    hashmap_add(amap, key, 'one')
-   log(hashmap_get_value(amap, key))
-   hashmap_add_or_update(amap, key, 'two')
-   key.b = 'one'
-   log(hashmap_has_key(amap, key))
+   log(hashmap_len(amap))
+   key = A {}
+   key.a = 1
+   hashmap_remove(amap, key)
+   log(hashmap_len(amap))
 
-   amap = #[int, int]
-   hashmap_add(vmap, 1, 2)
-   //log(has(vmap, 'one'))
-   b = hashmap_get_value(vmap, 1)
-   log(b)
-   //log(has(vmap, 'two'))
+   // vmap = #[int, int]
+   // hashmap_add(vmap, 1, 2)
+   // //log(has(vmap, 'one'))
+   // b = hashmap_get_value(vmap, 1)
+   // log(b)
+   // //log(has(vmap, 'two'))
 end

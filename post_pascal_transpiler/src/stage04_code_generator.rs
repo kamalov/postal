@@ -436,7 +436,7 @@ impl CodeGenerator {
                                 match type_info.get_scalar_type_str().as_str() {
                                     "int" => {
                                         format_parts.push("%lld");
-                                        names.push(format!("static_cast<long long>({})", param_name));
+                                        names.push(format!("static_cast<i64>({})", param_name));
                                     }
                                     "real" => {
                                         format_parts.push("%f");

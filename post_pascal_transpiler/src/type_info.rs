@@ -143,7 +143,7 @@ impl TypeInfo {
         fn type_str_to_cpp_type_str(s: &String) -> String {
             match s.as_str() {
                 "" => "void".to_string(),
-                "int" => "long long".to_string(),
+                "int" => "i64".to_string(),
                 "real" => "double".to_string(),
                 "str" => "std::string".to_string(),
                 _ => s.clone(),
