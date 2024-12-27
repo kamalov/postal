@@ -1,181 +1,95 @@
-/// lib array utils
-fn len<T>(a: [T]) int external
-fn push<T>(a: [T], elem: T) external
-fn array_set_len<T>(a: [T], new_len: int) external
-fn array_sort<T>(a: [T]) external
-fn array_contains<T>(a: [T], value: T) int external
-fn array_remove_at<T>(a: [T], index:int) external
-
-/// lib string utils
-fn str_split(s: str, by: str) [str] external
-fn str_to_int(s: str) int external
-fn str_to_chars(s: str) [str] external
-fn str_contains(s: str, subs: str) int external
-fn str_len(s: str) int external
-fn int_to_str(i: int) str external
-
-/// lib other utils
-fn err(s: str) external
-fn read_line_from_console() str external   
-fn read_string_lines_from_file(filename: str) [str] external
-
-/// main
-rec StrField {
-   row_count: int
-   col_count: int
-   values: [str]
+rec Data {
+    ax: int
+    ay: int
+    bx: int
+    by: int
+    target_x: int
+    target_y: int
 }
 
-rec Cell {
-   ri: int
-   ci: int
+rec XY {
+    x: int
+    y: int
 }
 
-fn create_str_field(row_count: int, col_count: int)
-   f = StrField {}
-   f.row_count = row_count
-   f.col_count = col_count
-   f.values = [str]
-   array_set_len(f.values, row_count * col_count)
-   ret f
+fn get_xy(s: str) 
+    l = str_split(s, ' ')
+    x = l[2]
+    x = str_remove(x, 'X')
+    x = str_remove(x, '+')
+    x = str_remove(x, ',')
+    y = l[3]
+    y = str_remove(y, 'Y')
+    y = str_remove(y, '+')
+
+    xy = XY {}
+    xy.x = str_to_int(x)
+    xy.y = str_to_int(y)
+
+    ret xy
 end
 
-fn get_str_field_value(f: StrField, row_index: int, col_index: int) str
-   ret f.values[row_index*f.col_count + col_index]
+fn create_data(lines: [str], index: int)
+    data = Data {}
+
+    xy = get_xy(lines[index])
+    data.ax = xy.x
+    data.ay = xy.y
+
+    xy = get_xy(lines[index + 1])
+    data.bx = xy.x
+    data.by = xy.y
+
+    l = str_split(lines[index + 2], ' ')
+    x = l[1]
+    x = str_remove(x, 'X')
+    x = str_remove(x, '=')
+    x = str_remove(x, ',')
+
+    y = l[2]
+    y = str_remove(y, 'Y')
+    y = str_remove(y, '=')
+    data.target_x = str_to_int(x)
+    data.target_y = str_to_int(y)
+
+    ret data
 end
 
-fn set_str_field_value(f: StrField, row_index: int, col_index: int, value: str)
-   f.values[row_index*f.col_count + col_index] = value
+fn process_data(d: Data)
+    // log(d.ax, d.ay)
+    // log(d.bx, d.by)
+    // log(d.target_x, d.target_y)
+
+    b_up = d.ax*d.target_y - d.ay*d.target_x
+    b_down = d.ax*d.by - d.ay*d.bx
+    b = b_up/b_down
+
+    a_up = d.target_x - b*d.bx
+    a_down = d.ax
+    a = a_up/a_down
+
+    if a_up % a_down <> 0 or b_up % b_down <> 0 do ret 0
+
+    if a > 100 or b > 100 do ret 0
+
+    price = a*3 + b 
+    log('price', price)
+    ret price
 end
 
-fn is_valid_field_index(f: StrField, row_index: int, col_index: int)
-   ret row_index >= 0 and row_index < f.row_count and col_index >= 0 and col_index < f.col_count
-end
-
-fn print_str_field(f: StrField)
-   for 0..(f.row_count - 1) {
-      ri = it
-      s = ''
-      for 0..(f.col_count - 1) {
-         ci = it
-         v = get_str_field_value(f, ri, ci)
-         s = s + ' ' + v
-      }
-      log(s)
-   }
-   log()
-end
-
-fn lines_to_str_field(lines: [str])
-   f = create_str_field(len(lines), str_len(lines[0]))
-   for lines {
-      ri = idx
-      for str_to_chars(it) {
-         ci = idx
-         set_str_field_value(f, ri, ci, it)
-      }
-   }
-   ret f
-end
-
-fn set_visited(visited: [int], ri: int, ci: int) 
-   visited[ri*1000 + ci] = 1
-end
-
-fn was_visited(visited: [int], ri: int, ci: int) 
-   ret visited[ri*1000 + ci]
-end
-
-fn fill_farm(f: StrField, visited: [int], letter: str, farm: [Cell], ri: int, ci: int)
-   if is_valid_field_index(f, ri, ci) = 0 do ret
-   if was_visited(visited, ri, ci) do ret
-   v = get_str_field_value(f, ri, ci)
-   if v <> letter do ret
-   cell = Cell {}
-   cell.ri = ri
-   cell.ci = ci
-   push(farm, cell)
-   set_visited(visited, ri, ci)
-
-   fill_farm(f, visited, letter, farm, ri - 1, ci)
-   fill_farm(f, visited, letter, farm, ri + 1, ci)
-   fill_farm(f, visited, letter, farm, ri, ci - 1)
-   fill_farm(f, visited, letter, farm, ri, ci + 1)
-end
-
-fn get_farm(f: StrField, visited: [int], ri: int, ci: int)
-   farm = [Cell]
-   if was_visited(visited, ri, ci) = 1 do ret farm
-   letter = get_str_field_value(f, ri, ci)
-   fill_farm(f, visited, letter, farm, ri, ci)
-   ret farm
-end
-
-rec Edge {
-   ri: int
-   ci: int
-   ri1: int
-   ci1: int
-}
-fn coord_to_edge(ri: int, ci: int, ri1: int, ci1: int)  
-   e = Edge {}
-   e.ri = ri
-   e.ci = ci
-   e.ri1 = ri1
-   e.ci1 = ci1
-   ret e
-end
-
-fn get_cell_edges(f: Cell)
-   edges = [Edge]
-   push(edges, coord_to_edge(f.ri, f.ci, f.ri, f.ci + 1))
-   push(edges, coord_to_edge(f.ri, f.ci, f.ri + 1, f.ci))
-   push(edges, coord_to_edge(f.ri + 1, f.ci, f.ri + 1, f.ci + 1))
-   push(edges, coord_to_edge(f.ri, f.ci + 1, f.ri + 1, f.ci + 1))
-   ret edges
-end
-
-fn get_perimeter(farm: [Cell])
-   total = 0
-   edges = [Edge]
-   for farm {
-      for get_cell_edges(it) {
-         if array_contains(edges, it) {
-            total = total - 1
-         } else {
-            push(edges, it)
-            total = total + 1
-         }
-      }
-   }
-   ret total
-end
-
-fn process(f: StrField)
-   visited = [int]
-   array_set_len(visited, 1000000)
-   total = 0
-   for 0..(f.row_count - 1) {
-      ri = it
-      for 0..(f.col_count - 1) {
-         ci = it
-         farm = get_farm(f, visited, ri, ci)
-         if len(farm) > 0 {
-            v = get_str_field_value(f, ri, ci)
-            perimeter = get_perimeter(farm)
-            log(v, 'len: ', len(farm), '; perimeter: ', perimeter)
-            total = total + perimeter*len(farm)
-         }
-      }
-   }
-   ret total
+fn process(lines: [str])
+    total = 0
+    for 0..len(lines)/4 {
+        index = it*4
+        data = create_data(lines, index)
+        total = total + process_data(data)
+    }
+    ret total
 end
 
 fn run
    lines = read_string_lines_from_file('D:/src/postal/aoc2024/input.txt')
-   f = lines_to_str_field(lines)
-   print_str_field(f)
-   total = process(f)
+   total = process(lines)
 
    log('total = ', total)
 end

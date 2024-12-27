@@ -151,6 +151,7 @@ impl TypeChecker {
                 return Ok(TypeInfo::new_scalar("str"));
             }
             ExpressionKind::FunctionCall(function_call) => {
+                // todo!("extract");
                 let mut actual_param_types = vec![];
                 for param in &function_call.params {
                     let type_info = self.get_expression_type(param)?;
@@ -249,7 +250,7 @@ impl TypeChecker {
                             return Ok(TypeInfo::new_array(actual_type_str));
                         }
                         TypeInfoKind::HashMap(key_generic_type_str, value_generic_type_str) => {
-
+                            todo!();
                         }
                     }
                 }

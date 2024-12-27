@@ -111,7 +111,7 @@ i64 process_data(Data* d) {
     a_down = d->ax;
     a = a_up/a_down;
 
-    if (a_up % a_down != 0ll || b_up % b_down != 0ll) {
+    if (a_up%a_down != 0ll || b_up%b_down != 0ll) {
         return 0ll;
     };
     //if a > 100 or b > 100 do ret 0

@@ -1,25 +1,26 @@
 fn len<T>(a: [T]) int external
 fn push<T>(a: [T], elem: T) external
 fn pop<T>(a: [T]) T external
-fn array_set_len<T>(a: [T], new_len: int) external
-fn array_sort<T>(a: [T]) external
-fn array_contains<T>(a: [T], value: T) int external
-fn array_remove_at<T>(a: [T], index: int) external
-fn array_remove<T>(a: [T], value: T) external
+fn arr_set_len<T>(a: [T], new_len: int) external
+fn arr_sort<T>(a: [T]) external
+fn arr_contains<T>(a: [T], value: T) int external
+fn arr_remove_at<T>(a: [T], index: int) external
+fn arr_remove<T>(a: [T], value: T) external
 
-fn hashmap_add<K, V>(hashmap: #[K, V], key: K, value: V) external
-fn hashmap_add_or_update<K, V>(hashmap: #[K, V], key: K, value: V) external
-fn hashmap_has_key<K, V>(hashmap: #[K, V], key: K) int external
-fn hashmap_get_value<K, V>(hashmap: #[K, V], key: K) V external
-fn hashmap_remove<K, V>(hashmap: #[K, V], key: K) external
-fn hashmap_len<K, V>(hashmap: #[K, V]) int external
-fn hashmap_keys<K, V>(hashmap: #[K, V]) [K] external
+fn map_add<K, V>(map: #[K, V], key: K, value: V) external
+fn map_add_or_update<K, V>(map: #[K, V], key: K, value: V) external
+fn map_has_key<K, V>(map: #[K, V], key: K) int external
+fn map_get_value<K, V>(map: #[K, V], key: K) V external
+fn map_remove<K, V>(map: #[K, V], key: K) external
+fn map_len<K, V>(map: #[K, V]) int external
+fn map_keys<K, V>(map: #[K, V]) [K] external
 
 fn str_split(s: str, by: str) [str] external
 fn str_to_int(s: str) int external
 fn str_to_chars(s: str) [str] external
 fn str_contains(s: str, subs: str) int external
 fn str_len(s: str) int external
+fn str_remove(s: str, r: str) str external
 fn int_to_str(i: int) str external
 
 fn err(s: str) external
