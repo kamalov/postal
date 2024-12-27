@@ -1,88 +1,69 @@
 rec Data {
-    ax: int
-    ay: int
-    bx: int
-    by: int
-    target_x: int
-    target_y: int
-}
-
-rec XY {
     x: int
     y: int
+    dx: int
+    dy: int
 }
 
-fn get_xy(s: str) 
-    l = str_split(s, ' ')
-    x = l[2]
-    x = str_remove(x, 'X')
-    x = str_remove(x, '+')
-    x = str_remove(x, ',')
-    y = l[3]
-    y = str_remove(y, 'Y')
-    y = str_remove(y, '+')
+fn create_data(line: str)
+    d = Data {}
 
-    xy = XY {}
-    xy.x = str_to_int(x)
-    xy.y = str_to_int(y)
+    ps = str_split(str_split(line, ' ')[0], ',')
+    x = str_split(ps[0], '=')[1]
+    y = ps[1]
+    d.x = str_to_int(x)
+    d.y = str_to_int(y)
 
-    ret xy
+    vs = str_split(str_split(line, ' ')[1], ',')
+    dx = str_split(vs[0], '=')[1]
+    dy = vs[1]
+    d.dx = str_to_int(dx)
+    d.dy = str_to_int(dy)
+
+    ret d
 end
 
-fn create_data(lines: [str], index: int)
-    data = Data {}
+fn get_quadrant(d: Data)
+    xlen = 101
+    ylen = 103
+    // xlen = 11
+    // ylen = 7
+    steps = 100
 
-    xy = get_xy(lines[index])
-    data.ax = xy.x
-    data.ay = xy.y
+    mx = xlen / 2
+    my = ylen / 2
+    //log('mx', mx, 'my', my)
 
-    xy = get_xy(lines[index + 1])
-    data.bx = xy.x
-    data.by = xy.y
+    x = (d.x + d.dx*steps) % xlen
+    if x < 0 do x = x + xlen
+    y = (d.y + d.dy*steps) % ylen
+    if y < 0 do y = y + ylen
 
-    l = str_split(lines[index + 2], ' ')
-    x = l[1]
-    x = str_remove(x, 'X')
-    x = str_remove(x, '=')
-    x = str_remove(x, ',')
+    if x = mx or y = my do ret 0
 
-    y = l[2]
-    y = str_remove(y, 'Y')
-    y = str_remove(y, '=')
-    data.target_x = str_to_int(x)
-    data.target_y = str_to_int(y)
+    if x > mx and y < my do ret 1
+    if x < mx and y < my do ret 2
+    if x < mx and y > my do ret 3
+    if x > mx and y > my do ret 4
 
-    ret data
-end
-
-fn process_data(d: Data)
-    // log(d.ax, d.ay)
-    // log(d.bx, d.by)
-    // log(d.target_x, d.target_y)
-
-    b_up = d.ax*d.target_y - d.ay*d.target_x
-    b_down = d.ax*d.by - d.ay*d.bx
-    b = b_up/b_down
-
-    a_up = d.target_x - b*d.bx
-    a_down = d.ax
-    a = a_up/a_down
-
-    if a_up % a_down <> 0 or b_up % b_down <> 0 do ret 0
-
-    if a > 100 or b > 100 do ret 0
-
-    price = a*3 + b 
-    log('price', price)
-    ret price
+    ret 0
 end
 
 fn process(lines: [str])
-    total = 0
-    for 0..len(lines)/4 {
-        index = it*4
-        data = create_data(lines, index)
-        total = total + process_data(data)
+    quadrants = [int]
+    arr_set_len(quadrants, 5)
+    for lines {
+        data = create_data(it)
+        i = get_quadrant(data)
+        if i > 0 {
+            quadrants[i] = quadrants[i] + 1
+        }
+    }
+
+    total = 1
+    for 1..4 {
+        log(it, quadrants[it])
+        total = total * quadrants[it]
     }
     ret total
 end
