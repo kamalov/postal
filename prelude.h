@@ -4,11 +4,12 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm> 
-#include <fstream>
-#include <iostream>
-#include <type_traits>
 #include <tuple>
 #include <functional>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <type_traits>
 
 using namespace std::literals;
 using i64 = long long;
@@ -204,6 +205,33 @@ void arr_remove_at(std::vector<T>* a, i64 index) {
     a->erase(a->begin() + index);
 }
 
+template <typename T>
+i64 arr_index_of(std::vector<T>* a, T value) {
+    std::vector<T>::iterator it;
+    if constexpr (std::is_pointer<T>::value) {
+        it = std::find_if(a->begin(), a->end(), [value](T item) { return *item == *value; });
+    }
+    else {
+        it = std::find(a->begin(), a->end(), value);
+    }
+
+    if (it == a->end()) {
+        return -1;
+    }
+
+    return std::distance(a->begin(), it);
+}
+
+template <typename T>std::vector<T>* arr_slice(std::vector<T>* a, i64 from_index, i64 to_index) {
+    from_index = std::clamp(from_index, (i64)0, (i64)(a->size() - 1));
+    to_index = std::clamp(to_index, (i64)0, (i64)(a->size() - 1));
+    if (from_index > to_index) {
+        return new std::vector<T>();
+    }
+
+    return new std::vector<T>(a->begin() + from_index, a->begin() + to_index + 1);
+}
+
 /// string utils
 std::vector<std::string>* str_split(std::string s, std::string delimiter) {
     std::vector<std::string>* tokens = new std::vector<std::string>();
@@ -249,6 +277,17 @@ std::string str_remove(std::string s, std::string r) {
 
 i64 str_len(std::string s) {
     return s.length();
+}
+
+std::string str_arr_join(std::vector<std::string>* a, std::string delimiter) {
+    std::ostringstream ss;
+    for (size_t i = 0; i < a->size(); ++i) {
+        ss << a->at(i);
+        if (i != a->size() - 1) {
+            ss << delimiter;
+        }
+    }
+    return ss.str();
 }
 
 /// misc utils

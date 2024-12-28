@@ -167,11 +167,11 @@ impl CodeGenerator {
         };
 
         if function_node.is_external {
-            // writeln!(
-            //     &mut r,
-            //     "{padding}/// external {fn_generic_params_code}{return_type_str} {name}({fn_params_code});",
-            //     name = function_node.declaration.name
-            // );
+            writeln!(
+                &mut r,
+                "{padding}/// external {fn_generic_params_code}{return_type_str} {name}({fn_params_code});",
+                name = function_node.declaration.name
+            );
         } else {
             writeln!(
                 &mut r,

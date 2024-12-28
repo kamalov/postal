@@ -268,6 +268,12 @@ impl TypeChecker {
                             return Err(TypeCheckError::new(&expression.token, "Keyword 'it' is reserved and can be used only in iterations"));
                         }
                         let type_info = self.ctx.iterator_type_list.last().unwrap();
+                        if !type_info.is_array() {
+                            return Err(TypeCheckError::new(
+                                &expression.token,
+                                format!("iteratable must be of array type"),
+                            ));
+                        }
                         return Ok(TypeInfo::new_scalar(type_info.get_array_type_str()));
                     }
                     "idx" => {

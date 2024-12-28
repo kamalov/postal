@@ -1,76 +1,162 @@
-rec Data {
-    x: int
-    y: int
-    dx: int
-    dy: int
+rec IntField {
+   row_count: int
+   col_count: int
+   cri: int
+   cci: int
+   values: [int]
 }
 
-fn create_data(line: str)
-    d = Data {}
+rec Delta {
+    dr: int
+    dc: int
+}
 
-    ps = str_split(str_split(line, ' ')[0], ',')
-    x = str_split(ps[0], '=')[1]
-    y = ps[1]
-    d.x = str_to_int(x)
-    d.y = str_to_int(y)
+fn create_int_field(row_count: int, col_count: int)
+   f = IntField {}
+   f.row_count = row_count
+   f.col_count = col_count
+   f.values = [int]
+   arr_set_len(f.values, row_count * col_count)
+   ret f
+end
 
-    vs = str_split(str_split(line, ' ')[1], ',')
-    dx = str_split(vs[0], '=')[1]
-    dy = vs[1]
-    d.dx = str_to_int(dx)
-    d.dy = str_to_int(dy)
+fn get_int_field_value(f: IntField, row_index: int, col_index: int) int
+   ret f.values[row_index*f.col_count + col_index]
+end
 
+fn set_int_field_value(f: IntField, row_index: int, col_index: int, value: int)
+   f.values[row_index*f.col_count + col_index] = value
+end
+
+fn is_valid_field_index(f: IntField, row_index: int, col_index: int)
+   ret row_index >= 0 and row_index < f.row_count and col_index >= 0 and col_index < f.col_count
+end
+
+fn int_to_char(i: int) 
+    if i = 0 do ret '.'
+    if i = 1 do ret 'O'
+    if i = 2 do ret '#'
+    err('dummy')
+end
+
+fn print_int_field(f: IntField)
+   for 0..(f.row_count - 1) {
+      ri = it
+      s = ''
+      for 0..(f.col_count - 1) {
+         ci = it
+         v = get_int_field_value(f, ri, ci)
+         if ri = f.cri and f.cci = ci {
+             s = s + '' + '@'
+         } else {
+             s = s + '' + int_to_char(v)
+         }
+      }
+      log(s)
+   }
+   log()
+end
+
+fn char_to_int(c: str) 
+    if c = '.' do ret 0
+    if c = '@' do ret 0
+    if c = 'O' do ret 1
+    if c = '#' do ret 2
+    err('dummy')
+end
+
+fn lines_to_int_field(lines: [str])
+   f = create_int_field(len(lines), len(str_to_chars(lines[0])))
+   for lines {
+      ri = idx
+      for str_to_chars(it) {
+         ci = idx
+         if it = '@' {
+            f.cri = ri
+            f.cci = ci
+         }
+         v = char_to_int(it)
+         set_int_field_value(f, ri, ci, v)
+      }
+   }
+   ret f
+end
+
+fn get_delta(s: str)
+    dr = 0
+    dc = 0
+    if s = '<' do dc = 0-1
+    if s = '>' do dc = 1
+    if s = 'v' do dr = 1
+    if s = '^' do dr = 0-1
+    d = Delta {}
+    d.dr = dr
+    d.dc = dc
     ret d
 end
 
-fn get_quadrant(d: Data)
-    xlen = 101
-    ylen = 103
-    // xlen = 11
-    // ylen = 7
-    steps = 100
+fn move_next(f: IntField, d: Delta)
+    ri = f.cri + d.dr
+    ci = f.cci + d.dc
+    if is_valid_field_index(f, ri, ci) = 0 do ret
+    v = get_int_field_value(f, ri, ci)
+    if v = 2 do ret
+    if v = 0 {
+        set_int_field_value(f, f.cri, f.cci, 0) 
+        f.cri = ri
+        f.cci = ci
+        ret
+    }
 
-    mx = xlen / 2
-    my = ylen / 2
-    //log('mx', mx, 'my', my)
+    cri = ri
+    cci = ci
 
-    x = (d.x + d.dx*steps) % xlen
-    if x < 0 do x = x + xlen
-    y = (d.y + d.dy*steps) % ylen
-    if y < 0 do y = y + ylen
-
-    if x = mx or y = my do ret 0
-
-    if x > mx and y < my do ret 1
-    if x < mx and y < my do ret 2
-    if x < mx and y > my do ret 3
-    if x > mx and y > my do ret 4
-
-    ret 0
-end
-
-fn process(lines: [str])
-    quadrants = [int]
-    arr_set_len(quadrants, 5)
-    for lines {
-        data = create_data(it)
-        i = get_quadrant(data)
-        if i > 0 {
-            quadrants[i] = quadrants[i] + 1
+    loop {
+        ri = ri + d.dr
+        ci = ci + d.dc
+        if is_valid_field_index(f, ri, ci) = 0 do ret
+        v = get_int_field_value(f, ri, ci)
+        if v = 2 do ret
+        if v = 0 {
+            set_int_field_value(f, f.cri, f.cci, 0) 
+            set_int_field_value(f, ri, ci, 1) 
+            f.cri = cri
+            f.cci = cci
+            ret
         }
     }
+    
+end
 
-    total = 1
-    for 1..4 {
-        log(it, quadrants[it])
-        total = total * quadrants[it]
-    }
-    ret total
+fn get_total(f: IntField)
+    total = 0
+    for 0..(f.row_count - 1) {
+      ri = it
+      for 0..(f.col_count - 1) {
+         ci = it
+         v = get_int_field_value(f, ri, ci)
+         if v = 1 {
+            total = total + ri*100 + ci
+         }
+      }
+   }
+   ret total
 end
 
 fn run
-   lines = read_string_lines_from_file('D:/src/postal/aoc2024/input.txt')
-   total = process(lines)
-
-   log('total = ', total)
+    lines = read_string_lines_from_file('D:/src/postal/aoc2024/input.txt')
+    i = arr_index_of(lines, '')
+    f = lines_to_int_field(arr_slice(lines, 0, i - 1))
+    print_int_field(f)
+    commands = str_arr_join(arr_slice(lines, i + 1, len(lines)), '')
+    log(commands)
+    for str_to_chars(commands) {
+        delta = get_delta(it)
+        //log('move', it)
+        move_next(f, delta)
+        //readln()
+    }
+    print_int_field(f)
+    log()
+    log('total', get_total(f))
 end
