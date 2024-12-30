@@ -1,20 +1,20 @@
 current: 
-  -- todo: extract 
   -- refactor function call statement to expression
+  -- todo: extract fn typecheck code
 
 
 
 to do:
-  -- yes/no for booleans, div/mod for integers
+  -- yes/no for booleans (refactor parsing if needed)
+  -- div/mod for integers
   -- unary not
   -- object initializer
+  -- global variables
 
 
 
 backlog:
-  -- object initializer
-  -- унарный минус, унарный NOT (+ если потребуется, переделать парсинг выражения на рекурсивный алгоритм)
-  -- iteration mapping and iteration as expression (a = some >> { it })
+  -- mapping (a = some >> { it })
 
 
 
