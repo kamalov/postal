@@ -28,447 +28,219 @@
 /// external void err(std::string s);
 /// external std::string readln();
 /// external std::vector<std::string>* read_string_lines_from_file(std::string filename);
-struct Coords {
-    i64 ri;
-    i64 ci;
-    friend bool operator==(const Coords& l, const Coords& r) {
-        return (l.ri == r.ri) && (l.ci == r.ci);
-    }
-};
+i64 exp(i64 a, i64 e) {
+    i64 r;
+    r = 1ll;
 
-namespace std {
-    template<>
-    struct hash<Coords> {
-        std::size_t operator()(const Coords& rec) const {
-            size_t h = 0;
-            h ^= std::hash<i64>{}(rec.ri) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            h ^= std::hash<i64>{}(rec.ci) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            return h;
-        }
-    };
-}
-
-Coords* new_coords(i64 ri, i64 ci) {
-    Coords* c;
-    c = new Coords();
-    c->ri = ri;
-    c->ci = ci;
-    return c;
-}
-
-struct IntField {
-    i64 row_count;
-    i64 col_count;
-    Coords* start;
-    Coords* finish;
-    i64 cost;
-    std::vector<i64>* values;
-    Coords* north;
-    Coords* south;
-    Coords* west;
-    Coords* east;
-    friend bool operator==(const IntField& l, const IntField& r) {
-        return (l.row_count == r.row_count) && (l.col_count == r.col_count) && (l.cost == r.cost);
-    }
-};
-
-namespace std {
-    template<>
-    struct hash<IntField> {
-        std::size_t operator()(const IntField& rec) const {
-            size_t h = 0;
-            h ^= std::hash<i64>{}(rec.row_count) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            h ^= std::hash<i64>{}(rec.col_count) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            h ^= std::hash<i64>{}(rec.cost) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            return h;
-        }
-    };
-}
-
-struct VisitedCosts {
-    i64 dummy;
-    IntField* north;
-    IntField* south;
-    IntField* west;
-    IntField* east;
-    IntField* best;
-    i64 count;
-    friend bool operator==(const VisitedCosts& l, const VisitedCosts& r) {
-        return (l.dummy == r.dummy) && (l.count == r.count);
-    }
-};
-
-namespace std {
-    template<>
-    struct hash<VisitedCosts> {
-        std::size_t operator()(const VisitedCosts& rec) const {
-            size_t h = 0;
-            h ^= std::hash<i64>{}(rec.dummy) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            h ^= std::hash<i64>{}(rec.count) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            return h;
-        }
-    };
-}
-
-IntField* create_int_field(i64 row_count, i64 col_count) {
-    IntField* f;
-    f = new IntField();
-    f->row_count = row_count;
-    f->col_count = col_count;
-    f->values = new std::vector<i64>();
-    arr_set_len(f->values, row_count*col_count);
-    return f;
-}
-
-i64 get_int_field_value(IntField* f, i64 row_index, i64 col_index) {
-    return f->values->at(row_index*f->col_count + col_index);
-}
-
-void set_int_field_value(IntField* f, i64 row_index, i64 col_index, i64 value) {
-    f->values->at(row_index*f->col_count + col_index) = value;
-}
-
-i64 is_valid_field_index(IntField* f, i64 row_index, i64 col_index) {
-    return row_index >= 0ll && row_index < f->row_count && col_index >= 0ll && col_index < f->col_count;
-}
-
-std::string int_to_char(i64 i) {
-
-    if (i == 0ll) {
-        return "."s;
-    };
-
-    if (i == 0ll - 1ll) {
-        return "/"s;
-    };
-    err("int_to_char"s);
-}
-
-void print_int_field(IntField* f, IntField* visited) {
-    i64 ri;
-    std::string s;
-    i64 ci;
-    i64 v;
-    i64 vis_value;
-
-    auto __expr0 = create_range(0ll, (f->row_count - 1ll));
+    auto __expr0 = create_range(1ll, e);
     for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
         i64 expr__it0 = (*__expr0)[expr__it0__idx];
-        ri = expr__it0;
-        s = ""s;
+        r = r*a;
+    }
+    return r;
+}
 
-        auto __expr1 = create_range(0ll, (f->col_count - 1ll));
-        for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
-            i64 expr__it1 = (*__expr1)[expr__it1__idx];
-            ci = expr__it1;
-            v = get_int_field_value(f, ri, ci);
-            vis_value = get_int_field_value(visited, ri, ci);
+struct Data {
+    i64 a;
+    i64 b;
+    i64 c;
+    i64 ip;
+    std::vector<i64>* instructions;
+    std::string out;
+    friend bool operator==(const Data& l, const Data& r) {
+        return (l.a == r.a) && (l.b == r.b) && (l.c == r.c) && (l.ip == r.ip) && (l.out == r.out);
+    }
+};
 
-            if (vis_value != 0ll) {
-                s = s + "O"s;
-                //int_to_str(vis_value)
+namespace std {
+    template<>
+    struct hash<Data> {
+        std::size_t operator()(const Data& rec) const {
+            size_t h = 0;
+            h ^= std::hash<i64>{}(rec.a) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            h ^= std::hash<i64>{}(rec.b) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            h ^= std::hash<i64>{}(rec.c) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            h ^= std::hash<i64>{}(rec.ip) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            h ^= std::hash<std::string>{}(rec.out) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            return h;
+        }
+    };
+}
+
+i64 get_combo_value(Data* d, i64 operand) {
+
+    if (operand <= 3ll) {
+        return operand;
+    };
+
+    if (operand == 4ll) {
+        return d->a;
+    };
+
+    if (operand == 5ll) {
+        return d->b;
+    };
+
+    if (operand == 6ll) {
+        return d->c;
+    };
+
+    if (operand == 7ll) {
+        return 7ll;
+    };
+    err("get_combo_value opcode "s + int_to_str(operand));
+}
+
+void print(Data* d) {
+    i64 v;
+
+    if (d->ip >= len(d->instructions)) {
+        v = 0ll;
+    }
+    else {
+        v = d->instructions->at(d->ip + 1ll);
+    };
+    printf("%s %lld %s %lld %s %lld %s %lld %s %lld %s %lld %s %s\n", ("A="s).c_str(), static_cast<i64>(d->a), ("B="s).c_str(), static_cast<i64>(d->b), ("C="s).c_str(), static_cast<i64>(d->c), ("ip="s).c_str(), static_cast<i64>(d->ip), ("value="s).c_str(), static_cast<i64>(v), ("combo="s).c_str(), static_cast<i64>(get_combo_value(d, v)), ("out:"s).c_str(), (d->out).c_str());
+    //log('instructions:', len(d.instructions))
+    //log('out:', d.out)
+}
+
+Data* create_data(std::vector<std::string>* lines) {
+    Data* d;
+    d = new Data();
+    d->a = str_to_int(str_split(lines->at(0ll), " "s)->at(2ll));
+    d->b = str_to_int(str_split(lines->at(1ll), " "s)->at(2ll));
+    d->c = str_to_int(str_split(lines->at(2ll), " "s)->at(2ll));
+    d->instructions = new std::vector<i64>();
+
+    auto __expr0 = str_split(str_split(lines->at(4ll), " "s)->at(1ll), ","s);
+    for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
+        std::string expr__it0 = (*__expr0)[expr__it0__idx];
+        push(d->instructions, str_to_int(expr__it0));
+    }
+    return d;
+}
+
+void print1(Data* d, std::string cmd) {
+    printf("%s\n", (cmd).c_str());
+    print(d);
+}
+
+void execute(Data* d) {
+    i64 opcode;
+    i64 operand;
+    i64 value;
+    i64 combo_value;
+    i64 v;
+
+    for (;;) {
+
+        if (d->ip >= len(d->instructions)) {
+            break;
+        };
+        opcode = d->instructions->at(d->ip);
+        operand = d->instructions->at(d->ip + 1ll);
+        value = operand;
+        combo_value = get_combo_value(d, operand);
+        /// adv
+
+        if (opcode == 0ll) {
+            print1(d, "adv"s);
+            d->a = d->a/exp(2ll, combo_value);
+            d->ip = d->ip + 2ll;
+            continue;
+        };
+        /// bxl 
+
+        if (opcode == 1ll) {
+            print(d);
+            printf("%s %s %lld %s %lld %s %lld\n", ("bxl"s).c_str(), ("B = B ^ value ::"s).c_str(), static_cast<i64>(d->b^value), ("="s).c_str(), static_cast<i64>(d->b), ("^"s).c_str(), static_cast<i64>(value));
+            d->b = d->b^value;
+            d->ip = d->ip + 2ll;
+            print(d);
+            //readln()
+            continue;
+        };
+        /// bst 
+
+        if (opcode == 2ll) {
+            print(d);
+            d->b = combo_value % 8ll;
+            printf("%s %lld %s %lld %s\n", ("bst: B = combo % 8 ::"s).c_str(), static_cast<i64>(d->b), ("="s).c_str(), static_cast<i64>(combo_value), ("% 8"s).c_str());
+            d->ip = d->ip + 2ll;
+            print(d);
+            printf("\n");
+            //readln()
+            continue;
+        };
+        /// jnz
+
+        if (opcode == 3ll) {
+            print1(d, "jnz"s);
+
+            if (d->a > 0ll) {
+                d->ip = value;
             }
             else {
-                s = s + int_to_char(v);
+                d->ip = d->ip + 2ll;
             };
-            //  if ri = f.cri and f.cci = ci {
-            //      s = s + '@' + dir
-            //  } else {
-            //      s = s + '' + int_to_char(v)
-            //  }
-        }
-        printf("%s\n", (s).c_str());
-    }
-    printf("\n");
-}
-
-i64 char_to_int(std::string c) {
-
-    if (c == "."s) {
-        return 0ll;
-    };
-
-    if (c == "S"s) {
-        return 0ll;
-    };
-
-    if (c == "E"s) {
-        return 0ll;
-    };
-
-    if (c == "#"s) {
-        return 0ll - 1ll;
-    };
-    err("char_to_int"s);
-}
-
-IntField* lines_to_int_field(std::vector<std::string>* lines) {
-    IntField* f;
-    i64 ri;
-    i64 ci;
-    i64 v;
-    f = create_int_field(len(lines), len(str_to_chars(lines->at(0ll))));
-    f->start = new Coords();
-    f->finish = new Coords();
-    f->north = new_coords(0ll - 1ll, 0ll);
-    f->south = new_coords(1ll, 0ll);
-    f->west = new_coords(0ll, 0ll - 1ll);
-    f->east = new_coords(0ll, 1ll);
-    f->cost = 1000000000ll;
-
-    auto __expr0 = lines;
-    for (int lines__it0__idx = 0; lines__it0__idx < __expr0->size(); lines__it0__idx++) {
-        std::string lines__it0 = (*__expr0)[lines__it0__idx];
-        ri = lines__it0__idx;
-
-        auto __expr1 = str_to_chars(lines__it0);
-        for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
-            std::string expr__it1 = (*__expr1)[expr__it1__idx];
-            ci = expr__it1__idx;
-
-            if (expr__it1 == "S"s) {
-                f->start->ri = ri;
-                f->start->ci = ci;
-            };
-
-            if (expr__it1 == "E"s) {
-                f->finish->ri = ri;
-                f->finish->ci = ci;
-                //log('finish', ri, ci)
-            };
-            v = char_to_int(expr__it1);
-            set_int_field_value(f, ri, ci, v);
-        }
-    }
-    return f;
-}
-
-Coords* rotate_left(IntField* f, Coords* dir) {
-
-    if (dir == f->north) {
-        return f->west;
-    };
-
-    if (dir == f->west) {
-        return f->south;
-    };
-
-    if (dir == f->south) {
-        return f->east;
-    };
-
-    if (dir == f->east) {
-        return f->north;
-    };
-    err("rotate_left"s);
-}
-
-i64 get_visited_cost(IntField* f, VisitedCosts* vis, i64 ri, i64 ci, Coords* dir) {
-
-    if (dir == f->north) {
-        return get_int_field_value(vis->north, ri, ci);
-    };
-
-    if (dir == f->south) {
-        return get_int_field_value(vis->south, ri, ci);
-    };
-
-    if (dir == f->west) {
-        return get_int_field_value(vis->west, ri, ci);
-    };
-
-    if (dir == f->east) {
-        return get_int_field_value(vis->east, ri, ci);
-    };
-    err("get_visited_cost"s);
-}
-
-void set_visited_cost(IntField* f, VisitedCosts* vis, i64 ri, i64 ci, Coords* dir, i64 value) {
-
-    if (dir == f->north) {
-        set_int_field_value(vis->north, ri, ci, value);
-        return;
-    };
-
-    if (dir == f->south) {
-        set_int_field_value(vis->south, ri, ci, value);
-        return;
-    };
-
-    if (dir == f->west) {
-        set_int_field_value(vis->west, ri, ci, value);
-        return;
-    };
-
-    if (dir == f->east) {
-        set_int_field_value(vis->east, ri, ci, value);
-        return;
-    };
-    err("set_visited_cost"s);
-}
-
-i64 try_update_visited_cost(IntField* f, VisitedCosts* vis, i64 ri, i64 ci, Coords* dir, i64 cost) {
-    IntField* vf;
-    i64 v;
-
-    if (dir == f->north) {
-        vf = vis->north;
-    };
-
-    if (dir == f->south) {
-        vf = vis->south;
-    };
-
-    if (dir == f->west) {
-        vf = vis->west;
-    };
-
-    if (dir == f->east) {
-        vf = vis->east;
-    };
-    v = get_int_field_value(vf, ri, ci);
-
-    if (v == 0ll || cost <= v) {
-        set_int_field_value(vf, ri, ci, cost);
-        return 1ll;
-    };
-    return 0ll;
-}
-
-i64 get_count(IntField* f) {
-    i64 count;
-    i64 ri;
-    i64 ci;
-    i64 v;
-    count = 0ll;
-
-    auto __expr0 = create_range(0ll, f->row_count - 1ll);
-    for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
-        i64 expr__it0 = (*__expr0)[expr__it0__idx];
-        ri = expr__it0;
-
-        auto __expr1 = create_range(0ll, f->col_count - 1ll);
-        for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
-            i64 expr__it1 = (*__expr1)[expr__it1__idx];
-            ci = expr__it1;
-            v = get_int_field_value(f, ri, ci);
-
-            if (v == 1ll) {
-                count = count + 1ll;
-            };
-        }
-    }
-    return count;
-}
-
-void update_best(IntField* best, IntField* visited) {
-    i64 ri;
-    i64 ci;
-    i64 v;
-
-    auto __expr0 = create_range(0ll, visited->row_count - 1ll);
-    for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
-        i64 expr__it0 = (*__expr0)[expr__it0__idx];
-        ri = expr__it0;
-
-        auto __expr1 = create_range(0ll, visited->col_count - 1ll);
-        for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
-            i64 expr__it1 = (*__expr1)[expr__it1__idx];
-            ci = expr__it1;
-            v = get_int_field_value(visited, ri, ci);
-
-            if (v == 1ll) {
-                set_int_field_value(best, ri, ci, 1ll);
-            };
-        }
-    }
-}
-
-i64 try_visit(IntField* f, IntField* visited, i64 ri, i64 ci, i64 cost, Coords* dir, VisitedCosts* visited_costs) {
-    i64 v;
-    Coords* rl;
-    Coords* rr;
-    i64 r1;
-    i64 r2;
-    i64 r3;
-
-    if (cost > f->cost) {
-        return 1ll;
-    };
-
-    if (get_int_field_value(visited, ri, ci) == 1ll) {
-        return 1ll;
-    };
-    v = get_int_field_value(f, ri, ci);
-
-    if (v == 0ll - 1ll) {
-        return 0ll;
-    };
-
-    if (ri == f->finish->ri && ci == f->finish->ci) {
-        f->cost = cost;
-        //print_int_field(f, visited)
-        printf("%s %lld\n", ("found"s).c_str(), static_cast<i64>(cost));
-
-        if (cost == 90460ll) {
-            update_best(visited_costs->best, visited);
+            //readln()
+            continue;
         };
-        return 1ll;
-    };
-    set_int_field_value(visited, ri, ci, 1ll);
-    // visited_costs.count = visited_costs.count + 1
-    // if visited_costs.count % 50000000 = 0 {
-    //     print_int_field(f, visited)
-    //     log('at step', visited_costs.count)
-    //     readln()
-    // }
-    rl = rotate_left(f, dir);
-    rr = rotate_left(f, rotate_left(f, rl));
-    //if try_update_visited_cost(f, visited_costs, ri, ci, dir, cost) {
-    r1 = try_visit(f, visited, ri + dir->ri, ci + dir->ci, cost + 1ll, dir, visited_costs);
-    //}
+        /// bxc
 
-    if (try_update_visited_cost(f, visited_costs, ri, ci, rl, cost + 1000ll)) {
-        r2 = try_visit(f, visited, ri + rl->ri, ci + rl->ci, cost + 1001ll, rl, visited_costs);
-    };
+        if (opcode == 4ll) {
+            print1(d, "bxc"s);
+            d->b = d->b^d->c;
+            d->ip = d->ip + 2ll;
+            //readln()
+            continue;
+        };
+        /// out
 
-    if (try_update_visited_cost(f, visited_costs, ri, ci, rr, cost + 1000ll)) {
-        r3 = try_visit(f, visited, ri + rr->ri, ci + rr->ci, cost + 1001ll, rr, visited_costs);
-    };
-    set_int_field_value(visited, ri, ci, 0ll);
+        if (opcode == 5ll) {
+            print1(d, "out"s);
+            v = combo_value % 8ll;
 
-    if (r1 + r2 + r3 == 0ll) {
-        set_int_field_value(f, ri, ci, 0ll - 1ll);
-        return 0ll;
-    };
-    return 1ll;
-}
+            if (str_len(d->out) > 0ll) {
+                d->out = d->out + ","s;
+            };
+            d->out = d->out + int_to_str(v);
+            d->ip = d->ip + 2ll;
+            //readln()
+            continue;
+        };
+        /// bdv
 
-VisitedCosts* create_visited_costs(IntField* f) {
-    VisitedCosts* c;
-    c = new VisitedCosts();
-    c->north = create_int_field(f->row_count, f->col_count);
-    c->south = create_int_field(f->row_count, f->col_count);
-    c->west = create_int_field(f->row_count, f->col_count);
-    c->east = create_int_field(f->row_count, f->col_count);
-    c->best = create_int_field(f->row_count, f->col_count);
-    return c;
+        if (opcode == 6ll) {
+            print1(d, "bdv"s);
+            d->b = d->a/exp(2ll, combo_value);
+            d->ip = d->ip + 2ll;
+            //readln()
+            continue;
+        };
+        /// cdv
+
+        if (opcode == 7ll) {
+            print(d);
+            d->c = d->a/exp(2ll, combo_value);
+            printf("%s %s %lld %s %lld %s %lld\n", ("cdv"s).c_str(), ("C = A div 2^combo ::"s).c_str(), static_cast<i64>(d->c), ("="s).c_str(), static_cast<i64>(d->a), ("div 2^"s).c_str(), static_cast<i64>(combo_value));
+            d->ip = d->ip + 2ll;
+            print(d);
+            //readln()
+            continue;
+        };
+    }
 }
 
 void run() {
     std::vector<std::string>* lines;
-    IntField* f;
-    IntField* visited;
-    VisitedCosts* visited_costs;
-    i64 total;
+    Data* d;
     lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt"s);
-    f = lines_to_int_field(lines);
-    visited = create_int_field(f->row_count, f->col_count);
-    visited_costs = create_visited_costs(f);
-    try_visit(f, visited, f->start->ri, f->start->ci, 0ll, f->east, visited_costs);
-    //print_int_field(f, visited)
-    total = get_count(visited_costs->best) + 1ll;
-    printf("%s %lld %s %lld\n", ("done"s).c_str(), static_cast<i64>(f->cost), ("steps"s).c_str(), static_cast<i64>(total));
+    d = create_data(lines);
+    printf("%s\n", (lines->at(4ll)).c_str());
+    execute(d);
+    printf("%s %s\n", ("\ndone"s).c_str(), (d->out).c_str());
 }
 
 

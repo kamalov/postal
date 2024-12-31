@@ -37,10 +37,10 @@ const KEYWORDS: [&str; 20] = [
     "not", "and", "or", //
 ];
 
-const SPECIALS: [&str; 19] = [
+const SPECIALS: [&str; 20] = [
     "#", //
     "{", "}", "(", ")", "[", "]", ",", //
-    ":", ";", "=", "*", "/", "+", "-", "<", ">", ".", //, "::", "<<", "=>", "->"
+    ":", ";", "=", "*", "/", "+", "-", "<", ">", ".", "^", //, "::", "<<", "=>", "->"
     "%"
 ];
 
@@ -95,6 +95,8 @@ impl Tokenizer {
 
         t.priorities.insert("=".to_string(), 40);
         t.priorities.insert("<>".to_string(), 40);
+
+        t.priorities.insert("^".to_string(), 35);
 
         t.priorities.insert("and".to_string(), 30);
 

@@ -1,275 +1,155 @@
-rec Coords {
-    ri: int
-    ci: int
+fn exp(a: int, e: int)
+    r = 1
+    for 1..e do r = r*a
+    ret r
+end
+
+rec Data {
+    a: int
+    b: int
+    c: int
+    ip: int
+    instructions: [int]
+    out: str
 }
 
-fn new_coords(ri: int, ci: int)
-    c = Coords {}
-    c.ri = ri
-    c.ci = ci
-    ret c
+fn get_combo_value(d: Data, operand: int)
+    if operand <= 3 do ret operand
+    if operand = 4 do ret d.a
+    if operand = 5 do ret d.b
+    if operand = 6 do ret d.c
+    if operand = 7 do ret 7
+    err('get_combo_value opcode ' + int_to_str(operand))
 end
 
-rec IntField {
-   row_count: int
-   col_count: int
-   start: Coords
-   finish: Coords
-   cost: int
-   values: [int]
-   north: Coords
-   south: Coords
-   west: Coords
-   east: Coords
-}
-
-rec VisitedCosts {
-    dummy: int
-    north: IntField
-    south: IntField
-    west: IntField
-    east: IntField
-    best: IntField
-    count: int
-}
-
-fn create_int_field(row_count: int, col_count: int)
-   f = IntField {}
-   f.row_count = row_count
-   f.col_count = col_count
-   f.values = [int]
-   arr_set_len(f.values, row_count * col_count)
-   ret f
+fn print(d: Data) 
+    if d.ip >= len(d.instructions) {
+        v = 0
+    } else {
+        v = d.instructions[d.ip + 1]
+    }
+    log('A=', d.a, 'B=', d.b, 'C=', d.c, 'ip=', d.ip, 'value=', v, 'combo=', get_combo_value(d, v), 'out:', d.out)
+    //log('instructions:', len(d.instructions))
+    //log('out:', d.out)
 end
 
-fn get_int_field_value(f: IntField, row_index: int, col_index: int) int
-   ret f.values[row_index*f.col_count + col_index]
+fn create_data(lines: [str])
+    d = Data {}
+    d.a = str_to_int(str_split(lines[0], ' ')[2])
+    d.b = str_to_int(str_split(lines[1], ' ')[2])
+    d.c = str_to_int(str_split(lines[2], ' ')[2])
+
+    d.instructions = [int]
+    for str_split(str_split(lines[4], ' ')[1], ',') {
+        push(d.instructions, str_to_int(it))
+    }
+
+    ret d
 end
 
-fn set_int_field_value(f: IntField, row_index: int, col_index: int, value: int)
-   f.values[row_index*f.col_count + col_index] = value
+fn print1(d: Data, cmd: str)
+    ret
+    log(cmd)
+    print(d)
 end
 
-fn is_valid_field_index(f: IntField, row_index: int, col_index: int)
-   ret row_index >= 0 and row_index < f.row_count and col_index >= 0 and col_index < f.col_count
-end
+fn execute(d: Data)
+    loop {
+        if d.ip >= len(d.instructions) do break
+        opcode = d.instructions[d.ip]
+        operand = d.instructions[d.ip + 1]
+        value = operand
+        combo_value = get_combo_value(d, operand)
 
-fn int_to_char(i: int) 
-    if i = 0 do ret '.'
-    if i = 0-1 do ret '/'
-    err('int_to_char')
-end
+        /// adv
+        if opcode = 0 {
+            print1(d, 'adv')
+            d.a = d.a/exp(2, combo_value)  
+            d.ip = d.ip + 2
+            continue
+        }
 
-fn print_int_field(f: IntField, visited: IntField)
-   for 0..(f.row_count - 1) {
-      ri = it
-      s = ''
-      for 0..(f.col_count - 1) {
-         ci = it
-         v = get_int_field_value(f, ri, ci)
-         vis_value = get_int_field_value(visited, ri, ci)
-         if vis_value <> 0 {
-             s = s + 'O'
-             //int_to_str(vis_value)
-         } else {
-             s = s + int_to_char(v)
-         }
-        //  if ri = f.cri and f.cci = ci {
-        //      s = s + '@' + dir
-        //  } else {
-        //      s = s + '' + int_to_char(v)
-        //  }
-      }
-      log(s)
-   }
-   log()
-end
+        /// bxl 
+        if opcode = 1 {
+            print(d)
+            log('bxl', 'B = B ^ value ::', d.b^value, '=', d.b, '^', value)
+            d.b = d.b ^ value
+            d.ip = d.ip + 2
+            print(d)
+            //readln()
+            continue
+        }
 
-fn char_to_int(c: str) 
-    if c = '.' do ret 0
-    if c = 'S' do ret 0
-    if c = 'E' do ret 0
-    if c = '#' do ret 0-1
-    err('char_to_int')
-end
+        /// bst 
+        if opcode = 2 {
+            print(d)
+            d.b = combo_value % 8
+            log('bst: B = combo % 8 ::', d.b, '=', combo_value, '% 8')
+            d.ip = d.ip + 2
+            print(d)
+            log()
+            //readln()
+            continue
+        }
 
-fn lines_to_int_field(lines: [str])
-    f = create_int_field(len(lines), len(str_to_chars(lines[0])))
-    f.start = Coords {}
-    f.finish = Coords {}
-    f.north = new_coords(0-1, 0)
-    f.south = new_coords(1, 0)
-    f.west = new_coords(0, 0-1)
-    f.east = new_coords(0, 1)
-    f.cost = 1000000000
-    for lines {
-        ri = idx
-        for str_to_chars(it) {
-            ci = idx
-            if it = 'S' {
-                f.start.ri = ri
-                f.start.ci = ci
+        /// jnz
+        if opcode = 3 {
+            print1(d, 'jnz')
+            if d.a > 0 {
+                d.ip = value
+            } else {
+                d.ip = d.ip + 2
             }
-            if it = 'E' {
-                f.finish.ri = ri
-                f.finish.ci = ci
-                //log('finish', ri, ci)
-            }
-            v = char_to_int(it)
-            set_int_field_value(f, ri, ci, v)
-        }
-    }
-
-    ret f
-end
-
-fn rotate_left(f: IntField, dir: Coords) 
-    if dir = f.north do ret f.west
-    if dir = f.west do ret f.south
-    if dir = f.south do ret f.east
-    if dir = f.east do ret f.north
-    err('rotate_left')
-end
-
-fn get_visited_cost(f: IntField, vis: VisitedCosts, ri: int, ci: int, dir: Coords)
-    if dir = f.north do ret get_int_field_value(vis.north, ri, ci)
-    if dir = f.south do ret get_int_field_value(vis.south, ri, ci)
-    if dir = f.west do ret get_int_field_value(vis.west, ri, ci)
-    if dir = f.east do ret get_int_field_value(vis.east, ri, ci)
-    err('get_visited_cost')
-end
-
-fn set_visited_cost(f: IntField, vis: VisitedCosts, ri: int, ci: int, dir: Coords, value: int)
-    if dir = f.north {
-        set_int_field_value(vis.north, ri, ci, value)
-        ret
-    }
-    if dir = f.south {
-        set_int_field_value(vis.south, ri, ci, value)
-        ret
-    }
-    if dir = f.west {
-        set_int_field_value(vis.west, ri, ci, value)
-        ret
-    }
-    if dir = f.east {
-        set_int_field_value(vis.east, ri, ci, value)
-        ret
-    }
-    err('set_visited_cost')
-end
-
-fn try_update_visited_cost(f: IntField, vis: VisitedCosts, ri: int, ci: int, dir: Coords, cost: int)
-    if dir = f.north do vf = vis.north
-    if dir = f.south do vf = vis.south
-    if dir = f.west do vf = vis.west
-    if dir = f.east do vf = vis.east
-
-    v = get_int_field_value(vf, ri, ci)
-    if v = 0 or cost <= v {
-        set_int_field_value(vf, ri, ci, cost)
-        ret 1
-    }
-
-    ret 0
-end
-
-fn get_count(f: IntField)
-    count = 0
-    for 0..f.row_count - 1 {
-        ri = it
-        for 0..f.col_count - 1 {
-            ci = it
-            v = get_int_field_value(f, ri, ci)
-            if v = 1 do count = count + 1
-        }
-    }
-    ret count
-end
-
-fn update_best(best: IntField, visited: IntField)
-    for 0..visited.row_count - 1 {
-        ri = it
-        for 0..visited.col_count - 1 {
-            ci = it
-            v = get_int_field_value(visited, ri, ci)
-            if v = 1 do set_int_field_value(best, ri, ci, 1)
-        }
-    }
-end
-
-fn try_visit(f: IntField, visited: IntField, ri: int, ci: int, cost: int, dir: Coords, visited_costs: VisitedCosts) int
-    if cost > f.cost do ret 1
-    
-    if get_int_field_value(visited, ri, ci) = 1 do ret 1
-    
-    v = get_int_field_value(f, ri, ci)
-    if v = 0-1 do ret 0
-
-    if ri = f.finish.ri and ci = f.finish.ci {
-        f.cost = cost
-        //print_int_field(f, visited)
-        log('found', cost)
-        if cost = 90460 {
-            update_best(visited_costs.best, visited)
+            //readln()
+            continue
         }
 
-        ret 1
+        /// bxc
+        if opcode = 4 {
+            print1(d, 'bxc')
+            d.b = d.b ^ d.c
+            d.ip = d.ip + 2
+            //readln()
+            continue
+        }
+
+        /// out
+        if opcode = 5 {
+            print1(d, 'out')
+            v = combo_value % 8
+            if str_len(d.out) > 0 do d.out = d.out + ','
+            d.out = d.out + int_to_str(v)
+            d.ip = d.ip + 2
+            //readln()
+            continue
+        }
+
+        /// bdv
+        if opcode = 6 {
+            print1(d, 'bdv')
+            d.b = d.a/exp(2, combo_value)  
+            d.ip = d.ip + 2
+            //readln()
+            continue
+        }
+
+        /// cdv
+        if opcode = 7 {
+            print(d)
+            d.c = d.a/exp(2, combo_value)  
+            log('cdv', 'C = A div 2^combo ::', d.c, '=', d.a, 'div 2^', combo_value)
+            d.ip = d.ip + 2
+            print(d)
+            //readln()
+            continue
+        }
     }
-
-    set_int_field_value(visited, ri, ci, 1)
-    // visited_costs.count = visited_costs.count + 1
-    // if visited_costs.count % 50000000 = 0 {
-    //     print_int_field(f, visited)
-    //     log('at step', visited_costs.count)
-    //     readln()
-    // }
-
-    rl = rotate_left(f, dir)
-    rr = rotate_left(f, rotate_left(f, rl))
-
-    //if try_update_visited_cost(f, visited_costs, ri, ci, dir, cost) {
-        r1 = try_visit(f, visited, ri + dir.ri, ci + dir.ci, cost + 1, dir, visited_costs)
-    //}
-
-    if try_update_visited_cost(f, visited_costs, ri, ci, rl, cost + 1000) {
-        r2 = try_visit(f, visited, ri + rl.ri, ci + rl.ci, cost + 1001, rl, visited_costs)
-    }
-
-    if try_update_visited_cost(f, visited_costs, ri, ci, rr, cost + 1000) {
-        r3 = try_visit(f, visited, ri + rr.ri, ci + rr.ci, cost + 1001, rr, visited_costs)
-    }
-
-    set_int_field_value(visited, ri, ci, 0)
-
-    if r1 + r2 + r3 = 0 {
-        set_int_field_value(f, ri, ci, 0-1)
-        ret 0
-    }
-
-    ret 1
-end
-
-
-fn create_visited_costs(f: IntField)
-    c = VisitedCosts {}
-    c.north = create_int_field(f.row_count, f.col_count)
-    c.south = create_int_field(f.row_count, f.col_count)
-    c.west = create_int_field(f.row_count, f.col_count)
-    c.east = create_int_field(f.row_count, f.col_count)
-    c.best = create_int_field(f.row_count, f.col_count)
-    ret c
 end
 
 fn run
     lines = read_string_lines_from_file('D:/src/postal/aoc2024/input.txt')
-    f = lines_to_int_field(lines)
-    visited = create_int_field(f.row_count, f.col_count)
-    visited_costs = create_visited_costs(f)
-    try_visit(f, visited, f.start.ri, f.start.ci, 0, f.east, visited_costs)
-    
-    //print_int_field(f, visited)
-    total = get_count(visited_costs.best) + 1
-
-    log('done', f.cost, 'steps', total)
+    d = create_data(lines)
+    log(lines[4])
+    execute(d)
+    log('\ndone', d.out)
 end
