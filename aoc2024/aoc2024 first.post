@@ -1,14 +1,35 @@
+rec Coords {
+    ri: int
+    ci: int
+}
+
+fn new_coords(ri: int, ci: int)
+    c = Coords {}
+    c.ri = ri
+    c.ci = ci
+    ret c
+end
+
 rec IntField {
    row_count: int
    col_count: int
-   cri: int
-   cci: int
+   start: Coords
+   finish: Coords
+   cost: int
    values: [int]
+   north: Coords
+   south: Coords
+   west: Coords
+   east: Coords
 }
 
-rec Delta {
-    dr: int
-    dc: int
+rec VisitedCosts {
+    dummy: int
+    north: IntField
+    south: IntField
+    west: IntField
+    east: IntField
+    count: int
 }
 
 fn create_int_field(row_count: int, col_count: int)
@@ -34,23 +55,29 @@ end
 
 fn int_to_char(i: int) 
     if i = 0 do ret '.'
-    if i = 1 do ret 'O'
-    if i = 2 do ret '#'
-    err('dummy')
+    if i = 0-1 do ret '/'
+    err('int_to_char')
 end
 
-fn print_int_field(f: IntField)
+fn print_int_field(f: IntField, visited: IntField)
    for 0..(f.row_count - 1) {
       ri = it
       s = ''
       for 0..(f.col_count - 1) {
          ci = it
          v = get_int_field_value(f, ri, ci)
-         if ri = f.cri and f.cci = ci {
-             s = s + '' + '@'
+         vis_value = get_int_field_value(visited, ri, ci)
+         if vis_value <> 0 {
+             s = s + 'O'
+             //int_to_str(vis_value)
          } else {
-             s = s + '' + int_to_char(v)
+             s = s + int_to_char(v)
          }
+        //  if ri = f.cri and f.cci = ci {
+        //      s = s + '@' + dir
+        //  } else {
+        //      s = s + '' + int_to_char(v)
+        //  }
       }
       log(s)
    }
@@ -59,104 +86,159 @@ end
 
 fn char_to_int(c: str) 
     if c = '.' do ret 0
-    if c = '@' do ret 0
-    if c = 'O' do ret 1
-    if c = '#' do ret 2
-    err('dummy')
+    if c = 'S' do ret 0
+    if c = 'E' do ret 0
+    if c = '#' do ret 0-1
+    err('char_to_int')
 end
 
 fn lines_to_int_field(lines: [str])
-   f = create_int_field(len(lines), len(str_to_chars(lines[0])))
-   for lines {
-      ri = idx
-      for str_to_chars(it) {
-         ci = idx
-         if it = '@' {
-            f.cri = ri
-            f.cci = ci
-         }
-         v = char_to_int(it)
-         set_int_field_value(f, ri, ci, v)
-      }
-   }
-   ret f
-end
-
-fn get_delta(s: str)
-    dr = 0
-    dc = 0
-    if s = '<' do dc = 0-1
-    if s = '>' do dc = 1
-    if s = 'v' do dr = 1
-    if s = '^' do dr = 0-1
-    d = Delta {}
-    d.dr = dr
-    d.dc = dc
-    ret d
-end
-
-fn move_next(f: IntField, d: Delta)
-    ri = f.cri + d.dr
-    ci = f.cci + d.dc
-    if is_valid_field_index(f, ri, ci) = 0 do ret
-    v = get_int_field_value(f, ri, ci)
-    if v = 2 do ret
-    if v = 0 {
-        set_int_field_value(f, f.cri, f.cci, 0) 
-        f.cri = ri
-        f.cci = ci
-        ret
-    }
-
-    cri = ri
-    cci = ci
-
-    loop {
-        ri = ri + d.dr
-        ci = ci + d.dc
-        if is_valid_field_index(f, ri, ci) = 0 do ret
-        v = get_int_field_value(f, ri, ci)
-        if v = 2 do ret
-        if v = 0 {
-            set_int_field_value(f, f.cri, f.cci, 0) 
-            set_int_field_value(f, ri, ci, 1) 
-            f.cri = cri
-            f.cci = cci
-            ret
+    f = create_int_field(len(lines), len(str_to_chars(lines[0])))
+    f.start = Coords {}
+    f.finish = Coords {}
+    f.north = new_coords(0-1, 0)
+    f.south = new_coords(1, 0)
+    f.west = new_coords(0, 0-1)
+    f.east = new_coords(0, 1)
+    f.cost = 1000000000
+    for lines {
+        ri = idx
+        for str_to_chars(it) {
+            ci = idx
+            if it = 'S' {
+                f.start.ri = ri
+                f.start.ci = ci
+            }
+            if it = 'E' {
+                f.finish.ri = ri
+                f.finish.ci = ci
+                //log('finish', ri, ci)
+            }
+            v = char_to_int(it)
+            set_int_field_value(f, ri, ci, v)
         }
     }
-    
+
+    ret f
 end
 
-fn get_total(f: IntField)
-    total = 0
-    for 0..(f.row_count - 1) {
-      ri = it
-      for 0..(f.col_count - 1) {
-         ci = it
-         v = get_int_field_value(f, ri, ci)
-         if v = 1 {
-            total = total + ri*100 + ci
-         }
-      }
-   }
-   ret total
+fn rotate_left(f: IntField, dir: Coords) 
+    if dir = f.north do ret f.west
+    if dir = f.west do ret f.south
+    if dir = f.south do ret f.east
+    if dir = f.east do ret f.north
+    err('rotate_left')
+end
+
+fn get_visited_cost(f: IntField, vis: VisitedCosts, ri: int, ci: int, dir: Coords)
+    if dir = f.north do ret get_int_field_value(vis.north, ri, ci)
+    if dir = f.south do ret get_int_field_value(vis.south, ri, ci)
+    if dir = f.west do ret get_int_field_value(vis.west, ri, ci)
+    if dir = f.east do ret get_int_field_value(vis.east, ri, ci)
+    err('get_visited_cost')
+end
+
+fn set_visited_cost(f: IntField, vis: VisitedCosts, ri: int, ci: int, dir: Coords, value: int)
+    if dir = f.north {
+        set_int_field_value(vis.north, ri, ci, value)
+        ret
+    }
+    if dir = f.south {
+        set_int_field_value(vis.south, ri, ci, value)
+        ret
+    }
+    if dir = f.west {
+        set_int_field_value(vis.west, ri, ci, value)
+        ret
+    }
+    if dir = f.east {
+        set_int_field_value(vis.east, ri, ci, value)
+        ret
+    }
+    err('set_visited_cost')
+end
+
+fn try_update_visited_cost(f: IntField, vis: VisitedCosts, ri: int, ci: int, dir: Coords, cost: int)
+    if dir = f.north do vf = vis.north
+    if dir = f.south do vf = vis.south
+    if dir = f.west do vf = vis.west
+    if dir = f.east do vf = vis.east
+
+    v = get_int_field_value(vf, ri, ci)
+    if v = 0 or cost < v {
+        set_int_field_value(vf, ri, ci, cost)
+        ret 1
+    }
+
+    ret 0
+end
+
+fn try_visit(f: IntField, visited: IntField, ri: int, ci: int, cost: int, dir: Coords, visited_costs: VisitedCosts) int
+    if cost >= f.cost do ret 1
+    
+    if get_int_field_value(visited, ri, ci) = 1 do ret 1
+    
+    v = get_int_field_value(f, ri, ci)
+    if v = 0-1 do ret 0
+
+    if ri = f.finish.ri and ci = f.finish.ci {
+        f.cost = cost
+        //print_int_field(f, visited)
+        log('found', cost)
+        //readln()
+        ret 1
+    }
+
+    set_int_field_value(visited, ri, ci, 1)
+    visited_costs.count = visited_costs.count + 1
+    if visited_costs.count % 50000000 = 0 {
+        print_int_field(f, visited)
+        log('at step', visited_costs.count)
+        readln()
+    }
+
+    rl = rotate_left(f, dir)
+    rr = rotate_left(f, rotate_left(f, rl))
+
+    //if try_update_visited_cost(f, visited_costs, ri, ci, dir, cost) {
+        r1 = try_visit(f, visited, ri + dir.ri, ci + dir.ci, cost + 1, dir, visited_costs)
+    //}
+
+    if try_update_visited_cost(f, visited_costs, ri, ci, rl, cost + 1000) {
+        r2 = try_visit(f, visited, ri + rl.ri, ci + rl.ci, cost + 1001, rl, visited_costs)
+    }
+
+    if try_update_visited_cost(f, visited_costs, ri, ci, rr, cost + 1000) {
+        r3 = try_visit(f, visited, ri + rr.ri, ci + rr.ci, cost + 1001, rr, visited_costs)
+    }
+
+    set_int_field_value(visited, ri, ci, 0)
+
+    if r1 + r2 + r3 = 0 {
+        set_int_field_value(f, ri, ci, 0-1)
+        ret 0
+    }
+
+    ret 1
+end
+
+
+fn create_visited_costs(f: IntField)
+    c = VisitedCosts {}
+    c.north = create_int_field(f.row_count, f.col_count)
+    c.south = create_int_field(f.row_count, f.col_count)
+    c.west = create_int_field(f.row_count, f.col_count)
+    c.east = create_int_field(f.row_count, f.col_count)
+    ret c
 end
 
 fn run
     lines = read_string_lines_from_file('D:/src/postal/aoc2024/input.txt')
-    i = arr_index_of(lines, '')
-    f = lines_to_int_field(arr_slice(lines, 0, i - 1))
-    print_int_field(f)
-    commands = str_arr_join(arr_slice(lines, i + 1, len(lines)), '')
-    log(commands)
-    for str_to_chars(commands) {
-        delta = get_delta(it)
-        //log('move', it)
-        move_next(f, delta)
-        //readln()
-    }
-    print_int_field(f)
-    log()
-    log('total', get_total(f))
+    f = lines_to_int_field(lines)
+    visited = create_int_field(f.row_count, f.col_count)
+    visited_costs = create_visited_costs(f)
+    try_visit(f, visited, f.start.ri, f.start.ci, 0, f.east, visited_costs)
+    
+    //print_int_field(f, visited)
+    log('done', f.cost)
 end
