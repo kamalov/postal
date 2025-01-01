@@ -5,7 +5,7 @@ use indexmap::IndexMap;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{format, Write};
 
-const OPERATORS_MAP: [(&str, &str); 12] = [
+const OPERATORS_MAP: [(&str, &str); 14] = [
     (".", "->"),
     ("+", " + "),
     ("-", " - "),
@@ -18,6 +18,9 @@ const OPERATORS_MAP: [(&str, &str); 12] = [
     ("and", " && "),
     ("or", " || "),
     ("<>", " != "),
+
+    ("rshift", " >> "),
+    ("lshift", " << ")
 ];
 
 const PADDING: &str = "    ";
