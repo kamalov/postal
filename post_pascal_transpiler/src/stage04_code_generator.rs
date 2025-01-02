@@ -5,7 +5,7 @@ use indexmap::IndexMap;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{format, Write};
 
-const OPERATORS_MAP: [(&str, &str); 14] = [
+const OPERATORS_MAP: [(&str, &str); 17] = [
     (".", "->"),
     ("+", " + "),
     ("-", " - "),
@@ -18,6 +18,9 @@ const OPERATORS_MAP: [(&str, &str); 14] = [
     ("and", " && "),
     ("or", " || "),
     ("<>", " != "),
+    ("xor", "^"),
+    ("div", "/"),
+    ("mod", " % "),
 
     ("rshift", " >> "),
     ("lshift", " << ")
@@ -172,7 +175,7 @@ impl CodeGenerator {
         if function_node.is_external {
             writeln!(
                 &mut r,
-                "{padding}/// external {fn_generic_params_code}{return_type_str} {name}({fn_params_code});",
+                "{padding}/// prelude {fn_generic_params_code}{return_type_str} {name}({fn_params_code});",
                 name = function_node.declaration.name
             );
         } else {

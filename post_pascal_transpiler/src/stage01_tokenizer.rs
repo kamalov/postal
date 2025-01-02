@@ -30,18 +30,17 @@ impl Token {
     }
 }
 
-const KEYWORDS: [&str; 22] = [
+const KEYWORDS: [&str; 25] = [
     "begin", "end", "do", //
     "fn", "external", "var", "if", "for", "in", "loop", "break", "continue", "ret", //
     "int", "real", "str", "rec", //
-    "not", "and", "or", "rshift", "lshift"//
+    "not", "and", "or", "xor", "div", "mod", "rshift", "lshift"//
 ];
 
-const SPECIALS: [&str; 20] = [
+const SPECIALS: [&str; 18] = [
     "#", //
     "{", "}", "(", ")", "[", "]", ",", //
-    ":", ";", "=", "*", "/", "+", "-", "<", ">", ".", "^", //, "::", "<<", "=>", "->"
-    "%"
+    ":", ";", "=", "*", "/", "+", "-", "<", ">", ".", //, "::", "<<", "=>", "->"
 ];
 
 fn is_identifier_char(c: char) -> bool {
@@ -81,7 +80,8 @@ impl Tokenizer {
 
         t.priorities.insert("*".to_string(), 100);
         t.priorities.insert("/".to_string(), 100);
-        t.priorities.insert("%".to_string(), 100);
+        t.priorities.insert("div".to_string(), 100);
+        t.priorities.insert("mod".to_string(), 100);
 
         t.priorities.insert("+".to_string(), 90);
         t.priorities.insert("-".to_string(), 90);
@@ -99,7 +99,7 @@ impl Tokenizer {
         t.priorities.insert("=".to_string(), 40);
         t.priorities.insert("<>".to_string(), 40);
 
-        t.priorities.insert("^".to_string(), 35);
+        t.priorities.insert("xor".to_string(), 35);
 
         t.priorities.insert("and".to_string(), 30);
 
@@ -186,7 +186,7 @@ impl Tokenizer {
         }
 
         let kind = if self.keywords.contains(&value) {
-            if ["and", "or", "not", "div", "mod", "rshift", "lshift"].contains(&value.as_str()) {
+            if ["and", "or", "not", "xor", "div", "mod", "rshift", "lshift"].contains(&value.as_str()) {
                 TokenKind::SpecialSymbol
             } else {
                 TokenKind::Keyword
