@@ -6,7 +6,6 @@ current:
 
 to do:
   -- yes/no for booleans (refactor parsing if needed)
-  -- div/mod for integers
   -- unary not
   -- object initializer
   -- global variables

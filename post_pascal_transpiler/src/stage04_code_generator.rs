@@ -4,6 +4,7 @@ use crate::type_info::*;
 use indexmap::IndexMap;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{format, Write};
+use std::vec;
 
 const OPERATORS_MAP: [(&str, &str); 17] = [
     (".", "->"),
@@ -100,7 +101,6 @@ impl CodeGenerator {
 
     fn generate_record_equality_operator(&mut self, record_node: &Record, padding: &str) -> String {
         let mut result_str = String::new();
-        writeln!(&mut result_str, "{padding}friend bool operator==(const {0}& l, const {0}& r) {{", record_node.name);
         let mut parts = vec![];
         for (field_name, type_info) in &record_node.fields {
             if type_info.is_generic {
@@ -115,23 +115,15 @@ impl CodeGenerator {
             }
         }
         if parts.len() > 0 {
+            writeln!(&mut result_str, "{padding}friend bool operator==(const {0}& l, const {0}& r) {{", record_node.name);
             writeln!(&mut result_str, "{padding}{PADDING}return {};", parts.to_vec().join(" && "));
-        } else {
-            writeln!(&mut result_str, "{padding}{PADDING}return true;");
+            writeln!(&mut result_str, "{padding}}}");
         }
-        writeln!(&mut result_str, "{padding}}}");
         result_str
     }
 
     fn generate_record_hash_code(&mut self, record_node: &Record) -> String {
-        let mut result_str = String::new();
-        
-        writeln!(&mut result_str, "namespace std {{");
-        writeln!(&mut result_str, "{PADDING}template<>");
-        writeln!(&mut result_str, "{PADDING}struct hash<{}> {{", record_node.name);
-        writeln!(&mut result_str, "{PADDING}{PADDING}std::size_t operator()(const {}& rec) const {{", record_node.name);
-        writeln!(&mut result_str, "{PADDING}{PADDING}{PADDING}size_t h = 0;");
-
+        let mut parts = vec![];
         for (field_name, type_info) in &record_node.fields {
             if type_info.is_generic {
                 continue;
@@ -142,9 +134,24 @@ impl CodeGenerator {
                 if !is_custom_type(&type_str) {
                     let cpp_type_str = type_info.to_cpp_type_string();
                     //writeln!(&mut result_str, "{PADDING}{PADDING}{PADDING}h = combine_hash(h, rec.{field_name});");
-                    writeln!(&mut result_str, "{PADDING}{PADDING}{PADDING}h ^= std::hash<{cpp_type_str}>{{}}(rec.{field_name}) + 0x9e3779b9 + (h << 6) + (h >> 2);");
+                    parts.push(format!("{PADDING}{PADDING}{PADDING}h ^= std::hash<{cpp_type_str}>{{}}(rec.{field_name}) + 0x9e3779b9 + (h << 6) + (h >> 2);\n"));
                 }
             }
+        }
+
+        if parts.len() == 0 {
+            return String::new();
+        }
+
+        let mut result_str = String::new();
+        writeln!(&mut result_str, "namespace std {{");
+        writeln!(&mut result_str, "{PADDING}template<>");
+        writeln!(&mut result_str, "{PADDING}struct hash<{}> {{", record_node.name);
+        writeln!(&mut result_str, "{PADDING}{PADDING}std::size_t operator()(const {}& rec) const {{", record_node.name);
+        writeln!(&mut result_str, "{PADDING}{PADDING}{PADDING}size_t h = 0;");
+
+        for p in parts {
+            result_str = result_str + &p;
         }
 
         writeln!(&mut result_str, "{PADDING}{PADDING}{PADDING}return h;");
