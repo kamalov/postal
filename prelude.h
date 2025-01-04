@@ -166,6 +166,11 @@ void push(std::vector<T>* a, T elem) {
 }
 
 template <typename T>
+void arr_push_front(std::vector<T>* a, T elem) {
+    a->insert(a->begin(), elem);
+}
+
+template <typename T>
 T pop(std::vector<T>* a) {
     T last = a->back();
     a->pop_back();

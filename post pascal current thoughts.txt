@@ -46,7 +46,7 @@ Phase pre-last (bells and whistles):
 -- IDE support (language server, etc.)
 -- semantic block comment (clojure style)
 
-Phase last (most likely will not be needed as transpile to C++ should be enought):
+Phase last (most likely will not be needed as transpilation to C++ should be enought):
 -- for debug mode generate x64 native code (unoptimized) 
 -- for production generate LLVM code 
 -- debug mode compile speed (cold start) >= 100k loc per second
