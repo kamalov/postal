@@ -178,6 +178,11 @@ T pop(std::vector<T>* a) {
 }
 
 template <typename T>
+T arr_last(std::vector<T>* a) {
+    return a->back();
+}
+
+template <typename T>
 void arr_set_len(std::vector<T>* a, i64 new_len) {
     a->resize(new_len);
 }

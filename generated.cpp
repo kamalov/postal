@@ -4,6 +4,7 @@
 /// prelude template <typename T>void push(std::vector<T>* a, T elem);
 /// prelude template <typename T>T pop(std::vector<T>* a);
 /// prelude template <typename T>void arr_push_front(std::vector<T>* a, T elem);
+/// prelude template <typename T>T arr_last(std::vector<T>* a);
 /// prelude template <typename T>void arr_set_len(std::vector<T>* a, i64 new_len);
 /// prelude template <typename T>void arr_sort(std::vector<T>* a);
 /// prelude template <typename T>i64 arr_contains(std::vector<T>* a, T value);
@@ -167,9 +168,11 @@ std::vector<std::string>* get_paths_str_array() {
     l = new std::vector<std::string>();
     push(l, "A^ <"s);
     push(l, "A> v"s);
-    push(l, "Av <v v<"s);
-    push(l, "A< <v< v<<"s);
-    push(l, "^> >v v>"s);
+    //push(l, 'Av <v v<')
+    push(l, "Av <v"s);
+    push(l, "A< v<<"s);
+    //push(l, '^> >v v>')
+    push(l, "^> >v"s);
     push(l, "^v v"s);
     push(l, "^< v<"s);
     push(l, ">v <"s);
@@ -185,56 +188,77 @@ std::vector<std::string>* get_paths_str_array() {
     //     | 0 | A |
     //     +---+---+
     push(l, "A0 <"s);
-    push(l, "A1 <^< ^<<"s);
-    push(l, "A2 <^ ^<"s);
+    push(l, "A1 ^<<"s);
+    //push(l, 'A2 <^ ^<')
+    push(l, "A2 <^"s);
     push(l, "A3 ^"s);
-    push(l, "A4 <^<^ <^^< ^<<^ ^<^< ^^<<"s);
-    push(l, "A5 <^^ ^<^ ^^<"s);
+    push(l, "A4 ^^<<"s);
+    //push(l, 'A5 <^^ ^^<')
+    push(l, "A5 <^^"s);
     push(l, "A6 ^^"s);
-    push(l, "A7 <^<^^ <^^<^ <^^^< ^<<^^ ^<^<^ ^<^^< ^^<<^ ^^<^< ^^^<<"s);
-    push(l, "A8 <^^^ ^<^^ ^^<^ ^^^<"s);
+    //push(l, 'A7 <^<^^ <^^<^ <^^^< ^<<^^ ^<^<^ ^<^^< ^^<<^ ^^<^< ^^^<<')
+    push(l, "A7 ^^^<<"s);
+    //push(l, 'A8 <^^^ ^^^<')
+    push(l, "A8 <^^^"s);
     push(l, "A9 ^^^"s);
     push(l, "01 ^<"s);
     push(l, "02 ^"s);
     push(l, "03 ^>"s);
-    push(l, "04 ^<^ ^^<"s);
+    push(l, "04 ^^<"s);
     push(l, "05 ^^"s);
-    push(l, "06 ^>^ ^^>"s);
-    push(l, "07 ^<^^ ^^<^ ^^^<"s);
+    push(l, "06 ^^>"s);
+    push(l, "07 ^^^<"s);
     push(l, "08 ^^^"s);
-    push(l, "09 ^>^^ ^^>^ ^^^>"s);
+    push(l, "09 ^^^>"s);
     push(l, "12 >"s);
     push(l, "13 >>"s);
     push(l, "14 ^"s);
-    push(l, "15 >^ ^>"s);
-    push(l, "16 >>^ >^> ^>>"s);
+    //push(l, '15 >^ ^>')
+    push(l, "15 >^"s);
+    push(l, "16 >>^ ^>>"s);
     push(l, "17 ^^"s);
-    push(l, "18 ^^> ^>^ >^^"s);
-    push(l, "19 >>^^ >^>^ >^^> ^>>^ ^>^> ^^>>"s);
+    //push(l, '18 ^^> >^^')
+    push(l, "18 >^^"s);
+    //push(l, '19 >>^^ ^^>>')
+    push(l, "19 >>^^"s);
     push(l, "23 >"s);
-    push(l, "24 <^ ^<"s);
+    //push(l, '24 <^ ^<')
+    push(l, "24 <^"s);
     push(l, "25 ^"s);
-    push(l, "26 ^> >^"s);
-    push(l, "27 <^^ ^<^ ^^<"s);
+    //push(l, '26 ^> >^')
+    push(l, "26 >^"s);
+    //push(l, '27 <^^ ^^<')
+    push(l, "27 <^^"s);
     push(l, "28 ^^"s);
-    push(l, "29 >^^ ^>^ ^^>"s);
-    push(l, "34 <<^ <^< ^<<"s);
-    push(l, "35 <^ ^<"s);
+    //push(l, '29 >^^ ^^>')
+    push(l, "29 >^^"s);
+    //    push(l, '34 <<^ ^<<')
+    push(l, "34 <<^"s);
+    //push(l, '35 <^ ^<')
+    push(l, "35 <^"s);
     push(l, "36 ^"s);
-    push(l, "37 <<^^ <^<^ <^^< ^<<^ ^<^< ^^<<"s);
-    push(l, "38 <^^ ^<^ ^^<"s);
+    //push(l, '37 <<^^ ^^<<')
+    push(l, "37 <<^^"s);
+    //push(l, '38 <^^ ^^<')
+    push(l, "38 <^^"s);
     push(l, "39 ^^"s);
     push(l, "45 >"s);
     push(l, "46 >>"s);
     push(l, "47 ^"s);
-    push(l, "48 ^> >^"s);
-    push(l, "49 ^>> >^> >>^"s);
+    //push(l, '48 ^> >^')
+    push(l, "48 >^"s);
+    //push(l, '49 ^>> >>^')
+    push(l, "49 >>^"s);
     push(l, "56 >"s);
-    push(l, "57 <^ ^<"s);
+    //push(l, '57 <^ ^<')
+    push(l, "57 <^"s);
     push(l, "58 ^"s);
-    push(l, "59 ^> >^"s);
-    push(l, "67 <<^ <^< ^<<"s);
-    push(l, "68 <^ ^<"s);
+    //push(l, '59 ^> >^')
+    push(l, "59 >^"s);
+    //push(l, '67 <<^ ^<<')
+    push(l, "67 <<^"s);
+    //push(l, '68 <^ ^<')
+    push(l, "68 <^"s);
     push(l, "69 ^"s);
     push(l, "78 >"s);
     push(l, "79 >>"s);
@@ -292,72 +316,126 @@ struct Data {
 };
 
 
-void transform(Data* d, std::vector<i64>* target_path, i64 from, i64 index, std::string transformed, universal_hashmap<std::string, i64>* res) {
+std::string transform(Data* d, std::vector<i64>* target_path, i64 from_, i64 index_, std::string transformed_) {
+    i64 from;
+    std::vector<std::string>* t;
+    i64 index;
+    std::string s;
     i64 to;
+    from = from_;
+    t = new std::vector<std::string>();
+    push(t, transformed_);
+    index = index_;
+
+    for (;;) {
+
+        if (index >= len(target_path)) {
+            // if map_has_key(res, transformed) = 0 {
+            //     map_add(res, transformed, 0)
+            // }
+            s = str_arr_join(t, ""s);
+            arr_set_len(t, 0ll);
+            return s;
+        };
+        to = target_path->at(index);
+
+        if (from == to) {
+            //transform(d, target_path, to, index + 1, transformed + 'A', res)
+            from = to;
+            index = index + 1ll;
+            push(t, "A"s);
+        }
+        else {
+
+            auto __expr0 = d->navis;
+            for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
+                Navi* expr__it0 = (*__expr0)[expr__it0__idx];
+
+                if (expr__it0->from == from && expr__it0->to == to) {
+                    //log('it.from = from and it.to', from, to, s)
+                    //transform(d, target_path, to, index + 1, transformed + it.path_str + 'A', res)
+                    from = to;
+                    index = index + 1ll;
+                    push(t, expr__it0->path_str + "A"s);
+                    break;
+                };
+            }
+        };
+    }
+}
+
+void transform1(Data* d, std::vector<i64>* target_path, i64 from, i64 index, std::string transformed, std::vector<std::string>* res) {
+    i64 to;
+    i64 c;
 
     if (index >= len(target_path)) {
-
-        if (map_has_key(res, transformed) == 0ll) {
-            map_add(res, transformed, 0ll);
-        };
+        push(res, transformed);
         return;
     };
     to = target_path->at(index);
 
     if (from == to) {
-        transform(d, target_path, to, index + 1ll, transformed + "A"s, res);
+        transform1(d, target_path, to, index + 1ll, transformed + "A"s, res);
     }
     else {
+        c = 0ll;
 
         auto __expr0 = d->navis;
         for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
             Navi* expr__it0 = (*__expr0)[expr__it0__idx];
 
             if (expr__it0->from == from && expr__it0->to == to) {
+
+                if (c > 0ll) {
+                    printf("%s\n", (expr__it0->path_str).c_str());
+                };
                 //log('it.from = from and it.to', from, to, s)
-                transform(d, target_path, to, index + 1ll, transformed + expr__it0->path_str + "A"s, res);
+                transform1(d, target_path, to, index + 1ll, transformed + expr__it0->path_str + "A"s, res);
+                c = c + 1ll;
             };
         }
     };
 }
 
 i64 process(Data* d, std::string s) {
-    std::vector<std::string>* src;
-    universal_hashmap<std::string, i64>* res;
+    std::string src;
     i64 iteration;
-    std::vector<i64>* l;
-    src = new std::vector<std::string>();
-    push(src, s);
-    printf("%s\n", (s).c_str());
+    std::vector<i64>* p;
+    std::string res;
+    src = s;
+    //log(s)
 
-    auto __expr0 = create_range(1ll, 3ll);
+    auto __expr0 = create_range(1ll, 20ll);
     for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
         i64 expr__it0 = (*__expr0)[expr__it0__idx];
-        printf("%s %lld\n", ("iteration"s).c_str(), static_cast<i64>(expr__it0));
-        res = new universal_hashmap<std::string, i64>();
+        //log('it', it)
+        //res = #[str, int]
         iteration = expr__it0;
 
-        auto __expr1 = src;
-        for (int src__it1__idx = 0; src__it1__idx < __expr1->size(); src__it1__idx++) {
-            std::string src__it1 = (*__expr1)[src__it1__idx];
-            //log(it)
-            transform(d, str_to_path(src__it1), char_to_int("A"s), 0ll, ""s, res);
+        if (iteration > 2ll) {
+            printf("%s %lld\n", ("it"s).c_str(), static_cast<i64>(iteration));
+        };
+        //log(it)
+        //if iteration > 2 do log(it)
+        //r = [str]
+        p = str_to_path(src);
+        res = transform(d, p, char_to_int("A"s), 0ll, ""s);
 
-            if (iteration == 3ll) {
-                //log(map_len(res))
-            };
-        }
-        src = map_keys(res);
-    }
-    l = new std::vector<i64>();
+        if (iteration > 2ll) {
+            // for r do log(it, str_len(it))
+            // log()
+        };
+        //for r do push(res, it)
+        src = res;
 
-    auto __expr2 = src;
-    for (int src__it2__idx = 0; src__it2__idx < __expr2->size(); src__it2__idx++) {
-        std::string src__it2 = (*__expr2)[src__it2__idx];
-        push(l, str_len(src__it2));
+        if (iteration > 10ll) {
+            printf("%lld\n", static_cast<i64>(str_len(res)));
+        };
+        //arr_set_len(res, 0)
     }
-    arr_sort(l);
-    return l->at(0ll);
+    printf("%s %lld\n", ("len"s).c_str(), static_cast<i64>(str_len(src)));
+    //arr_set_len(src, 0)
+    return str_len(src);
 }
 
 void run() {
@@ -376,13 +454,18 @@ void run() {
     for (int lines__it0__idx = 0; lines__it0__idx < __expr0->size(); lines__it0__idx++) {
         std::string lines__it0 = (*__expr0)[lines__it0__idx];
         s = lines__it0;
+
+        if (s == ""s) {
+            break;
+        };
         //log(s)
         v = str_to_int(str_remove(s, "A"s));
         r = process(d, s);
-        printf("%lld %lld %lld\n", static_cast<i64>(v), static_cast<i64>(r), static_cast<i64>(v*r));
+        //log(v, r, v*r)
         total = total + v*r;
     }
-    printf("%s %lld\n", ("done"s).c_str(), static_cast<i64>(total));
+    //log('\ndone')
+    printf("%s %lld\n", ("\ndone"s).c_str(), static_cast<i64>(total));
 }
 
 

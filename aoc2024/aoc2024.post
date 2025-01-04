@@ -60,9 +60,11 @@ fn get_paths_str_array
 
     push(l, 'A^ <')
     push(l, 'A> v')
-    push(l, 'Av <v v<')
-    push(l, 'A< <v< v<<')
-    push(l, '^> >v v>')
+    //push(l, 'Av <v v<')
+    push(l, 'Av <v')
+    push(l, 'A< v<<')
+    //push(l, '^> >v v>')
+    push(l, '^> >v')
     push(l, '^v v')
     push(l, '^< v<')
     push(l, '>v <')
@@ -80,63 +82,84 @@ fn get_paths_str_array
     //     +---+---+
 
     push(l, 'A0 <')
-    push(l, 'A1 <^< ^<<')
-    push(l, 'A2 <^ ^<')
+    push(l, 'A1 ^<<')
+    //push(l, 'A2 <^ ^<')
+    push(l, 'A2 <^')
     push(l, 'A3 ^')
-    push(l, 'A4 <^<^ <^^< ^<<^ ^<^< ^^<<')
-    push(l, 'A5 <^^ ^<^ ^^<')
+    push(l, 'A4 ^^<<')
+    //push(l, 'A5 <^^ ^^<')
+    push(l, 'A5 <^^')
     push(l, 'A6 ^^')
-    push(l, 'A7 <^<^^ <^^<^ <^^^< ^<<^^ ^<^<^ ^<^^< ^^<<^ ^^<^< ^^^<<')
-    push(l, 'A8 <^^^ ^<^^ ^^<^ ^^^<')
+    //push(l, 'A7 <^<^^ <^^<^ <^^^< ^<<^^ ^<^<^ ^<^^< ^^<<^ ^^<^< ^^^<<')
+    push(l, 'A7 ^^^<<')
+    //push(l, 'A8 <^^^ ^^^<')
+    push(l, 'A8 <^^^')
     push(l, 'A9 ^^^')
 
     push(l, '01 ^<')
     push(l, '02 ^')
     push(l, '03 ^>')
-    push(l, '04 ^<^ ^^<')
+    push(l, '04 ^^<')
     push(l, '05 ^^')
-    push(l, '06 ^>^ ^^>')
-    push(l, '07 ^<^^ ^^<^ ^^^<')
+    push(l, '06 ^^>')
+    push(l, '07 ^^^<')
     push(l, '08 ^^^')
-    push(l, '09 ^>^^ ^^>^ ^^^>')
+    push(l, '09 ^^^>')
 
     push(l, '12 >')
     push(l, '13 >>')
     push(l, '14 ^')
-    push(l, '15 >^ ^>')
-    push(l, '16 >>^ >^> ^>>')
+    //push(l, '15 >^ ^>')
+    push(l, '15 >^')
+    push(l, '16 >>^ ^>>')
     push(l, '17 ^^')
-    push(l, '18 ^^> ^>^ >^^')
-    push(l, '19 >>^^ >^>^ >^^> ^>>^ ^>^> ^^>>')
+    //push(l, '18 ^^> >^^')
+    push(l, '18 >^^')
+    //push(l, '19 >>^^ ^^>>')
+    push(l, '19 >>^^')
     
     push(l, '23 >')
-    push(l, '24 <^ ^<')
+    //push(l, '24 <^ ^<')
+    push(l, '24 <^')
     push(l, '25 ^')
-    push(l, '26 ^> >^')
-    push(l, '27 <^^ ^<^ ^^<')
+    //push(l, '26 ^> >^')
+    push(l, '26 >^')
+    //push(l, '27 <^^ ^^<')
+    push(l, '27 <^^')
     push(l, '28 ^^')
-    push(l, '29 >^^ ^>^ ^^>')
+    //push(l, '29 >^^ ^^>')
+    push(l, '29 >^^')
     
-    push(l, '34 <<^ <^< ^<<')
-    push(l, '35 <^ ^<')
+//    push(l, '34 <<^ ^<<')
+    push(l, '34 <<^')
+    //push(l, '35 <^ ^<')
+    push(l, '35 <^')
     push(l, '36 ^')
-    push(l, '37 <<^^ <^<^ <^^< ^<<^ ^<^< ^^<<')
-    push(l, '38 <^^ ^<^ ^^<')
+    //push(l, '37 <<^^ ^^<<')
+    push(l, '37 <<^^')
+    //push(l, '38 <^^ ^^<')
+    push(l, '38 <^^')
     push(l, '39 ^^')
     
     push(l, '45 >')
     push(l, '46 >>')
     push(l, '47 ^')
-    push(l, '48 ^> >^')
-    push(l, '49 ^>> >^> >>^')
+    //push(l, '48 ^> >^')
+    push(l, '48 >^')
+    //push(l, '49 ^>> >>^')
+    push(l, '49 >>^')
 
     push(l, '56 >')
-    push(l, '57 <^ ^<')
+    //push(l, '57 <^ ^<')
+    push(l, '57 <^')
     push(l, '58 ^')
-    push(l, '59 ^> >^')
+    //push(l, '59 ^> >^')
+    push(l, '59 >^')
     
-    push(l, '67 <<^ <^< ^<<')
-    push(l, '68 <^ ^<')
+    //push(l, '67 <<^ ^<<')
+    push(l, '67 <<^')
+    //push(l, '68 <^ ^<')
+    push(l, '68 <^')
     push(l, '69 ^')   
     
     push(l, '78 >')
@@ -186,48 +209,92 @@ rec Data {
     navis: [Navi]
 }
 
-fn transform(d: Data, target_path: [int], from: int, index: int, transformed: str, res: #[str, int])
-    if index >= len(target_path) {
-        if map_has_key(res, transformed) = 0 {
-            map_add(res, transformed, 0)
+fn transform(d: Data, target_path: [int], from_: int, index_: int, transformed_: str)
+    from = from_
+    t = [str]
+    push(t, transformed_)
+    index = index_
+    loop {
+        if index >= len(target_path) {
+            // if map_has_key(res, transformed) = 0 {
+            //     map_add(res, transformed, 0)
+            // }
+            s = str_arr_join(t, '')
+            arr_set_len(t, 0)
+            ret s
         }
+
+        to = target_path[index]
+        if from = to {
+            //transform(d, target_path, to, index + 1, transformed + 'A', res)
+            from = to
+            index = index + 1
+            push(t, 'A')
+        } else {
+            for d.navis {
+                if it.from = from and it.to = to {
+                    //log('it.from = from and it.to', from, to, s)
+                    //transform(d, target_path, to, index + 1, transformed + it.path_str + 'A', res)
+                    from = to
+                    index = index + 1
+                    push(t, it.path_str + 'A')
+                    break
+                } 
+            }
+        }
+    }
+end
+
+fn transform1(d: Data, target_path: [int], from: int, index: int, transformed: str, res: [str])
+    if index >= len(target_path) {
+        push(res, transformed)
         ret
     }
 
     to = target_path[index]
     if from = to {
-        transform(d, target_path, to, index + 1, transformed + 'A', res)
+        transform1(d, target_path, to, index + 1, transformed + 'A', res)
     } else {
+        c = 0
         for d.navis {
             if it.from = from and it.to = to {
+                if c > 0 do log(it.path_str)
                 //log('it.from = from and it.to', from, to, s)
-                transform(d, target_path, to, index + 1, transformed + it.path_str + 'A', res)
+                transform1(d, target_path, to, index + 1, transformed + it.path_str + 'A', res)
+                c = c + 1
             } 
         }
     }
 end
 
 fn process(d: Data, s: str)
-    src = [str]
-    push(src, s)
-    log(s)
-    for 1..3 {
-        log('iteration', it)
-        res = #[str, int]
+    src = s
+    //log(s)
+    for 1..20 {
+        //log('it', it)
+        //res = #[str, int]
         iteration = it
-        for src {
+
+        if iteration > 2 do log('it', iteration)
             //log(it)
-            transform(d, str_to_path(it), char_to_int('A'), 0, '', res)
-            if iteration = 3 {
-                //log(map_len(res))
-            }
+            //if iteration > 2 do log(it)
+            //r = [str]
+        p = str_to_path(src)
+        res = transform(d, p, char_to_int('A'), 0, '')
+        
+        if iteration > 2 {
+            // for r do log(it, str_len(it))
+            // log()
         }
-        src = map_keys(res)
+            //for r do push(res, it)
+        src = res
+        if iteration > 10 do log(str_len(res))
+        //arr_set_len(res, 0)
     }
-    l = [int]
-    for src do push(l, str_len(it))
-    arr_sort(l)
-    ret l[0]
+
+    log('len', str_len(src))
+    //arr_set_len(src, 0)
+    ret str_len(src)
 end
 
 fn run
@@ -239,12 +306,14 @@ fn run
     total = 0
     for lines {
         s = it
+        if s = '' do break
         //log(s)
         v = str_to_int(str_remove(s, 'A'))
         r = process(d, s)    
-        log(v, r, v*r)
+        //log(v, r, v*r)
         total = total + v*r
     }
 
-    log('done', total)
+    //log('\ndone')
+    log('\ndone', total)
 end
