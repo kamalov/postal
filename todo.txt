@@ -1,18 +1,19 @@
 current: 
-  -- refactor function call statement to expression
+  -- refactor function call statement to expression (for correct type checking)
   -- todo: extract fn typecheck code
 
 
 
 to do:
+  -- unary not, +, -
   -- yes/no for booleans (refactor parsing if needed)
-  -- unary not
-  -- object initializer
-  -- global variables
+  -- try refcounted memory management
 
 
 
 backlog:
+  -- object initializer
+  -- global variables
   -- mapping (a = some >> { it })
 
 

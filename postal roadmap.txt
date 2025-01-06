@@ -1,11 +1,11 @@
 Postal (POST pascAL) programming language
 
-Goal: easy syntax like TypeScript, compilation time speed like Delphi, runtime memory and speed like C++
+Goal: easy syntax (like TypeScript), fast compilation (like Delphi), fast runtime (like C++)
 
 Priorities (by desc):
 1. Typed 
 2. Memsafe
-3. Run time	:: At least C++ runtime performance (speed and memory wise)
+3. Run time     :: At least C++ runtime performance (speed and memory wise)
 4. Compile time :: At least Free/Object Pascal compilation speed
 5. Design time  :: At least TypeScript code writing speed (low friction)
 
@@ -27,6 +27,7 @@ Phase zero (basic syntax and type checking):
 
 Phase zero.1:
 -- refcounted memory management
+-- function overload
 -- generics
 -- first class functions
 -- exceptions
@@ -37,14 +38,13 @@ Phase one:
 -- multiple source files (modules)
 -- utf-8 strings
 -- nested arrays
--- function overload
 -- some kind of dynamic dispatch or discriminated unions (or both)
--- better compile error messages
 
 Phase pre-last (bells and whistles):
 -- variant data type
 -- IDE support (language server, etc.)
 -- semantic block comment (clojure style)
+-- better compile error messages
 
 Phase last (most likely will not be needed as transpilation to C++ should be enought):
 -- for debug mode generate x64 native code (unoptimized) 

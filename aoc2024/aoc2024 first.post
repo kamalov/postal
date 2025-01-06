@@ -1,250 +1,138 @@
-//     +---+---+
-//     | ^ | A |
-// +---+---+---+
-// | < | v | > |
-// +---+---+---+
-rec Navi {
-    from: int
-    to: int
-    path: [int]
-    path_str: str
+rec Int_Array {
+    values: [int]
 }
 
-fn reverse_dir(dir: str)
-    if dir = '^' do ret 'v'
-    if dir = '>' do ret '<'
-    if dir = '<' do ret '>'
-    if dir = 'v' do ret '^'
-    err('err')
-end
-
-fn char_to_int(c: str)
-    if c = 'A' do ret 10
-    if c = '>' do ret 11
-    if c = 'v' do ret 12
-    if c = '<' do ret 13
-    if c = '^' do ret 14
-    ret str_to_int(c)
-end
-
-fn int_to_char(i: int)
-    if i = 10 do ret 'A'
-    if i = 11 do ret '>'
-    if i = 12 do ret 'v'
-    if i = 13 do ret '<'
-    if i = 14 do ret '^'
-    ret int_to_str(i)
-end
-
-fn path_to_str(p: [int])
-    s = ''
-    for p do s = s + int_to_char(it)
-    ret s
-end
-
-fn str_to_path(s: str)
-    r = [int]
-    for str_to_chars(s) do push(r, char_to_int(it))
-    ret r
-end
-
-fn print_navi(n: Navi) 
-    log(n.from + n.to)
-    s = '    '
-    for n.path do s = s + int_to_char(it) + ' '
-    log(s)
-end
-
-fn get_paths_str_array
-    l = [str]
-
-    push(l, 'A^ <')
-    push(l, 'A> v')
-    push(l, 'Av <v v<')
-    push(l, 'A< <v< v<<')
-    push(l, '^> >v v>')
-    push(l, '^v v')
-    push(l, '^< v<')
-    push(l, '>v <')
-    push(l, '>< <<')
-    push(l, 'v< <')
-
-    // +---+---+---+
-    // | 7 | 8 | 9 |
-    // +---+---+---+
-    // | 4 | 5 | 6 |
-    // +---+---+---+
-    // | 1 | 2 | 3 |
-    // +---+---+---+
-    //     | 0 | A |
-    //     +---+---+
-
-    push(l, 'A0 <')
-    push(l, 'A1 <^< ^<<')
-    push(l, 'A2 <^ ^<')
-    push(l, 'A3 ^')
-    push(l, 'A4 <^<^ <^^< ^<<^ ^<^< ^^<<')
-    push(l, 'A5 <^^ ^<^ ^^<')
-    push(l, 'A6 ^^')
-    push(l, 'A7 <^<^^ <^^<^ <^^^< ^<<^^ ^<^<^ ^<^^< ^^<<^ ^^<^< ^^^<<')
-    push(l, 'A8 <^^^ ^<^^ ^^<^ ^^^<')
-    push(l, 'A9 ^^^')
-
-    push(l, '01 ^<')
-    push(l, '02 ^')
-    push(l, '03 ^>')
-    push(l, '04 ^<^ ^^<')
-    push(l, '05 ^^')
-    push(l, '06 ^>^ ^^>')
-    push(l, '07 ^<^^ ^^<^ ^^^<')
-    push(l, '08 ^^^')
-    push(l, '09 ^>^^ ^^>^ ^^^>')
-
-    push(l, '12 >')
-    push(l, '13 >>')
-    push(l, '14 ^')
-    push(l, '15 >^ ^>')
-    push(l, '16 >>^ >^> ^>>')
-    push(l, '17 ^^')
-    push(l, '18 ^^> ^>^ >^^')
-    push(l, '19 >>^^ >^>^ >^^> ^>>^ ^>^> ^^>>')
-    
-    push(l, '23 >')
-    push(l, '24 <^ ^<')
-    push(l, '25 ^')
-    push(l, '26 ^> >^')
-    push(l, '27 <^^ ^<^ ^^<')
-    push(l, '28 ^^')
-    push(l, '29 >^^ ^>^ ^^>')
-    
-    push(l, '34 <<^ <^< ^<<')
-    push(l, '35 <^ ^<')
-    push(l, '36 ^')
-    push(l, '37 <<^^ <^<^ <^^< ^<<^ ^<^< ^^<<')
-    push(l, '38 <^^ ^<^ ^^<')
-    push(l, '39 ^^')
-    
-    push(l, '45 >')
-    push(l, '46 >>')
-    push(l, '47 ^')
-    push(l, '48 ^> >^')
-    push(l, '49 ^>> >^> >>^')
-
-    push(l, '56 >')
-    push(l, '57 <^ ^<')
-    push(l, '58 ^')
-    push(l, '59 ^> >^')
-    
-    push(l, '67 <<^ <^< ^<<')
-    push(l, '68 <^ ^<')
-    push(l, '69 ^')   
-    
-    push(l, '78 >')
-    push(l, '79 >>')
-    
-    push(l, '89 >')
-
-
-    ret l
-end
-
-fn create_navis(lines: [str])
-    navis = [Navi]
-    for lines {
-        p = str_split(it, ' ')
-
-        from = char_to_int(str_to_chars(p[0])[0])
-        to = char_to_int(str_to_chars(p[0])[1])
-
-        for 1..len(p) - 1 {
-            a = str_to_chars(p[it])
-            forward = Navi {}
-            forward.from = from
-            forward.to = to
-            forward.path = [int]
-
-            backward = Navi {}
-            backward.from = to
-            backward.to = from
-            backward.path = [int]
-
-            for a {
-                push(forward.path, char_to_int(it))
-                arr_push_front(backward.path, char_to_int(reverse_dir(it)))
-            }
-            forward.path_str = path_to_str(forward.path)
-            backward.path_str = path_to_str(backward.path)
-            push(navis, forward)
-            push(navis, backward)
-        }
-
-    }
-    ret navis
-end
-
-rec Data {
-    navis: [Navi]
+rec Graph {
+    names: [str]
+    vertex_names_to_index: #[str, int]
+    edges: #[int, Int_Array]
 }
 
-fn transform(d: Data, target_path: [int], from: int, index: int, transformed: str, res: #[str, int])
-    if index >= len(target_path) {
-        if map_has_key(res, transformed) = 0 {
-            map_add(res, transformed, 0)
-        }
-        ret
-    }
 
-    to = target_path[index]
-    if from = to {
-        transform(d, target_path, to, index + 1, transformed + 'A', res)
+fn ensure_vertex(g: Graph, vertex_name: str)
+    if map_has_key(g.vertex_names_to_index, vertex_name) do ret map_get_value(g.vertex_names_to_index, vertex_name)
+    index = len(g.names)
+    push(g.names, vertex_name)
+    map_add(g.vertex_names_to_index, vertex_name, index)
+    ret index
+end
+
+fn add_vertex_edge(g: Graph, a: int, b: int)
+    if map_has_key(g.edges, a) {
+        to = map_get_value(g.edges, a)
+        push(to.values, b)
     } else {
-        for d.navis {
-            if it.from = from and it.to = to {
-                //log('it.from = from and it.to', from, to, s)
-                transform(d, target_path, to, index + 1, transformed + it.path_str + 'A', res)
-            } 
-        }
+        to = Int_Array {}
+        to.values = [int]
+        push(to.values, b)
+        map_add(g.edges, a, to)
     }
 end
 
-fn process(d: Data, s: str)
-    src = [str]
-    push(src, s)
-    log(s)
-    for 1..3 {
-        log('iteration', it)
-        res = #[str, int]
-        iteration = it
-        for src {
-            //log(it)
-            transform(d, str_to_path(it), char_to_int('A'), 0, '', res)
-            if iteration = 3 {
-                //log(map_len(res))
+fn add_edge(g: Graph, s1: str, s2: str)
+    a = ensure_vertex(g, s1)
+    b = ensure_vertex(g, s2)
+    add_vertex_edge(g, a, b)
+    add_vertex_edge(g, b, a)
+end
+
+fn fill_isle(g: Graph, visited: [int], vertices: [int], vi: int)
+    if visited[vi] > 0 do ret
+    visited[vi] = 1
+    push(vertices, vi)
+    for map_get_value(g.edges, vi).values {
+        fill_isle(g, visited, vertices, it)
+    }
+end
+
+fn get_isles(g: Graph) 
+    result = [str]
+    visited = [int]
+    arr_set_len(visited, len(g.names))
+    for 0..len(g.names) - 1 {
+        vertices = [int]
+        fill_isle(g, visited, vertices, it)
+        if len(vertices) > 0 {
+            names = [str]
+            for vertices do push(names, g.names[it])
+            push(result, str_arr_join(names, ','))
+        }
+    }
+    ret result
+end
+
+rec Three {
+    a: int
+    b: int
+    c: int
+}
+
+fn get_threes(g: Graph) 
+    result = [str]
+    visited = #[Three, int]
+    a = [int]
+    t = Three {}
+    for g.names {
+        v1 = idx
+        for map_get_value(g.edges, v1).values {
+            v2 = it
+            for map_get_value(g.edges, v2).values {
+                v3 = it
+                for map_get_value(g.edges, v3).values {
+                    v4 = it
+                    if v1 = v4 {
+                        arr_set_len(a, 0)
+                        push(a, v1)
+                        push(a, v2)
+                        push(a, v3)
+                        arr_sort(a)
+                        t.a = a[0]
+                        t.b = a[1]
+                        t.c = a[2]
+                        if map_has_key(visited, t) = 0 {
+                            map_add(visited, t, 0)
+                            s = g.names[t.a] + ',' + g.names[t.b] + ',' + g.names[t.c]
+                            push(result, s)
+                        }
+                    }
+                }
             }
         }
-        src = map_keys(res)
     }
-    l = [int]
-    for src do push(l, str_len(it))
-    arr_sort(l)
-    ret l[0]
+    ret result
 end
 
 fn run
     lines = read_string_lines_from_file('D:/src/postal/aoc2024/input.txt')
+    g = Graph {}
+    g.names = [str]
+    g.vertex_names_to_index = #[str, int]
+    g.edges = #[int, Int_Array]
 
-    d = Data {}
-    d.navis = create_navis(get_paths_str_array())
-
-    total = 0
     for lines {
-        s = it
-        //log(s)
-        v = str_to_int(str_remove(s, 'A'))
-        r = process(d, s)    
-        log(v, r, v*r)
-        total = total + v*r
+        p = str_split(it, '-')
+        add_edge(g, p[0], p[1])
     }
 
+    // for g.names {
+    //     log(it)
+    //     a = map_get_value(g.edges, idx)
+    //     for a.values {
+    //         log('   ', g.names[it])
+    //     }
+    // }
+
+    isles = get_threes(g)
+    total = 0
+    for isles {
+        log(it)
+        for str_split(it, ',') {
+            if str_to_chars(it)[0] = 't' {
+                total = total + 1
+                break
+            }
+        }
+    }
+    
     log('done', total)
 end

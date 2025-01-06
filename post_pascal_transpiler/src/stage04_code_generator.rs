@@ -380,7 +380,7 @@ impl CodeGenerator {
 
         let block = self.generate_block_code(&iteration_node.block, padding);
         writeln!(&mut r, "");
-        writeln!(&mut r, "{0}for (int {1} = 0; {1} < {2}->size(); {1}++) {{", padding, it_index_name, iteratable_name);
+        writeln!(&mut r, "{0}for (i64 {1} = 0; {1} < {2}->size(); {1}++) {{", padding, it_index_name, iteratable_name);
         let type_info = TypeInfo::new_scalar(it_type_name);
         let type_declaration_str = type_info.to_declaration_string();
         writeln!(&mut r, "{padding}{PADDING}{type_declaration_str} {it_name} = {iteratable_name}->at({it_index_name});");
@@ -417,7 +417,7 @@ impl CodeGenerator {
         let it_type_name = iteratable_type_info.get_array_type_str();
         ctx.iterators.push((it_name.clone(), it_type_name.clone()));
         let block = self.generate_block_code(&for_statement.block, padding);
-        writeln!(&mut r, "{padding}for (int {0} = 0; {0} < {it_expression_var_name}->size(); {0}++) {{", it_index_name);
+        writeln!(&mut r, "{padding}for (i64 {0} = 0; {0} < {it_expression_var_name}->size(); {0}++) {{", it_index_name);
         let type_info = TypeInfo::new_scalar(it_type_name);
         let type_declaration_str = type_info.to_declaration_string();
         writeln!(&mut r, "{padding}{PADDING}{type_declaration_str} {it_name} = (*{it_expression_var_name})[{it_index_name}];");
