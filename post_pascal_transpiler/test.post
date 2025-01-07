@@ -1,6 +1,11 @@
 fn run
-    a = 1
-    b = 0
-    c = (a and b) or a
-    log(c)
+    a = [str]
+    push(a, 'a')
+    push(a, 'c')
+    push(a, 'b')
+    
+    for a do log(it)
+
+    arr_sort(a)
+    for a do log(it)
 end

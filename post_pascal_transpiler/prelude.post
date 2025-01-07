@@ -1,11 +1,11 @@
 fn len<T>(a: [T]) int external
 fn push<T>(a: [T], elem: T) external
 fn pop<T>(a: [T]) T external
+fn sort<T>(a: [T]) external
 fn arr_push_front<T>(a: [T], elem: T) external
 fn arr_pop_front<T>(a: [T], elem: T) T external
 fn arr_last<T>(a: [T]) T external
 fn arr_set_len<T>(a: [T], new_len: int) external
-fn arr_sort<T>(a: [T]) external
 fn arr_contains<T>(a: [T], value: T) int external
 fn arr_remove_at<T>(a: [T], index: int) external
 fn arr_remove<T>(a: [T], value: T) external

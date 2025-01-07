@@ -1,138 +1,93 @@
-rec Int_Array {
-    values: [int]
+rec Expr {
+    left: str
+    op: str
+    right: str
 }
 
-rec Graph {
-    names: [str]
-    vertex_names_to_index: #[str, int]
-    edges: #[int, Int_Array]
+rec Registers {
+    values: #[str, int]
+    ops: #[str, Expr]
 }
 
+fn calc(r: Registers, reg: str) int
+    if map_has_key(r.values, reg) do ret map_get_value(r.values, reg)
 
-fn ensure_vertex(g: Graph, vertex_name: str)
-    if map_has_key(g.vertex_names_to_index, vertex_name) do ret map_get_value(g.vertex_names_to_index, vertex_name)
-    index = len(g.names)
-    push(g.names, vertex_name)
-    map_add(g.vertex_names_to_index, vertex_name, index)
-    ret index
-end
-
-fn add_vertex_edge(g: Graph, a: int, b: int)
-    if map_has_key(g.edges, a) {
-        to = map_get_value(g.edges, a)
-        push(to.values, b)
-    } else {
-        to = Int_Array {}
-        to.values = [int]
-        push(to.values, b)
-        map_add(g.edges, a, to)
-    }
-end
-
-fn add_edge(g: Graph, s1: str, s2: str)
-    a = ensure_vertex(g, s1)
-    b = ensure_vertex(g, s2)
-    add_vertex_edge(g, a, b)
-    add_vertex_edge(g, b, a)
-end
-
-fn fill_isle(g: Graph, visited: [int], vertices: [int], vi: int)
-    if visited[vi] > 0 do ret
-    visited[vi] = 1
-    push(vertices, vi)
-    for map_get_value(g.edges, vi).values {
-        fill_isle(g, visited, vertices, it)
-    }
-end
-
-fn get_isles(g: Graph) 
-    result = [str]
-    visited = [int]
-    arr_set_len(visited, len(g.names))
-    for 0..len(g.names) - 1 {
-        vertices = [int]
-        fill_isle(g, visited, vertices, it)
-        if len(vertices) > 0 {
-            names = [str]
-            for vertices do push(names, g.names[it])
-            push(result, str_arr_join(names, ','))
-        }
-    }
-    ret result
-end
-
-rec Three {
-    a: int
-    b: int
-    c: int
-}
-
-fn get_threes(g: Graph) 
-    result = [str]
-    visited = #[Three, int]
-    a = [int]
-    t = Three {}
-    for g.names {
-        v1 = idx
-        for map_get_value(g.edges, v1).values {
-            v2 = it
-            for map_get_value(g.edges, v2).values {
-                v3 = it
-                for map_get_value(g.edges, v3).values {
-                    v4 = it
-                    if v1 = v4 {
-                        arr_set_len(a, 0)
-                        push(a, v1)
-                        push(a, v2)
-                        push(a, v3)
-                        arr_sort(a)
-                        t.a = a[0]
-                        t.b = a[1]
-                        t.c = a[2]
-                        if map_has_key(visited, t) = 0 {
-                            map_add(visited, t, 0)
-                            s = g.names[t.a] + ',' + g.names[t.b] + ',' + g.names[t.c]
-                            push(result, s)
-                        }
-                    }
-                }
-            }
-        }
-    }
-    ret result
+    expr = map_get_value(r.ops, reg)
+    left = calc(r, expr.left)
+    right = calc(r, expr.right)
+    if expr.op = 'OR' do v = left or right
+    if expr.op = 'AND' do v = left and right
+    if expr.op = 'XOR' do v = left xor right
+    map_add(r.values, reg, v)
+    
+    ret v
 end
 
 fn run
     lines = read_string_lines_from_file('D:/src/postal/aoc2024/input.txt')
-    g = Graph {}
-    g.names = [str]
-    g.vertex_names_to_index = #[str, int]
-    g.edges = #[int, Int_Array]
+    i = arr_index_of(lines, '')
+    data = arr_slice(lines, 0, i - 1)
+    ops = arr_slice(lines, i + 1, len(lines))
 
-    for lines {
-        p = str_split(it, '-')
-        add_edge(g, p[0], p[1])
+    r = Registers {}
+    r.values = #[str, int]
+    r.ops = #[str, Expr]
+
+    for data {
+        p = str_split(it, ': ')
+        map_add(r.values, p[0], str_to_int(p[1]))
+    }
+    
+    for ops {
+        p = str_split(it, ' -> ')
+        reg = arr_last(p)
+        p = str_split(p[0], ' ')
+        e = Expr {}
+        e.left = p[0]
+        e.op = p[1]
+        e.right = p[2]
+        map_add(r.ops, reg, e)
     }
 
-    // for g.names {
-    //     log(it)
-    //     a = map_get_value(g.edges, idx)
-    //     for a.values {
-    //         log('   ', g.names[it])
-    //     }
+    // keys = map_keys(r.ops)
+    // arr_sort(keys)
+    // for keys {
+    //     e = map_get_value(r.ops, it)    
+    //     s = e.left + ' ' + e.op + ' ' + e.right
+    //     log(it, s)
     // }
 
-    isles = get_threes(g)
-    total = 0
-    for isles {
-        log(it)
-        for str_split(it, ',') {
-            if str_to_chars(it)[0] = 't' {
-                total = total + 1
-                break
+    for 0..99 {
+        if it = 0 {
+            key = 'z00'
+        } else if it < 10 {
+            key = 'z0' + int_to_str(it)
+        } else {
+            key = 'z' + int_to_str(it)
+        }
+        if map_has_key(r.ops, key) = 0 do break
+        calc(r, key)
+    }
+
+    keys = map_keys(r.values)
+    arr_sort(keys)
+    res = 0
+    for keys {
+        if map_has_key(r.values, it) {
+            v = map_get_value(r.values, it)
+            log(it, v)
+        } else {
+            log(it, 'none')
+        }
+        if str_to_chars(it)[0] = 'z' {
+            zi = str_to_int(str_remove(it, 'z'))
+            if v = 1 {
+                a = 1 lshift zi
+                res = res + a
             }
         }
     }
-    
-    log('done', total)
+
+
+    log('done', res)
 end
