@@ -106,8 +106,7 @@ end
 fn read_lines(filename: str) [str] external
 
 fn test_read_lines
-begin
-    lines = read_lines('d:/test.txt')
+s    lines = read_lines('d:/test.txt')
     lines >> {
         log(idx, it)
     }

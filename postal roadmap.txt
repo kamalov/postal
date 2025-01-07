@@ -33,6 +33,7 @@ Phase zero.1:
 -- exceptions
 -- enums
 -- booleans
+-- mapping with >>
 
 Phase one:
 -- multiple source files (modules)

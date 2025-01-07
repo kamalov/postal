@@ -587,6 +587,7 @@ impl AstBuilder {
                     }
                 }
                 panic_ => {
+                    println!("{}", token.value);
                     panic!();
                 }
             },
