@@ -1,11 +1,51 @@
-fn run
-    a = [str]
-    push(a, 'a')
-    push(a, 'c')
-    push(a, 'b')
-    
-    for a do log(it)
+// fn len<T>(a: [T]) int external
+// fn push<T>(a: [T], elem: T) external
 
-    arr_sort(a)
-    for a do log(it)
+rec A {
+     v: int
+}
+
+fn test_equals
+    a = A {}
+    a.v = 5
+    b = A {}
+    b.v = 5
+    log('test equals', a = b)
+end
+
+fn test_array
+    aa = [A]
+    a = A {}
+    a.v = 5
+    push(aa, a)
+    b = A {}
+    b.v = 5
+    log('object array contains A {v: 5} =', arr_contains(aa, b))
+    log('object array len =', len(aa))
+    log('object array first elem v field value =', aa[0].v)
+    a.v = 6
+    log('object array contains A {v: 6} =', arr_contains(aa, a))
+    log('object array contains A {v: 5} =', arr_contains(aa, b))
+end
+
+fn test_map
+    i = #[int, int]
+    map_add(i, 1, 10)
+    log('test simple map get value', map_get_value(i, 1))
+
+    m = #[A, int]
+    a = A {}
+    a.v = 5
+    map_add(m, a, 15)
+    b = A {}
+    b.v = 5
+    log('test shared map get value', map_get_value(m, b))
+    a.v = 6
+    log('test shared map has key', map_has_key(m, a))
+end
+
+fn run
+    test_equals()
+    test_array()
+    test_map()
 end

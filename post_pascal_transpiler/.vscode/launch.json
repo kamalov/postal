@@ -20,26 +20,13 @@
                 }
             },
             "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'ppt'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=postal",
-                    "--package=postal"
-                ],
-                "filter": {
-                    "name": "postal",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "presentation": {
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "clear": true,
+                "close": true
+            }
         }
     ]
 }

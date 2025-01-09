@@ -558,7 +558,7 @@ impl CodeGenerator {
     fn generate_object_initializer_code(&mut self, record_name: &str) -> String {
         let mut result_str = String::new();
 
-        write!(&mut result_str, "new {record_name}()");
+        write!(&mut result_str, "_spi_<{record_name} >()");
         result_str
     }
 

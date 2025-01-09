@@ -20,36 +20,34 @@ use stage02_ast_builder::*;
 use stage03_type_checker::*;
 use stage04_code_generator::*;
 
-fn hadle_error(token: Token, expected: &String, text: &String, tokenizer: &Tokenizer, prelude_lines_count: usize) {
+fn handle_error(token: Token, expected: &String, text: &String, tokenizer: &Tokenizer, prelude_lines_count: usize) {
     let lines = text.lines().to_vec();
     let (line_number, column_number) = tokenizer.char_index_to_line_and_column(token.char_index);
     let line = lines[line_number].clone();
     let (left, right) = line.split_at(column_number);
-    println!("error: line {}, column {}", line_number + 1 - prelude_lines_count, column_number + 1);
-    println!("");
+    println!("error: line {}, column {}\n", line_number + 1 - prelude_lines_count, column_number + 1);
     print!("{}", left);
-    println!("\x1b[93m{}\x1b[0m", right);
-    println!("");
+    println!("\x1b[93m{}\x1b[0m\n", right);
     let v = token.value;
     let v = if v == "\n" { "line end".to_string() } else { v };
     println!("\x1b[93m{}\x1b[0m, token: \x1b[93m{}\x1b[0m", expected, v);
 }
 
 fn main() {
-    //let filename = Path::new("./test.post");
-    let filename = Path::new("./../aoc2024/aoc2024.post");
+    let filename = Path::new("./test.post");
+    //let filename = Path::new("./../aoc2024/aoc2024.post");
     let text = read_to_string(filename).unwrap();
     let prelude_lines_count = read_to_string(Path::new("./prelude.post")).unwrap().lines().to_vec().len() + 1;
     let prelude = include_str!("./../prelude.post");
     let text = format!("{}\n{}", prelude, text);
     
-    let mut tokenizer = stage01_tokenizer::Tokenizer::create_and_parse(&text);
+    let tokenizer = Tokenizer::create_and_parse(&text);
 
     let mut ast_builder = AstBuilder::new(&tokenizer);
     let ast_builder_result = ast_builder.parse_tokens_to_ast();
     if ast_builder_result.is_err() {
         let ast_error = ast_builder_result.unwrap_err();
-        hadle_error(ast_error.token, &ast_error.expected, &text, &tokenizer, prelude_lines_count);
+        handle_error(ast_error.token, &ast_error.expected, &text, &tokenizer, prelude_lines_count);
     }
 
     let mut type_checker = TypeChecker::new(ast_builder.clone());
@@ -57,7 +55,7 @@ fn main() {
     let ast = match ast_with_types_result {
         Ok(ast) => ast,
         Err(err) => {
-            hadle_error(err.token, &err.expected, &text, &tokenizer, prelude_lines_count);
+            handle_error(err.token, &err.expected, &text, &tokenizer, prelude_lines_count);
             return;
         }
     };
