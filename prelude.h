@@ -40,8 +40,6 @@ public:
         }
     }
 
-    T& operator*() { return *ptr; }
-    T* operator->() { return ptr; }
     void operator=(Shared_Pointer other) {
         if (ptr != other.ptr) {
             if (ptr && counter) {
@@ -59,6 +57,10 @@ public:
         }
     }
 
+    T& operator*() const { return *ptr; }
+    
+    T* operator->() { return ptr; }
+    
     bool operator==(const Shared_Pointer& other) const {
         return (*ptr == *other.ptr);
     }
@@ -71,18 +73,18 @@ public:
 
 template<class T>
 struct std::hash<Shared_Pointer<T>> {
-    std::size_t operator()(const Shared_Pointer<T>& obj) const {
+    std::size_t operator()(const Shared_Pointer<T>& sp) const {
         std::hash<T> hasher;
-        return hasher(*obj.ptr);
+        return hasher(*sp);
     }
 };
 
-template <typename T> using _sp_ = Shared_Pointer<T>;
-template <typename T> using _sv_ = Shared_Pointer<std::vector<T>>;
-template <typename T> constexpr auto _spi_ = &Shared_Pointer<T>::create;
-template <typename T> constexpr auto _svi_ = &Shared_Pointer<std::vector<T>>::create;
-template<typename K,typename V> using _sm_ = Shared_Pointer<std::unordered_map<K, V> >;
-template<typename K,typename V> const auto _smi_ = &Shared_Pointer<std::unordered_map<K, V> >::create;
+template <typename T> using _sp_                   = Shared_Pointer<T>;
+template <typename T> using _sv_                   = Shared_Pointer<std::vector<T>>;
+template <typename K, typename V> using _sm_       = Shared_Pointer<std::unordered_map<K, V> >;
+template <typename T> constexpr auto _spi_         = &Shared_Pointer<T>::create;
+template <typename T> constexpr auto _svi_         = &Shared_Pointer<std::vector<T>>::create;
+template <typename K, typename V> const auto _smi_ = &Shared_Pointer<std::unordered_map<K, V>>::create;
 
 /// hash utils
 template <typename K, typename V> i64 map_has_key(_sm_<K, V> h, K k) { return h->find(k) != h->end(); }
@@ -105,41 +107,45 @@ void map_add(_sm_<_sp_<K>, V> hashmap, _sp_<K> key, V value) {
 }
 
 template <typename K, typename V>
-V map_get_value(_sm_<K, V> h, K key) {
-    auto it = h->find(key);
-    if (it != h->end()) return it->second;
+V map_get_value(_sm_<K, V> hashmap, K key) {
+    auto it = hashmap->find(key);
+    if (it != hashmap->end()) return it->second;
     throw "Error getting value from hashmap: key not found"s;
 }
 
-// template <typename K, typename V>
-// void map_add_or_update(_sm_<K, V> hashmap, K key, V value) {
-//     K new_key = key;
-    
-//     if constexpr (std::is_pointer_v<K>) {
-//         using KV = std::remove_pointer_t<K>;
-//         new_key = new KV();
-//         std::memcpy(new_key, key, sizeof(KV));
-//     }
+template <typename K, typename V>
+void map_add_or_update(_sm_<K, V> hashmap, K key, V value) {
+    (*hashmap)[key] = value;
+}
 
-//     (*hashmap)[new_key] = value;
-// }
+template <typename K, typename V>
+void map_add_or_update(_sm_<_sp_<K>, V>, _sp_<K> key, V value) {
+    if (map.find(key) != map.end()) {
+        (*hashmap)[key] = value;
+    } else {
+        K* new_key_data = new K();
+        std::memcpy(new_key_data, key.ptr, sizeof(K));
+        _sp_<K> new_key(new_key_data);
+        (*hashmap)[new_key] = value;
+    }
+}
 
-// template <typename K, typename V>
-// void map_remove(universal_hashmap<K, V>* h, K key) {
-//     if (h->find(key) == h->end()) {
-//         throw "Error removing value from hashmap: key not found"s;
-//     }
-//     h->erase(key);
-// }
+template <typename K, typename V>
+void map_remove(_sm_<K, V> h, K key) {
+    if (h->find(key) == h->end()) {
+        throw "Error removing value from hashmap: key not found"s;
+    }
+    h->erase(key);
+}
 
-// template <typename K, typename V>
-// std::vector<K>* map_keys(universal_hashmap<K, V>* h) {
-//     std::vector<K>* keys = new std::vector<K>();
-//     for (const auto& pair : *h) {
-//         keys->push_back(pair.first);
-//     }
-//     return keys;
-// }
+template <typename K, typename V>
+_sv_<K> map_keys(_sm_<K, V> h) {
+    auto keys = _svi_<K>();
+    for (const auto& pair : *h) {
+        keys->push_back(pair.first);
+    }
+    return keys;
+}
 
 
 
@@ -176,13 +182,14 @@ i64 arr_index_of(_sv_<T> a, T value) {
     return -1;
 }
 
-template <typename T>_sv_<T> arr_slice(_sv_<T> a, i64 from_index, i64 to_index) {
+template <typename T>
+_sv_<T> arr_slice(_sv_<T> a, i64 from_index, i64 to_index) {
     from_index = std::clamp(from_index, (i64)0, (i64)(a->size() - 1));
     to_index = std::clamp(to_index, (i64)0, (i64)(a->size() - 1));
     if (from_index > to_index) {
-        return new std::vector<T>();
+        return _svi_<T>();
     }
-    return new _svi_(a->begin() + from_index, a->begin() + to_index + 1);
+    return _sv_<T>(new std::vector<T>(a->begin() + from_index, a->begin() + to_index + 1));
 }
 
 
@@ -193,8 +200,8 @@ i64 str_contains(std::string s, std::string subs) { return s.find(subs) != std::
 i64 str_len(std::string s) { return s.length(); }
 std::string int_to_str(i64 i) { return std::to_string(i); }
 
-std::vector<std::string>* str_split(std::string s, std::string delimiter) {
-    std::vector<std::string>* tokens = new std::vector<std::string>();
+_sv_<std::string> str_split(std::string s, std::string delimiter) {
+    auto tokens = _svi_<std::string>();
     size_t pos = 0;
     std::string token;
     while ((pos = s.find(delimiter)) != std::string::npos) {
@@ -206,11 +213,9 @@ std::vector<std::string>* str_split(std::string s, std::string delimiter) {
     return tokens;
 }
 
-std::vector<std::string>* str_to_chars(std::string s) {
-    std::vector<std::string>* chars = new std::vector<std::string>();
-    for (char c : s) {
-        chars->push_back(std::string(1, c));
-    }
+_sv_<std::string> str_to_chars(std::string s) {
+    auto chars = _svi_<std::string>();
+    for (char c : s) chars->push_back(std::string(1, c));
     return chars;
 }
 
@@ -223,7 +228,7 @@ std::string str_remove(std::string s, std::string r) {
     return result;
 }
 
-std::string str_arr_join(std::vector<std::string>* a, std::string delimiter) {
+std::string str_arr_join(_sv_<std::string> a, std::string delimiter) {
     std::ostringstream ss;
     for (size_t i = 0; i < a->size(); ++i) {
         ss << a->at(i);

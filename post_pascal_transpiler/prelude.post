@@ -20,15 +20,15 @@ fn map_remove<K, V>(map: #[K, V], key: K) external
 fn map_len<K, V>(map: #[K, V]) int external
 fn map_keys<K, V>(map: #[K, V]) [K] external
 
-// fn str_split(s: str, by: str) [str] external
-// fn str_to_int(s: str) int external
-// fn str_to_chars(s: str) [str] external
-// fn str_contains(s: str, subs: str) int external
-// fn str_len(s: str) int external
-// fn str_remove(s: str, r: str) str external
-// fn str_arr_join(a: [str], delimiter: str) str external
-// fn int_to_str(i: int) str external
+fn str_split(s: str, by: str) [str] external
+fn str_to_int(s: str) int external
+fn str_to_chars(s: str) [str] external
+fn str_contains(s: str, subs: str) int external
+fn str_len(s: str) int external
+fn str_remove(s: str, r: str) str external
+fn str_arr_join(a: [str], delimiter: str) str external
+fn int_to_str(i: int) str external
 
-// fn err(s: str) external
-// fn readln() str external   
-// fn read_string_lines_from_file(filename: str) [str] external
+fn err(s: str) external
+fn readln() str external   
+fn read_string_lines_from_file(filename: str) [str] external

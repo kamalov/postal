@@ -14,32 +14,36 @@ Implementation
 Phase zero (basic syntax and type checking):
 -- features:
    -- type checking
-   -- type inference (variable type and function return type)
+   -- type inference
+   -- refcounted memory management
    -- C++/Pascal hybrid syntax
    -- built-in dyn array and hash table
-   -- only structs (no oop)
+   -- structs only
 -- limitations:
    -- transpilation to C++
-   -- no memory management
+   -- single line expressions
    -- single source file
    -- ansi strings
-   -- no nested built-in collections (i.e array of array, hash of array, etc.)
+   -- no nested built-in collections (i.e array of array, hashmap of array, etc.)
 
 Phase zero.1:
--- refcounted memory management
--- function overload
 -- generics
 -- first class functions
--- exceptions
+-- function overload
+-- scope variables
+-- nested collections
+-- iterators
 -- enums
+-- exceptions
 -- booleans
 -- mapping with >>
 
 Phase one:
 -- multiple source files (modules)
 -- utf-8 strings
--- nested arrays
 -- some kind of dynamic dispatch or discriminated unions (or both)
+
+...
 
 Phase pre-last (bells and whistles):
 -- variant data type
