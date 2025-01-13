@@ -852,7 +852,7 @@ impl AstBuilder {
         Ok(node)
     }
 
-    fn expressions_to_tree_node(&mut self, expressions: &Vec<Expression>, current_expression_index: &mut usize, prev_tree_node: TreeNode, prev_priority: usize) -> AstResult<TreeNode> {
+    fn  expressions_to_tree_node(&mut self, expressions: &Vec<Expression>, current_expression_index: &mut usize, prev_tree_node: TreeNode, prev_priority: usize) -> AstResult<TreeNode> {
         let mut prev_tree_node = prev_tree_node;
         let mut prev_priority = prev_priority;
         loop {

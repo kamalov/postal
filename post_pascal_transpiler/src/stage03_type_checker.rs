@@ -361,17 +361,13 @@ impl TypeChecker {
             }
             ExpressionKind::ArrayItemAccess { array_expression, access_expression } => {
                 let array_type_info = self.get_expression_type(&array_expression)?;
-
                 if !array_type_info.is_array() {
                     return Err(TypeCheckError::new(&expression.token, format!("not an array")));
                 }
-
                 let accessor_type_info = self.get_expression_type(&access_expression)?;
-
                 if !accessor_type_info.is_scalar_type_str("int") {
                     return Err(TypeCheckError::new(&expression.token, format!("incorrect index type '{accessor_type_info}'")));
                 }
-
                 return Ok(TypeInfo::new_scalar(array_type_info.get_array_type_str()));
             }
             ExpressionKind::ArrayInitializer(identifier) => {

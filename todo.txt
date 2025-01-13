@@ -1,7 +1,7 @@
 current: 
+  -- unary not, -
   -- refactor function call statement to expression (for correct type checking)
   -- todo: extract fn typecheck code
-  -- unary not, +, -
   -- yes/no for booleans
   -- object initializer
   -- fix parsing panic errors

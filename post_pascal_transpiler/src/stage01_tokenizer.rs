@@ -34,7 +34,7 @@ const KEYWORDS: [&str; 25] = [
     "begin", "end", "do", //
     "fn", "external", "var", "if", "for", "in", "loop", "break", "continue", "ret", //
     "int", "real", "str", "rec", //
-    "not", "and", "or", "xor", "div", "mod", "rshift", "lshift"//
+    "not", "and", "or", "xor", "div", "mod", "shr", "shl"//
 ];
 
 const SPECIALS: [&str; 18] = [
@@ -77,6 +77,8 @@ impl Tokenizer {
         t.priorities.insert(".".to_string(), 200);
         t.priorities.insert("()".to_string(), 200);
         t.priorities.insert("[]".to_string(), 200);
+
+        t.priorities.insert("not".to_string(), 100);
 
         t.priorities.insert("*".to_string(), 100);
         t.priorities.insert("/".to_string(), 100);
@@ -186,7 +188,7 @@ impl Tokenizer {
         }
 
         let kind = if self.keywords.contains(&value) {
-            if ["and", "or", "not", "xor", "div", "mod", "rshift", "lshift"].contains(&value.as_str()) {
+            if ["and", "or", "not", "xor", "div", "mod", "shr", "shl"].contains(&value.as_str()) {
                 TokenKind::SpecialSymbol
             } else {
                 TokenKind::Keyword
