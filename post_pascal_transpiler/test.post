@@ -1,5 +1,12 @@
+fn f1(a: int)
+    //log(a)
+    ret a
+end
+
 fn run
     //a = 5
     //if not a do log('not a')
-    a = 5 + 6*7*8
+    a = 1 + 2*3 + 4
+    //a = -1 + -- 2
+    log(a)
 end

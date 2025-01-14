@@ -10,7 +10,7 @@ const OPERATORS_MAP: [(&str, &str); 18] = [
     (".", "->"),
     ("not", "!"),
     ("+", " + "),
-    ("-", " - "),
+    ("-", "-"),
     ("%", " % "),
     ("=", " == "),
     (">", " > "),
@@ -607,7 +607,12 @@ impl CodeGenerator {
             ExpressionKind::StringLiteral(literal) => {
                 write!(&mut r, "\"{}\"s", literal);
             }
-            ExpressionKind::BinaryOperation { operation, left, right } => {
+            ExpressionKind::UnaryOperation { operator: operation, expr } => {
+                let code = self.generate_expression_code(&expr);
+                let op_str = self.operators_map.get(operation).cloned().unwrap_or(operation.clone());
+                write!(&mut r, "({op_str}{code})");
+            }
+            ExpressionKind::BinaryOperation { operator: operation, left, right } => {
                 let left = self.generate_expression_code(&left);
                 let right = self.generate_expression_code(&right);
                 let op_str = self.operators_map.get(operation).cloned().unwrap_or(operation.clone());

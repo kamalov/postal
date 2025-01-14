@@ -31,11 +31,18 @@
 /// prelude void err(std::string s);
 /// prelude std::string readln();
 /// prelude _sv_<std::string> read_string_lines_from_file(std::string filename);
+i64 f1(i64 a) {
+    //log(a)
+    return a;
+}
+
 void run() {
     i64 a;
     //a = 5
     //if not a do log('not a')
-    a = (5ll + ((6ll*7ll)*8ll));
+    a = ((1ll + (2ll*3ll)) + 4ll);
+    //a = -1 + -- 2
+    printf("%lld\n", static_cast<i64>(a));
 }
 
 

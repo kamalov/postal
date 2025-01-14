@@ -4,12 +4,13 @@ current:
   -- todo: extract fn typecheck code
   -- yes/no for booleans
   -- object initializer
-  -- fix parsing panic errors
 
 
 to do:
   -- fix mem leak
+  -- jai like generic type syntax
   -- global variables
+  -- fix parsing panic errors
 
 
 backlog:

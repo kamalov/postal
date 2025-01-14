@@ -292,7 +292,13 @@ impl TypeChecker {
                     }
                 }
             }
-            ExpressionKind::BinaryOperation { operation, left, right } => {
+
+            ExpressionKind::UnaryOperation { operator: operation, expr } => {
+                let type_info = self.get_expression_type(&expr)?;
+                Ok(type_info)
+            }
+
+            ExpressionKind::BinaryOperation { operator: operation, left, right } => {
                 let left_side_type_info = self.get_expression_type(&left)?;
 
                 if operation == "." {

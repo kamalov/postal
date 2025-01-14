@@ -59,7 +59,6 @@ pub struct Tokenizer {
     specials: HashSet<String>,
     pub tokens: Vec<Token>,
     pub chars: Vec<char>,
-    pub priorities: HashMap<String, usize>,
 }
 
 impl Tokenizer {
@@ -73,42 +72,9 @@ impl Tokenizer {
         for c in SPECIALS {
             t.specials.insert(c.to_string());
         }
-
-        t.priorities.insert(".".to_string(), 200);
-        t.priorities.insert("()".to_string(), 200);
-        t.priorities.insert("[]".to_string(), 200);
-
-        t.priorities.insert("not".to_string(), 100);
-
-        t.priorities.insert("*".to_string(), 100);
-        t.priorities.insert("/".to_string(), 100);
-        t.priorities.insert("div".to_string(), 100);
-        t.priorities.insert("mod".to_string(), 100);
-
-        t.priorities.insert("+".to_string(), 90);
-        t.priorities.insert("-".to_string(), 90);
-
-        t.priorities.insert("..".to_string(), 80);
-
-        t.priorities.insert("rshift".to_string(), 60);
-        t.priorities.insert("lshift".to_string(), 60);
-
-        t.priorities.insert("<".to_string(), 50);
-        t.priorities.insert("<=".to_string(), 50);
-        t.priorities.insert(">".to_string(), 50);
-        t.priorities.insert(">=".to_string(), 50);
-
-        t.priorities.insert("=".to_string(), 40);
-        t.priorities.insert("<>".to_string(), 40);
-
-        t.priorities.insert("xor".to_string(), 35);
-
-        t.priorities.insert("and".to_string(), 30);
-
-        t.priorities.insert("or".to_string(), 20);
-
+        
         t.chars = text.chars().to_vec();
-
+        
         t.parse_chars_to_tokens();
 
         t
