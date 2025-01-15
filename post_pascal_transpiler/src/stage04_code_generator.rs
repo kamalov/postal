@@ -305,6 +305,9 @@ impl CodeGenerator {
                 let s = self.generate_assignment_code(assignment_node, padding);
                 r.push_str(s.as_str());
             }
+            Statement::Expression(expr) => {
+                writeln!(&mut r, "{padding}{expr};", expr = self.generate_expression_code(&expr));
+            }
             _ => {
                 println!("{:?}", statement);
                 panic!();
@@ -451,6 +454,7 @@ impl CodeGenerator {
                         let param_name = param_names[i].clone();
                         match &expression.type_info {
                             Some(type_info) => {
+                                println!("{}", type_info.get_scalar_type_str().as_str());
                                 //
                                 match type_info.get_scalar_type_str().as_str() {
                                     "int" => {
@@ -594,9 +598,6 @@ impl CodeGenerator {
                 } else {
                     write!(&mut r, "{}", identifier_name);
                 }
-            }
-            ExpressionKind::Operator(operator) => {
-                write!(&mut r, " {} ", operator);
             }
             ExpressionKind::IntegerLiteral(literal) => {
                 write!(&mut r, "{}ll", literal);

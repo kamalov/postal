@@ -1,3 +1,5 @@
+// fn log(...) external
+
 fn len<T>(a: [T]) int external
 fn push<T>(a: [T], elem: T) external
 fn pop<T>(a: [T]) T external

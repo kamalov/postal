@@ -1,5 +1,6 @@
 #include "prelude.h"
 
+// fn log(...) external
 /// prelude template <typename T>i64 len(_sv_<T> a);
 /// prelude template <typename T>void push(_sv_<T> a, T elem);
 /// prelude template <typename T>T pop(_sv_<T> a);
@@ -31,39 +32,38 @@
 /// prelude void err(std::string s);
 /// prelude std::string readln();
 /// prelude _sv_<std::string> read_string_lines_from_file(std::string filename);
-i64 f1(i64 a) {
-    //log(a)
-    return a;
-}
-
 struct A {
     _sv_<i64> b;
 };
 
 
-_sp_<A> get_a() {
-    _sp_<A> a;
-    a = _spi_<A >();
-    (a->b) = _svi_<i64>();
-    return a;
+// fn get_a()
+//     a = A {}
+//     a.b = [int]
+//     ret a
+// end
+i64 test(i64 i) {
+    return (i + 1ll);
 }
 
 void run() {
-    _sp_<A> a;
     i64 c;
-    i64 f;
     //a = 5
     //if not a do log('not a')
-    a = get_a();
-    push((a->b), 5ll);
+    // a = get_a()
+    // push(a.b, 5)
+    // c = len(a.b)
+    // push(a.b, 6)
+    //test()
     //b = [int]
-    c = (-1ll);
-    f = 1ll;
-
-    if (((!(-1ll))-1ll)) {
-        c = (1ll + (a->b)->at(0ll));
-    };
-    printf("%lld\n", static_cast<i64>(c));
+    // c = -1
+    // f = 1
+    // if not -1 - 1 {
+    //     c = 1 + a.b[0]
+    // }
+    //c = A {}
+    c = test(1ll);
+    printf("%d\n", c);
 }
 
 

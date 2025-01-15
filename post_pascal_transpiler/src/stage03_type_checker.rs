@@ -1,11 +1,11 @@
-use std::vec;
+use crate::stage01_tokenizer::*;
+use crate::stage02_ast_builder::*;
+use crate::type_info::*;
+use crate::utils::*;
 use indexmap::IndexMap;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use crate::utils::*;
-use crate::type_info::*;
-use crate::stage01_tokenizer::*;
-use crate::stage02_ast_builder::*;
+use std::vec;
 
 #[derive(Debug)]
 pub struct TypeCheckError {
@@ -49,7 +49,7 @@ impl TypeChecker {
 
     pub fn build_new_ast_with_types(&mut self) -> TypeCheckResult<AstBuilder> {
         let mut ast_builder = self.ast_builder.clone();
-        
+
         for (idx, root_node) in ast_builder.root_nodes.iter_mut().enumerate() {
             match root_node {
                 RootNode::Function(function) => {
@@ -139,6 +139,118 @@ impl TypeChecker {
         }
     }
 
+    fn get_function_call_type_info(&self, expression: &Expression, function_call: &FunctionCall) -> TypeCheckResult<TypeInfo> {
+        if is_builtin_function(&function_call.name) {
+            return Ok(TypeInfo::new_scalar("none"))
+        }
+
+        let mut actual_param_types = vec![];
+        for param in &function_call.params {
+            let type_info = self.get_expression_type(param)?;
+            actual_param_types.push(type_info);
+        }
+
+        let decl = if let Some(decl) = self.get_function_declaration(&function_call.name) {
+            decl
+        } else {
+            return Err(TypeCheckError::new(&expression.token, "no such function"));
+        };
+
+        if decl.params.len() != actual_param_types.len() {
+            return Err(TypeCheckError::new(&expression.token, "wrong number of parameters in function call"));
+        }
+
+        let mut generic_type_str_to_actual_type_str = HashMap::<String, String>::new();
+
+        for (idx, (formal_param_name, formal_param_type_info)) in decl.params.iter().enumerate() {
+            let actual_param_type_info = &actual_param_types[idx];
+
+            if actual_param_type_info.kind_discriminant() != formal_param_type_info.kind_discriminant() {
+                return Err(TypeCheckError::new(
+                    &expression.token,
+                    format!("incompatible param types for function {}, field {}", function_call.name, formal_param_name),
+                ));
+            }
+
+            let is_generic = formal_param_type_info.is_generic;
+            let fn_name = function_call.name.clone();
+
+            let mut check_type_str = |formal_type_str: &String, actual_type_str: &String| {
+                if is_generic {
+                    match generic_type_str_to_actual_type_str.entry(formal_type_str.to_string()) {
+                        Entry::Occupied(occupied_entry) => {
+                            let found_type_str = occupied_entry.get();
+                            if found_type_str != actual_type_str {
+                                return Err(TypeCheckError::new(
+                                    &expression.token,
+                                    format!("Ambigous generic type {formal_type_str}, field {formal_param_name}: {found_type_str}, {actual_type_str}"),
+                                ));
+                            }
+                        }
+                        Entry::Vacant(vacant_entry) => {
+                            vacant_entry.insert(actual_type_str.clone());
+                        }
+                    }
+                } else {
+                    if formal_type_str != actual_type_str {
+                        return Err(TypeCheckError::new(
+                            &expression.token,
+                            format!("incompatible param types for field {formal_param_name}: expected {formal_type_str}, found {actual_type_str}"),
+                        ));
+                    }
+                }
+
+                Ok(())
+            };
+
+            match &formal_param_type_info.kind {
+                TypeInfoKind::Scalar(scalar_type_str) => {
+                    check_type_str(scalar_type_str, actual_param_type_info.get_scalar_type_str())?;
+                }
+                TypeInfoKind::Array(array_type_str) => {
+                    check_type_str(array_type_str, actual_param_type_info.get_array_type_str())?;
+                }
+                TypeInfoKind::HashMap(formal_key_type_str, formal_value_type_str) => {
+                    let actual_type_str_list = actual_param_type_info.get_hashmap_type_str_list();
+                    check_type_str(formal_key_type_str, &actual_type_str_list[0])?;
+                    check_type_str(formal_value_type_str, &actual_type_str_list[1])?;
+                }
+            }
+        }
+
+        for generic_type_str in &decl.generic_params {
+            if !generic_type_str_to_actual_type_str.contains_key(generic_type_str) {
+                return Err(TypeCheckError::new(&expression.token, format!("can't infer generic param {generic_type_str}")));
+            }
+        }
+
+        if let Some(return_type) = &decl.return_type {
+            if !return_type.is_generic {
+                return Ok(return_type.clone());
+            }
+
+            match &return_type.kind {
+                TypeInfoKind::Scalar(generic_type_str) => {
+                    let actual_type_str = generic_type_str_to_actual_type_str.get(generic_type_str).unwrap();
+                    return Ok(TypeInfo::new_scalar(actual_type_str));
+                }
+                TypeInfoKind::Array(generic_type_str) => {
+                    let actual_type_str = generic_type_str_to_actual_type_str.get(generic_type_str).unwrap();
+                    return Ok(TypeInfo::new_array(actual_type_str));
+                }
+                TypeInfoKind::HashMap(key_generic_type_str, value_generic_type_str) => {
+                    todo!();
+                }
+            }
+        }
+
+        // return Err(TypeCheckError::new(
+        //     &expression.token,
+        //     format!("can't figure return type of '{}' function call, please specify return type explicitly", function_call.name),
+        // ));
+        Ok(TypeInfo::new_scalar("none"))
+    }
+
     fn get_expression_type(&self, expression: &Expression) -> TypeCheckResult<TypeInfo> {
         match &*expression.kind {
             ExpressionKind::IntegerLiteral(..) => {
@@ -150,116 +262,7 @@ impl TypeChecker {
             ExpressionKind::StringLiteral(..) => {
                 return Ok(TypeInfo::new_scalar("str"));
             }
-            ExpressionKind::FunctionCall(function_call) => {
-                // todo!("extract");
-                let mut actual_param_types = vec![];
-                for param in &function_call.params {
-                    let type_info = self.get_expression_type(param)?;
-                    actual_param_types.push(type_info);
-                }
-
-                let decl = if let Some(decl) = self.get_function_declaration(&function_call.name) {
-                    decl
-                } else {
-                    return Err(TypeCheckError::new(&expression.token, "no such function"));
-                };
-
-                if decl.params.len() != actual_param_types.len() {
-                    return Err(TypeCheckError::new(&expression.token, "wrong number of parameters in function call"));
-                }
-
-                let mut generic_type_str_to_actual_type_str = HashMap::<String, String>::new();
-                
-                for (idx, (formal_param_name, formal_param_type_info)) in decl.params.iter().enumerate() {
-                    let actual_param_type_info = &actual_param_types[idx];
-                    
-                    if actual_param_type_info.kind_discriminant() != formal_param_type_info.kind_discriminant() {
-                        return Err(TypeCheckError::new(
-                            &expression.token,
-                            format!("incompatible param types for function {}, field {}", function_call.name, formal_param_name),
-                        ));
-                    }
-                    
-                    let is_generic = formal_param_type_info.is_generic;
-                    let fn_name = function_call.name.clone();
-
-                    let mut check_type_str = |formal_type_str: &String, actual_type_str: &String| {
-                        if is_generic {
-                            match generic_type_str_to_actual_type_str.entry(formal_type_str.to_string()) {
-                                Entry::Occupied(occupied_entry) => {
-                                    let found_type_str = occupied_entry.get();
-                                    if found_type_str != actual_type_str {
-                                        return Err(TypeCheckError::new(
-                                            &expression.token,
-                                            format!("Ambigous generic type {formal_type_str}, field {formal_param_name}: {found_type_str}, {actual_type_str}"),
-                                        ));
-                                    }
-                                }
-                                Entry::Vacant(vacant_entry) => {
-                                    vacant_entry.insert(actual_type_str.clone());
-                                }
-                            }
-                        } else {
-                            if formal_type_str != actual_type_str {
-                                return Err(TypeCheckError::new(
-                                    &expression.token,
-                                    format!("incompatible param types for field {formal_param_name}: expected {formal_type_str}, found {actual_type_str}")
-                                ));
-                            }
-                        }
-                        
-                        Ok(())
-                    };
-
-                    match &formal_param_type_info.kind {
-                        TypeInfoKind::Scalar(scalar_type_str) => {
-                            check_type_str(scalar_type_str, actual_param_type_info.get_scalar_type_str())?;
-                        }
-                        TypeInfoKind::Array(array_type_str) => {
-                            check_type_str(array_type_str, actual_param_type_info.get_array_type_str())?;
-                        }
-                        TypeInfoKind::HashMap(formal_key_type_str, formal_value_type_str) => {
-                            let actual_type_str_list = actual_param_type_info.get_hashmap_type_str_list();
-                            check_type_str(formal_key_type_str, &actual_type_str_list[0])?;
-                            check_type_str(formal_value_type_str, &actual_type_str_list[1])?;
-                        }
-                    }
-                }
-                
-                for generic_type_str in &decl.generic_params {
-                    if !generic_type_str_to_actual_type_str.contains_key(generic_type_str) {
-                        return Err(TypeCheckError::new(
-                            &expression.token,
-                            format!("can't infer generic param {generic_type_str}")
-                        ));
-                    }
-                }
-
-                if let Some(return_type) = &decl.return_type {
-                    if !return_type.is_generic {
-                        return Ok(return_type.clone());
-                    }
-
-                    match &return_type.kind {
-                        TypeInfoKind::Scalar(generic_type_str) => {
-                            let actual_type_str = generic_type_str_to_actual_type_str.get(generic_type_str).unwrap();
-                            return Ok(TypeInfo::new_scalar(actual_type_str));
-                        }
-                        TypeInfoKind::Array(generic_type_str) => {
-                            let actual_type_str = generic_type_str_to_actual_type_str.get(generic_type_str).unwrap();
-                            return Ok(TypeInfo::new_array(actual_type_str));
-                        }
-                        TypeInfoKind::HashMap(key_generic_type_str, value_generic_type_str) => {
-                            todo!();
-                        }
-                    }
-                }
-
-                return Err(TypeCheckError::new(
-                    &expression.token,
-                    format!("can't figure return type of '{}' function call, please specify return type explicitly", function_call.name),
-                ));
-            }
+            ExpressionKind::FunctionCall(function_call) => self.get_function_call_type_info(expression, function_call),
             ExpressionKind::Identifier(identifier_name) => {
                 //
                 match identifier_name.as_str() {
@@ -269,10 +272,7 @@ impl TypeChecker {
                         }
                         let type_info = self.ctx.iterator_type_list.last().unwrap();
                         if !type_info.is_array() {
-                            return Err(TypeCheckError::new(
-                                &expression.token,
-                                format!("iteratable must be of array type"),
-                            ));
+                            return Err(TypeCheckError::new(&expression.token, format!("iteratable must be of array type")));
                         }
                         return Ok(TypeInfo::new_scalar(type_info.get_array_type_str()));
                     }
@@ -292,16 +292,14 @@ impl TypeChecker {
                     }
                 }
             }
-
-            ExpressionKind::UnaryOperation { operator: operation, expr } => {
+            ExpressionKind::UnaryOperation { operator, expr } => {
                 let type_info = self.get_expression_type(&expr)?;
                 Ok(type_info)
             }
-
-            ExpressionKind::BinaryOperation { operator: operation, left, right } => {
+            ExpressionKind::BinaryOperation { operator, left, right } => {
                 let left_side_type_info = self.get_expression_type(&left)?;
 
-                if operation == "." {
+                if operator == "." {
                     if let ExpressionKind::Identifier(right_identifier_name) = &*right.kind {
                         match self.ast_builder.records.get(left_side_type_info.get_scalar_type_str()) {
                             Some(record) => {
@@ -325,7 +323,7 @@ impl TypeChecker {
 
                 let right_side_type_info = self.get_expression_type(&right)?;
 
-                if operation == ".." {
+                if operator == ".." {
                     if !left_side_type_info.is_scalar_type_str("int") {
                         return Err(TypeCheckError::new(&left.token, format!("left side of range must be 'int': found '{left_side_type_info}'")));
                     }
@@ -339,7 +337,7 @@ impl TypeChecker {
 
                 match get_common_type(&left_side_type_info, &right_side_type_info) {
                     Ok(common_type) => {
-                        if ["<", "<=", ">", ">=", "=", "<>"].contains(&operation.as_str()) {
+                        if ["<", "<=", ">", ">=", "=", "<>"].contains(&operator.as_str()) {
                             return Ok(TypeInfo::new_scalar("int"));
                         }
                         return Ok(common_type);
@@ -356,13 +354,10 @@ impl TypeChecker {
                 if group_expressions.is_empty() {
                     return Err(TypeCheckError::new(&expression.token, "empty group"));
                 }
-
                 for expression in group_expressions {
                     self.get_expression_type(expression)?;
                 }
-
                 let last_type_info = self.get_expression_type(group_expressions.last().unwrap())?;
-
                 return Ok(last_type_info);
             }
             ExpressionKind::ArrayItemAccess { array_expression, access_expression } => {
@@ -377,7 +372,7 @@ impl TypeChecker {
                 return Ok(TypeInfo::new_scalar(array_type_info.get_array_type_str()));
             }
             ExpressionKind::ArrayInitializer(identifier) => {
-                let type_str = identifier; 
+                let type_str = identifier;
                 let type_info = TypeInfo::new_array(type_str);
                 if is_builtin_type(&type_str) || self.ast_builder.records.contains_key(type_str) {
                     return Ok(type_info);
@@ -394,17 +389,11 @@ impl TypeChecker {
             ExpressionKind::ObjectInitializer(record_name) => {
                 //
                 match self.ast_builder.records.get(record_name) {
-                    Some(record) => {
-                        return Ok(TypeInfo::new_scalar(&record.name));
-                    }
-                    None => {
-                        return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{record_name}'")));
-                    }
+                    Some(record) => return Ok(TypeInfo::new_scalar(&record.name)),
+                    None => return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{record_name}'"))),
                 }
             }
             _ => {
-                //ExpressionNode::ArrayBrackets(array_brackets_node) => panic!(),
-                //ExpressionNode::Operator(operator_node) => panic!(),
                 println!("{expression:?}");
                 panic!()
             }
@@ -520,10 +509,13 @@ impl TypeChecker {
                     }
                     function_call.params = new_params;
                 }
+                Statement::Expression(expr) => {
+                    let type_info = self.get_expression_type(&expr)?;
+                }
                 Statement::Break() => {}
                 Statement::Continue() => {}
                 Statement::Comment(_) => {}
-                _ => panic!()
+                _ => panic!(),
             }
         }
 

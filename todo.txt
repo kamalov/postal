@@ -1,7 +1,8 @@
 current: 
   -- refactor function call statement to expression (for correct type checking)
+
   -- fix mem leak
-  -- todo: extract fn typecheck code
+
   -- yes/no for booleans
   -- object initializer
 
