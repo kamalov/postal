@@ -197,7 +197,7 @@ fn create_priorities() -> HashMap<(String, OpPriorityKind), usize> {
     fn add_op_priority(priorities: &mut HashMap<(String, OpPriorityKind), usize>, op: impl Into<String>, op_kind: OpPriorityKind, value: usize) {
         priorities.insert((op.into(), op_kind), value);
     }
-    
+
     let mut p = HashMap::new();
     add_op_priority(&mut p, ".", OpPriorityKind::Binary, 200);
     add_op_priority(&mut p, "()", OpPriorityKind::Binary, 200);
@@ -236,7 +236,6 @@ fn create_priorities() -> HashMap<(String, OpPriorityKind), usize> {
     return p;
 }
 
-
 #[derive(Clone)]
 pub struct AstBuilder {
     current_token_index: usize,
@@ -255,7 +254,7 @@ impl AstBuilder {
             tokenizer: tokenizer.clone(),
             tokens: tokenizer.tokens.clone(),
             records: HashMap::new(),
-            priorities: create_priorities()
+            priorities: create_priorities(),
         }
     }
 
@@ -832,7 +831,7 @@ impl AstBuilder {
         Ok(Expression::new(&token, ExpressionKind::ObjectLiteral))
     }
 
-    /// stage 1: parse expression tokens into list
+    /// stage 1: parse expression tokens into list (get_expressions)
     /// stage 2: convert list into intermediate tree by operation precedence (expressions_to_tree)
     /// stage 3: convert intermediate tree into expression (tree_to_expression)
     fn parse_expression_until(&mut self, terminators: &[&str]) -> AstResult<Expression> {
@@ -917,7 +916,7 @@ impl AstBuilder {
         Ok(expressions)
     }
 
-    fn get_suitable_target(&self, arena: &Arena<Node>, prev_id: Id<Node>, op: &String) -> AstResult<(Option<Id<Node>>)> {
+    fn get_suitable_target(&self, arena: &Arena<Node>, prev_id: Id<Node>, op: &str) -> AstResult<(Option<Id<Node>>)> {
         let mut cur_id = prev_id;
         let mut cur = &arena[cur_id];
 
@@ -990,6 +989,33 @@ impl AstBuilder {
                     }
                 }
 
+                ExpressionKind::ObjectLiteral => {
+                    //
+                    match &*nodes[prev_id].expression.kind {
+                        ExpressionKind::Identifier(identifier_name) => {
+                            let kind = ExpressionKind::ObjectInitializer(identifier_name.clone());
+                            let expression = Expression::new(&nodes[prev_id].expression.token, kind);
+                            nodes[prev_id].expression = expression;
+                            break;
+                        }
+                        else_ => return Err(AstError::new(&nodes[node_id].expression.token, "unexpected token")),
+                    }
+                }
+
+                ExpressionKind::ArrayBrackets(array_indexed_access_expression) => {
+                    if let Some(target_id) = self.get_suitable_target(&nodes, prev_id, "[]")? {
+                        let parent_id = nodes[target_id].parent_id;
+                        if let Some(parent_id) = parent_id {
+                            nodes[parent_id].right_id = Some(node_id);
+                        }
+                        nodes[node_id].parent_id = parent_id;
+                        nodes[node_id].left_id = Some(target_id);
+                        nodes[target_id].parent_id = Some(node_id);
+                        prev_id = node_id;
+                        continue;
+                    }
+                }
+
                 _ => {}
             }
 
@@ -997,38 +1023,6 @@ impl AstBuilder {
             nodes[prev_id].right_id = Some(node_id);
             prev_id = node_id;
         }
-        //     match &*current_expression.kind {
-        //         ExpressionKind::ArrayBrackets(array_indexed_access_expression) => {
-        //             let priority = *self.tokenizer.priorities.get("[]").unwrap();
-        //             if priority <= prev_priority {
-        //                 break;
-        //             }
-        //             *current_expression_index += 1;
-        //             prev_tree_node = TreeNode {
-        //                 expression: current_expression.clone(),
-        //                 childs: vec![prev_tree_node],
-        //             }
-        //         }
-
-        //         ExpressionKind::ObjectLiteral => {
-        //             //
-        //             match &*prev_tree_node.expression.kind {
-        //                 ExpressionKind::Identifier(identifier_name) => {
-        //                     let kind = ExpressionKind::ObjectInitializer(identifier_name.clone());
-        //                     let expression = Expression::new(&prev_tree_node.expression.token, kind);
-        //                     prev_tree_node.expression = expression;
-        //                     *current_expression_index += 1;
-        //                     break;
-        //                 }
-        //                 else_ => return Err(AstError::new(&current_expression.token, "unexpected token"))
-        //             }
-        //         }
-
-        //         _ => {
-        //             return Err(AstError::new(&current_expression.token, format!("unexpected token kind {:?}", current_expression.kind)));
-        //         }
-        //     }
-        // }
         let root_id = get_root_id(&nodes, prev_id);
         Ok((nodes, root_id))
     }
@@ -1044,44 +1038,39 @@ impl AstBuilder {
                         left: left,
                         right: right,
                     };
-    
+
                     let expression = Expression::new(&nodes[id].expression.token, kind);
                     return Ok(expression);
                 } else {
                     let expr = self.node_to_expression(nodes, nodes[id].right_id.unwrap())?.clone();
-                    let kind = ExpressionKind::UnaryOperation {
-                        operator: op.clone(),
-                        expr,
-                    };
-    
+                    let kind = ExpressionKind::UnaryOperation { operator: op.clone(), expr };
+
                     let expression = Expression::new(&nodes[id].expression.token, kind);
                     return Ok(expression);
                 }
             }
 
-            // ExpressionKind::ArrayBrackets(access_expression) => {
-            //     if tree_node.childs.is_empty() {
-            //         match &*access_expression.kind {
-            //             ExpressionKind::Identifier(identifier) => {
-            //                 let kind = ExpressionKind::ArrayInitializer(identifier.clone());
-            //                 let expression = Expression::new(&tree_node.expression.token, kind);
-            //                 return Ok(expression);
-            //             }
-            //             _ => {
-            //                 return Err(AstError::new(&access_expression.token, "expected identifier in array initializer"));
-            //             }
-            //         }
-            //     } else {
-            //         let array_expression = self.tree_node_to_expression(&tree_node.childs[0])?;
-            //         let kind = ExpressionKind::ArrayItemAccess {
-            //             array_expression,
-            //             access_expression: access_expression.clone(),
-            //         };
+            ExpressionKind::ArrayBrackets(access_expression) => {
+                if let Some(left_id) = nodes[id].left_id {
+                    let array_expression = self.node_to_expression(&nodes, left_id)?;
+                    let kind = ExpressionKind::ArrayItemAccess {
+                        array_expression,
+                        access_expression: access_expression.clone(),
+                    };
+                    let expression = Expression::new(&nodes[id].expression.token, kind);
+                    return Ok(expression);
+                } else {
+                    match &*access_expression.kind {
+                        ExpressionKind::Identifier(identifier) => {
+                            let kind = ExpressionKind::ArrayInitializer(identifier.clone());
+                            let expression = Expression::new(&nodes[id].expression.token, kind);
+                            return Ok(expression);
+                        }
+                        _ => return Err(AstError::new(&access_expression.token, "expected identifier in array initializer")),
+                    }
+                }
+            }
 
-            //         let expression = Expression::new(&tree_node.expression.token, kind);
-            //         return Ok(expression);
-            //     }
-            // }
             else_ => {
                 //assert!(false, "can't detect type");
                 return Ok(nodes[id].expression.clone());
@@ -1120,7 +1109,3 @@ fn get_root_id(nodes: &Arena<Node>, id: Id<Node>) -> Id<Node> {
     }
     root_id
 }
-
-// fn log(nodes: &Arena::<Node>, id: Id<Node>) {
-
-// }

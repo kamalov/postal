@@ -21,7 +21,6 @@ Phase zero (basic syntax and type checking):
    -- structs only
 -- limitations:
    -- transpilation to C++
-   -- single line expressions
    -- single source file
    -- ansi strings
    -- no nested built-in collections (i.e array of array, hashmap of array, etc.)
@@ -32,11 +31,11 @@ Phase zero.1:
 -- function overload
 -- scope variables
 -- nested collections
--- iterators
+-- iterators (+ mapping with >>)
+...
 -- enums
 -- exceptions
 -- booleans
--- mapping with >>
 
 Phase one:
 -- multiple source files (modules)

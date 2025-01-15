@@ -36,13 +36,34 @@ i64 f1(i64 a) {
     return a;
 }
 
+struct A {
+    _sv_<i64> b;
+};
+
+
+_sp_<A> get_a() {
+    _sp_<A> a;
+    a = _spi_<A >();
+    (a->b) = _svi_<i64>();
+    return a;
+}
+
 void run() {
-    i64 a;
+    _sp_<A> a;
+    i64 c;
+    i64 f;
     //a = 5
     //if not a do log('not a')
-    a = ((1ll + (2ll*3ll)) + 4ll);
-    //a = -1 + -- 2
-    printf("%lld\n", static_cast<i64>(a));
+    a = get_a();
+    push((a->b), 5ll);
+    //b = [int]
+    c = (-1ll);
+    f = 1ll;
+
+    if (((!(-1ll))-1ll)) {
+        c = (1ll + (a->b)->at(0ll));
+    };
+    printf("%lld\n", static_cast<i64>(c));
 }
 
 

@@ -1,20 +1,20 @@
 current: 
-  -- unary not, -
   -- refactor function call statement to expression (for correct type checking)
+  -- fix mem leak
   -- todo: extract fn typecheck code
   -- yes/no for booleans
   -- object initializer
 
 
 to do:
-  -- fix mem leak
   -- jai like generic type syntax
-  -- global variables
+  -- multiline expressions inside ()
   -- fix parsing panic errors
+  
 
 
 backlog:
-  -- mapping (a = some >> { it })
+  -- global variables
 
 
 
