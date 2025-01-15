@@ -2,11 +2,11 @@ rec A {
     b: [int]
 }
 
-// fn get_a()
-//     a = A {}
-//     a.b = [int]
-//     ret a
-// end
+fn get_a()
+    a = A {}
+    a.b = [int]
+    ret a
+end
 
 fn test(i: int)
     ret i + 1
@@ -15,11 +15,11 @@ end
 fn run
     //a = 5
     //if not a do log('not a')
-    // a = get_a()
-    // push(a.b, 5)
-    // c = len(a.b)
-    // push(a.b, 6)
-    //test()
+    a = get_a()
+    push(a.b, 5)
+    c = len(a.b)
+    push(a.b, 6)
+    test(1)
     //b = [int]
     // c = -1
     // f = 1
@@ -27,6 +27,6 @@ fn run
     //     c = 1 + a.b[0]
     // }
     //c = A {}
-    c = test(1)
-    log(c)
+    d = test(1)
+    log(c, len(a.b), d)
 end

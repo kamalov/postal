@@ -37,24 +37,28 @@ struct A {
 };
 
 
-// fn get_a()
-//     a = A {}
-//     a.b = [int]
-//     ret a
-// end
+_sp_<A> get_a() {
+    _sp_<A> a;
+    a = _spi_<A >();
+    (a->b) = _svi_<i64>();
+    return a;
+}
+
 i64 test(i64 i) {
     return (i + 1ll);
 }
 
 void run() {
+    _sp_<A> a;
     i64 c;
+    i64 d;
     //a = 5
     //if not a do log('not a')
-    // a = get_a()
-    // push(a.b, 5)
-    // c = len(a.b)
-    // push(a.b, 6)
-    //test()
+    a = get_a();
+    push((a->b), 5ll);
+    c = len((a->b));
+    push((a->b), 6ll);
+    test(1ll);
     //b = [int]
     // c = -1
     // f = 1
@@ -62,8 +66,8 @@ void run() {
     //     c = 1 + a.b[0]
     // }
     //c = A {}
-    c = test(1ll);
-    printf("%d\n", c);
+    d = test(1ll);
+    printf("%lld %lld %lld\n", static_cast<i64>(c), static_cast<i64>(len((a->b))), static_cast<i64>(d));
 }
 
 

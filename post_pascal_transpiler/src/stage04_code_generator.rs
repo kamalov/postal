@@ -273,11 +273,11 @@ impl CodeGenerator {
                 let s = self.generate_for_code(for_statement, padding);
                 r.push_str(s.as_str());
             }
-            Statement::FunctionCall(st) => {
-                let s = self.generate_function_call_code(st);
-                let s = format!("{}{};\n", padding, s);
-                r.push_str(s.as_str());
-            }
+            // Statement::FunctionCall(st) => {
+            //     let s = self.generate_function_call_code(st);
+            //     let s = format!("{}{};\n", padding, s);
+            //     r.push_str(s.as_str());
+            // }
             Statement::VariableAssignment(v) => {
                 let s = self.generate_variable_assignment_code(v, padding);
                 r.push_str(s.as_str());

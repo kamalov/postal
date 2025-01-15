@@ -1,6 +1,4 @@
 current: 
-  -- refactor function call statement to expression (for correct type checking)
-
   -- fix mem leak
 
   -- yes/no for booleans
@@ -9,12 +7,11 @@ current:
 
 to do:
   -- jai like generic type syntax
-  -- multiline expressions inside ()
-  -- fix parsing panic errors
-  
+  -- multiline expressions inside ( ) parenthesis
 
 
 backlog:
+  -- fix parsing panic errors (esp. in tokenizer)
   -- global variables
 
 

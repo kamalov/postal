@@ -160,7 +160,6 @@ pub enum Statement {
     Break(),
     Continue(),
     Return(Option<Expression>),
-    FunctionCall(FunctionCall),
     VariableAssignment(VariableAssignment),
     Assignment(Assignment),
     Expression(Expression),
