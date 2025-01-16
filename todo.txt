@@ -5,11 +5,11 @@ current:
 
 to do:
   -- jai like generic type syntax
-  -- multiline expressions inside ( ) parenthesis
+  -- fix parsing panic errors (esp. in tokenizer), it/idx outside iterator
 
 
 backlog:
-  -- fix parsing panic errors (esp. in tokenizer), it/idx outside iterator
+  -- multiline expressions inside ( ) parenthesis
   -- global variables
 
 

@@ -21,11 +21,6 @@ template <typename T> struct Shared_Pointer {
     T* ptr = nullptr;
 
     Shared_Pointer(T* from_ptr = nullptr) {
-	    //if (from_ptr) {
-	    //    printf("sp Create from ptr(%p) %lld\n", from_ptr, ++sp_counter);
-	    //} else {
-        //    printf("sp Create from null(%p) %lld\n", from_ptr, ++sp_counter);
-	    //}
         ptr = from_ptr;
         counter_ptr = new unsigned int(1);
     }
@@ -98,59 +93,65 @@ struct std::hash<Shared_Pointer<T>> {
     }
 };
 
-template <typename T> using _sp_                   = Shared_Pointer<T>;
-template <typename T> using _sv_                   = Shared_Pointer<std::vector<T>>;
-template <typename K, typename V> using _sm_       = Shared_Pointer<std::unordered_map<K, V> >;
-template <typename T> constexpr auto _spi_         = &Shared_Pointer<T>::create;
-template <typename T> constexpr auto _svi_         = &Shared_Pointer<std::vector<T>>::create;
-template <typename K, typename V> const auto _smi_ = &Shared_Pointer<std::unordered_map<K, V>>::create;
+template <typename T> 
+using shared_pointer = Shared_Pointer<T>;
+template <typename T> 
+using shared_vector = Shared_Pointer<std::vector<T>>;
+template <typename K, typename V> 
+using shared_map = Shared_Pointer<std::unordered_map<K, V> >;
+template <typename T> 
+constexpr auto create_shared_pointer = &Shared_Pointer<T>::create;
+template <typename T> 
+constexpr auto create_shared_vector = &Shared_Pointer<std::vector<T>>::create;
+template <typename K, typename V> 
+const auto create_shared_map = &Shared_Pointer<std::unordered_map<K, V>>::create;
 
 /// hash utils
-template <typename K, typename V> i64 map_has_key(_sm_<K, V> h, K k) { return h->find(k) != h->end(); }
-template <typename K, typename V> i64 map_len(_sm_<K, V> h) { return h->size(); }
+template <typename K, typename V> i64 map_has_key(shared_map<K, V> h, K k) { return h->find(k) != h->end(); }
+template <typename K, typename V> i64 map_len(shared_map<K, V> h) { return h->size(); }
 
 template <typename K, typename V>
-void map_add(_sm_<K, V> hashmap, K key, V value) {
+void map_add(shared_map<K, V> hashmap, K key, V value) {
     auto result = hashmap->insert(std::make_pair(key, value));
     if (!result.second) throw "Error adding to hashmap: key already exist"s;
 }
 
 template <typename K, typename V>
-void map_add(_sm_<_sp_<K>, V> hashmap, _sp_<K> key, V value) {
+void map_add(shared_map<shared_pointer<K>, V> hashmap, shared_pointer<K> key, V value) {
     // cloning shared key data
     K* new_key_data = new K();
     std::memcpy(new_key_data, key.ptr, sizeof(K));
-    _sp_<K> new_key(new_key_data);
+    shared_pointer<K> new_key(new_key_data);
     auto result = hashmap->insert(std::make_pair(new_key, value));
     if (!result.second) throw "Error adding to hashmap: key already exist"s;
 }
 
 template <typename K, typename V>
-V map_get_value(_sm_<K, V> hashmap, K key) {
+V map_get_value(shared_map<K, V> hashmap, K key) {
     auto it = hashmap->find(key);
     if (it != hashmap->end()) return it->second;
     throw "Error getting value from hashmap: key not found"s;
 }
 
 template <typename K, typename V>
-void map_add_or_update(_sm_<K, V> hashmap, K key, V value) {
+void map_add_or_update(shared_map<K, V> hashmap, K key, V value) {
     (*hashmap)[key] = value;
 }
 
 template <typename K, typename V>
-void map_add_or_update(_sm_<_sp_<K>, V> map, _sp_<K> key, V value) {
+void map_add_or_update(shared_map<shared_pointer<K>, V> map, shared_pointer<K> key, V value) {
     if (map.find(key) != map.end()) {
         (*map)[key] = value;
     } else {
         K* new_key_data = new K();
         std::memcpy(new_key_data, key.ptr, sizeof(K));
-        _sp_<K> new_key(new_key_data);
+        shared_pointer<K> new_key(new_key_data);
         (*map)[new_key] = value;
     }
 }
 
 template <typename K, typename V>
-void map_remove(_sm_<K, V> h, K key) {
+void map_remove(shared_map<K, V> h, K key) {
     if (h->find(key) == h->end()) {
         throw "Error removing value from hashmap: key not found"s;
     }
@@ -158,8 +159,8 @@ void map_remove(_sm_<K, V> h, K key) {
 }
 
 template <typename K, typename V>
-_sv_<K> map_keys(_sm_<K, V> h) {
-    auto keys = _svi_<K>();
+shared_vector<K> map_keys(shared_map<K, V> h) {
+    auto keys = create_shared_vector<K>();
     for (const auto& pair : *h) {
         keys->push_back(pair.first);
     }
@@ -169,32 +170,32 @@ _sv_<K> map_keys(_sm_<K, V> h) {
 
 
 /// dyn array utils
-template <typename T> i64 len(_sv_<T>& a) { return a->size(); }
-template <typename T> i64 arr_contains(_sv_<T>& a, T value) { return std::find(a->begin(), a->end(), value) != a->end(); }
-template <typename T> void push(_sv_<T>& a, T elem) { a->push_back(elem); }
-template <typename T> void arr_push_front(_sv_<T> a, T elem) { a->insert(a->begin(), elem); }
-template <typename T> void arr_set_len(_sv_<T>& a, i64 new_len) { a->resize(new_len); }
-template <typename T> void sort(_sv_<T>& a) { std::sort(a->begin(), a->end()); }
-template <typename T> void arr_remove(_sv_<T>& a, T value) { a->erase(std::remove_if(a->begin(), a->end(), [value](T item){ return item == value; }), a->end()); }
-template <typename T> void arr_remove_at(_sv_<T>& a, i64 index) { a->erase(a->begin() + index); }
-template <typename T> T arr_last(_sv_<T>& a) { return a->back(); }
+template <typename T> i64 len(shared_vector<T>& a) { return a->size(); }
+template <typename T> i64 arr_contains(shared_vector<T>& a, T value) { return std::find(a->begin(), a->end(), value) != a->end(); }
+template <typename T> void push(shared_vector<T>& a, T elem) { a->push_back(elem); }
+template <typename T> void arr_push_front(shared_vector<T> a, T elem) { a->insert(a->begin(), elem); }
+template <typename T> void arr_set_len(shared_vector<T>& a, i64 new_len) { a->resize(new_len); }
+template <typename T> void sort(shared_vector<T>& a) { std::sort(a->begin(), a->end()); }
+template <typename T> void arr_remove(shared_vector<T>& a, T value) { a->erase(std::remove_if(a->begin(), a->end(), [value](T item){ return item == value; }), a->end()); }
+template <typename T> void arr_remove_at(shared_vector<T>& a, i64 index) { a->erase(a->begin() + index); }
+template <typename T> T arr_last(shared_vector<T>& a) { return a->back(); }
 
 template <typename T>
-T pop(_sv_<T> a) {
+T pop(shared_vector<T> a) {
     T last = a->back();
     a->pop_back();
     return last;
 }
 
 template <typename T>
-T arr_pop_front(_sv_<T> a) {
+T arr_pop_front(shared_vector<T> a) {
     T first = a->at(0);
     a->erase(a->begin());
     return first;
 }
 
 template <typename T>
-i64 arr_index_of(_sv_<T> a, T value) {
+i64 arr_index_of(shared_vector<T> a, T value) {
     auto it = std::find(a->begin(), a->end(), value);
     if (it != a->end()) {
         return std::distance(a->begin(), it);
@@ -203,13 +204,13 @@ i64 arr_index_of(_sv_<T> a, T value) {
 }
 
 template <typename T>
-_sv_<T> arr_slice(_sv_<T> a, i64 from_index, i64 to_index) {
+shared_vector<T> arr_slice(shared_vector<T> a, i64 from_index, i64 to_index) {
     from_index = std::clamp(from_index, (i64)0, (i64)(a->size() - 1));
     to_index = std::clamp(to_index, (i64)0, (i64)(a->size() - 1));
     if (from_index > to_index) {
-        return _svi_<T>();
+        return create_shared_vector<T>();
     }
-    return _sv_<T>(new std::vector<T>(a->begin() + from_index, a->begin() + to_index + 1));
+    return shared_vector<T>(new std::vector<T>(a->begin() + from_index, a->begin() + to_index + 1));
 }
 
 
@@ -220,8 +221,8 @@ i64 str_contains(std::string s, std::string subs) { return s.find(subs) != std::
 i64 str_len(std::string s) { return s.length(); }
 std::string int_to_str(i64 i) { return std::to_string(i); }
 
-_sv_<std::string> str_split(std::string s, std::string delimiter) {
-    auto tokens = _svi_<std::string>();
+shared_vector<std::string> str_split(std::string s, std::string delimiter) {
+    auto tokens = create_shared_vector<std::string>();
     size_t pos = 0;
     std::string token;
     while ((pos = s.find(delimiter)) != std::string::npos) {
@@ -233,8 +234,8 @@ _sv_<std::string> str_split(std::string s, std::string delimiter) {
     return tokens;
 }
 
-_sv_<std::string> str_to_chars(std::string s) {
-    auto chars = _svi_<std::string>();
+shared_vector<std::string> str_to_chars(std::string s) {
+    auto chars = create_shared_vector<std::string>();
     for (char c : s) chars->push_back(std::string(1, c));
     return chars;
 }
@@ -248,7 +249,7 @@ std::string str_remove(std::string s, std::string r) {
     return result;
 }
 
-std::string str_arr_join(_sv_<std::string> a, std::string delimiter) {
+std::string str_arr_join(shared_vector<std::string> a, std::string delimiter) {
     std::ostringstream ss;
     for (size_t i = 0; i < a->size(); ++i) {
         ss << a->at(i);

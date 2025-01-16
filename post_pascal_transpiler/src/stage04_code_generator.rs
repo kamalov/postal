@@ -421,7 +421,7 @@ impl CodeGenerator {
         let it_type_name = iteratable_type_info.get_array_type_str();
         ctx.iterators.push((it_name.clone(), it_type_name.clone()));
         let block = self.generate_block_code(&for_statement.block, padding);
-        writeln!(&mut r, "{padding}for (auto {0} = 0; {0} < {it_expression_var_name}->size(); {0}++) {{", it_index_name);
+        writeln!(&mut r, "{padding}for (i64 {0} = 0; {0} < (i64){it_expression_var_name}->size(); {0}++) {{", it_index_name);
         let type_info = TypeInfo::new_scalar(it_type_name);
         let type_declaration_str = type_info.to_declaration_string();
         writeln!(&mut r, "{padding}{PADDING}{type_declaration_str} {it_name} = (*{it_expression_var_name})[{it_index_name}];");
@@ -458,7 +458,7 @@ impl CodeGenerator {
                                 match type_info.get_scalar_type_str().as_str() {
                                     "int" => {
                                         format_parts.push("%lld");
-                                        names.push(format!("static_cast<i64>({})", param_name));
+                                        names.push(format!("(i64)({})", param_name));
                                     }
                                     "real" => {
                                         format_parts.push("%f");
@@ -562,7 +562,7 @@ impl CodeGenerator {
     fn generate_object_initializer_code(&mut self, record_name: &str) -> String {
         let mut result_str = String::new();
 
-        write!(&mut result_str, "_spi_<{record_name} >()");
+        write!(&mut result_str, "create_shared_pointer<{record_name} >()");
         result_str
     }
 

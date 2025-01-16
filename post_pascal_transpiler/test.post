@@ -1,6 +1,6 @@
 rec A {
     //b: [int]
-    i: int
+    i: [int]
 }
 
 fn test 
@@ -8,7 +8,8 @@ fn test
     arr_set_len(arr, 1000_000)
     for arr {
         a = A {}
-        a.i = idx
+        a.i = [int]
+        push(a.i, idx)
         arr[idx] = a
     }
     ret arr
@@ -20,7 +21,7 @@ fn test1
         i = i + 1
         if i > 100 do break
         a = test()
-        log(i, arr_last(a).i)
+        log(i, arr_last(a).i[0])
     }
 end 
 
