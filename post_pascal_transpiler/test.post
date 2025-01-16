@@ -1,11 +1,11 @@
 rec A {
-    //b: [int]
+    b: int
     i: [int]
 }
 
 fn test 
     arr = [A]
-    arr_set_len(arr, 1000_000)
+    arr_set_len(arr, 1)
     for arr {
         a = A {}
         a.i = [int]
@@ -27,7 +27,12 @@ end
 
 fn run
     test1()
+    // arr = [A]
+    // arr_set_len(arr, 10)
+    // for arr {
+    //     a = A {}
+    //     arr[idx] = a
+    // }
     log('done')
-    readln()
-    //b = test()
+    //readln()
 end

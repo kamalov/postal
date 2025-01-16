@@ -1,11 +1,12 @@
 current: 
   -- yes/no for booleans
   -- object initializer
+  -- errors with line numbers
+  -- fix parsing panic errors (esp. in tokenizer), it/idx outside iterator
 
 
 to do:
   -- jai like generic type syntax
-  -- fix parsing panic errors (esp. in tokenizer), it/idx outside iterator
 
 
 backlog:

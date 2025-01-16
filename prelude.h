@@ -14,13 +14,14 @@
 using namespace std::literals;
 using i64 = long long;
                                    
-i64 sp_counter = 0;
+i64 shared_pointer_debug_counter = 0;
 
 template <typename T> struct Shared_Pointer {
     unsigned int* counter_ptr = nullptr;
     T* ptr = nullptr;
 
     Shared_Pointer(T* from_ptr = nullptr) {
+        shared_pointer_debug_counter++;
         ptr = from_ptr;
         counter_ptr = new unsigned int(1);
     }
@@ -44,6 +45,7 @@ template <typename T> struct Shared_Pointer {
         (*counter_ptr)--;
         if (*counter_ptr == 0) {
             //printf("sp Destroy %lld\n", sp_counter--);
+            shared_pointer_debug_counter--;
             delete counter_ptr;
             delete ptr;
         }
@@ -307,9 +309,9 @@ int main() {
 
     try {
         run();
-        if (sp_counter) {
-            printf("\nsp_counter = %lld\n", sp_counter);
-            //throw "shared pointer error"s;
+        if (shared_pointer_debug_counter) {
+            printf("\nshared_pointer_debug_counter = %lld\n", shared_pointer_debug_counter);
+            throw "shared pointer error"s;
         }
     }
     catch (const std::string& ex) {
