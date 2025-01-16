@@ -1,73 +1,60 @@
 #include "prelude.h"
 
-// fn log(...) external
-/// prelude template <typename T>i64 len(_sv_<T> a);
-/// prelude template <typename T>void push(_sv_<T> a, T elem);
-/// prelude template <typename T>T pop(_sv_<T> a);
-/// prelude template <typename T>void sort(_sv_<T> a);
-/// prelude template <typename T>void arr_push_front(_sv_<T> a, T elem);
-/// prelude template <typename T>T arr_pop_front(_sv_<T> a, T elem);
-/// prelude template <typename T>T arr_last(_sv_<T> a);
-/// prelude template <typename T>void arr_set_len(_sv_<T> a, i64 new_len);
-/// prelude template <typename T>i64 arr_contains(_sv_<T> a, T value);
-/// prelude template <typename T>void arr_remove_at(_sv_<T> a, i64 index);
-/// prelude template <typename T>void arr_remove(_sv_<T> a, T value);
-/// prelude template <typename T>i64 arr_index_of(_sv_<T> a, T value);
-/// prelude template <typename T>_sv_<T> arr_slice(_sv_<T> a, i64 from, i64 to);
-/// prelude template <typename K, typename V>void map_add(_sm_<K, V> map, K key, V value);
-/// prelude template <typename K, typename V>V map_get_value(_sm_<K, V> map, K key);
-/// prelude template <typename K, typename V>void map_add_or_update(_sm_<K, V> map, K key, V value);
-/// prelude template <typename K, typename V>i64 map_has_key(_sm_<K, V> map, K key);
-/// prelude template <typename K, typename V>void map_remove(_sm_<K, V> map, K key);
-/// prelude template <typename K, typename V>i64 map_len(_sm_<K, V> map);
-/// prelude template <typename K, typename V>_sv_<K> map_keys(_sm_<K, V> map);
-/// prelude _sv_<std::string> str_split(std::string s, std::string by);
-/// prelude i64 str_to_int(std::string s);
-/// prelude _sv_<std::string> str_to_chars(std::string s);
-/// prelude i64 str_contains(std::string s, std::string subs);
-/// prelude i64 str_len(std::string s);
-/// prelude std::string str_remove(std::string s, std::string r);
-/// prelude std::string str_arr_join(_sv_<std::string> a, std::string delimiter);
-/// prelude std::string int_to_str(i64 i);
-/// prelude void err(std::string s);
-/// prelude std::string readln();
-/// prelude _sv_<std::string> read_string_lines_from_file(std::string filename);
 struct A {
-    _sv_<i64> b;
+    i64 i;
+    friend bool operator==(const A& l, const A& r) {
+        return (l.i == r.i);
+    }
 };
 
-
-_sp_<A> get_a() {
-    _sp_<A> a;
-    a = _spi_<A >();
-    (a->b) = _svi_<i64>();
-    return a;
+namespace std {
+    template<>
+    struct hash<A> {
+        std::size_t operator()(const A& rec) const {
+            size_t h = 0;
+            h ^= std::hash<i64>{}(rec.i) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            return h;
+        }
+    };
 }
 
-i64 test(i64 i) {
-    return (i + 1ll);
+_sv_<_sp_<A>> test() {
+    _sv_<_sp_<A>> arr;
+    _sp_<A> a;
+    arr = _svi_<_sp_<A>>();
+    arr_set_len(arr, 1000000ll);
+
+    auto __expr0 = arr;
+    for (auto arr__it0__idx = 0; arr__it0__idx < __expr0->size(); arr__it0__idx++) {
+        _sp_<A> arr__it0 = (*__expr0)[arr__it0__idx];
+        a = _spi_<A >();
+        (a->i) = arr__it0__idx;
+        arr->at(arr__it0__idx) = a;
+    }
+    return arr;
+}
+
+void test1() {
+    i64 i;
+    _sv_<_sp_<A>> a;
+    i = 0ll;
+
+    for (;;) {
+        i = (i + 1ll);
+
+        if ((i > 100ll)) {
+            break;
+        };
+        a = test();
+        printf("%lld %lld\n", static_cast<i64>(i), static_cast<i64>((arr_last(a)->i)));
+    }
 }
 
 void run() {
-    _sp_<A> a;
-    i64 c;
-    i64 d;
-    //a = 5
-    //if not a do log('not a')
-    a = get_a();
-    push((a->b), 5ll);
-    c = len((a->b));
-    push((a->b), 6ll);
-    test(1ll);
-    //b = [int]
-    // c = -1
-    // f = 1
-    // if not -1 - 1 {
-    //     c = 1 + a.b[0]
-    // }
-    //c = A {}
-    d = test(1ll);
-    printf("%lld %lld %lld\n", static_cast<i64>(c), static_cast<i64>(len((a->b))), static_cast<i64>(d));
+    test1();
+    printf("%s\n", ("done"s).c_str());
+    readln();
+    //b = test()
 }
 
 

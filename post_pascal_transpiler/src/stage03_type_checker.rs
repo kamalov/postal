@@ -123,11 +123,7 @@ impl TypeChecker {
     }
 
     fn get_function_declaration(&self, name: &String) -> Option<&FnDeclaration> {
-        if let Some(decl) = self.fn_declarations.get(name) {
-            return Some(decl);
-        } else {
-            return None;
-        }
+        self.fn_declarations.get(name)
     }
 
     fn get_function_param_or_var_type(&self, name: &String) -> Option<&TypeInfo> {

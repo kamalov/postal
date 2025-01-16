@@ -181,11 +181,11 @@ impl CodeGenerator {
         };
 
         if function_node.is_external {
-            writeln!(
-                &mut r,
-                "{padding}/// prelude {fn_generic_params_code}{return_type_str} {name}({fn_params_code});",
-                name = function_node.declaration.name
-            );
+            // writeln!(
+            //     &mut r,
+            //     "{padding}/// prelude {fn_generic_params_code}{return_type_str} {name}({fn_params_code});",
+            //     name = function_node.declaration.name
+            // );
         } else {
             writeln!(
                 &mut r,
@@ -421,7 +421,7 @@ impl CodeGenerator {
         let it_type_name = iteratable_type_info.get_array_type_str();
         ctx.iterators.push((it_name.clone(), it_type_name.clone()));
         let block = self.generate_block_code(&for_statement.block, padding);
-        writeln!(&mut r, "{padding}for (i64 {0} = 0; {0} < {it_expression_var_name}->size(); {0}++) {{", it_index_name);
+        writeln!(&mut r, "{padding}for (auto {0} = 0; {0} < {it_expression_var_name}->size(); {0}++) {{", it_index_name);
         let type_info = TypeInfo::new_scalar(it_type_name);
         let type_declaration_str = type_info.to_declaration_string();
         writeln!(&mut r, "{padding}{PADDING}{type_declaration_str} {it_name} = (*{it_expression_var_name})[{it_index_name}];");
@@ -454,7 +454,6 @@ impl CodeGenerator {
                         let param_name = param_names[i].clone();
                         match &expression.type_info {
                             Some(type_info) => {
-                                println!("{}", type_info.get_scalar_type_str().as_str());
                                 //
                                 match type_info.get_scalar_type_str().as_str() {
                                     "int" => {

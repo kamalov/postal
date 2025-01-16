@@ -1,6 +1,4 @@
 current: 
-  -- fix mem leak
-
   -- yes/no for booleans
   -- object initializer
 
@@ -11,7 +9,7 @@ to do:
 
 
 backlog:
-  -- fix parsing panic errors (esp. in tokenizer)
+  -- fix parsing panic errors (esp. in tokenizer), it/idx outside iterator
   -- global variables
 
 

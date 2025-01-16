@@ -419,10 +419,17 @@ impl AstBuilder {
             if self.try_skip("}") {
                 break;
             }
-            let field_name = self.need_next_identifier_token()?.value.clone();
-            self.skip_expected(":")?;
-            let type_info = self.parse_type_info()?;
-            fields.insert(field_name, type_info);
+            match self.peek_next().kind {
+                TokenKind::Comment => {
+                    self.skip();
+                }
+                _ => {
+                    let field_name = self.need_next_identifier_token()?.value.clone();
+                    self.skip_expected(":")?;
+                    let type_info = self.parse_type_info()?;
+                    fields.insert(field_name, type_info);
+                } 
+            }
         }
 
         let record_node = Record { name: record_name.clone(), fields };

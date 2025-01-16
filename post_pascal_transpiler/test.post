@@ -1,32 +1,32 @@
 rec A {
-    b: [int]
+    //b: [int]
+    i: int
 }
 
-fn get_a()
-    a = A {}
-    a.b = [int]
-    ret a
-end
+fn test 
+    arr = [A]
+    arr_set_len(arr, 1000_000)
+    for arr {
+        a = A {}
+        a.i = idx
+        arr[idx] = a
+    }
+    ret arr
+end 
 
-fn test(i: int)
-    ret i + 1
-end
+fn test1
+    i = 0
+    loop {
+        i = i + 1
+        if i > 100 do break
+        a = test()
+        log(i, arr_last(a).i)
+    }
+end 
 
 fn run
-    //a = 5
-    //if not a do log('not a')
-    a = get_a()
-    push(a.b, 5)
-    c = len(a.b)
-    push(a.b, 6)
-    test(1)
-    //b = [int]
-    // c = -1
-    // f = 1
-    // if not -1 - 1 {
-    //     c = 1 + a.b[0]
-    // }
-    //c = A {}
-    d = test(1)
-    log(c, len(a.b), d)
+    test1()
+    log('done')
+    readln()
+    //b = test()
 end

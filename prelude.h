@@ -13,60 +13,79 @@
 
 using namespace std::literals;
 using i64 = long long;
+                                   
+i64 sp_counter = 0;
 
-template <typename T> class Shared_Pointer {
-    struct Counter { unsigned int count; };
-public:
-    Counter* counter;
-    T* ptr;
+template <typename T> struct Shared_Pointer {
+    unsigned int* counter_ptr = nullptr;
+    T* ptr = nullptr;
 
-    Shared_Pointer(T* ptr_ = nullptr) {
-        ptr = ptr_;
-        counter = new Counter();
-        counter->count = 1;
+    Shared_Pointer(T* from_ptr = nullptr) {
+	    //if (from_ptr) {
+	    //    printf("sp Create from ptr(%p) %lld\n", from_ptr, ++sp_counter);
+	    //} else {
+        //    printf("sp Create from null(%p) %lld\n", from_ptr, ++sp_counter);
+	    //}
+        ptr = from_ptr;
+        counter_ptr = new unsigned int(1);
     }
 
     Shared_Pointer(const Shared_Pointer& other) {
+        if (ptr || counter_ptr) {
+            throw "improper shared copy constructor call\n"s;
+        }
+
         ptr = other.ptr;
-        counter = other.counter;
-        counter->count++;
+        counter_ptr = other.counter_ptr;
+        (*counter_ptr)++;
     }
 
     ~Shared_Pointer() {
-        counter->count--;
-        if (counter->count == 0) {
-            delete counter;
+       	//printf("sp Destructor %p %lld\n", ptr, sp_counter);
+        decrement_counter();
+    }
+
+    void decrement_counter() {
+        (*counter_ptr)--;
+        if (*counter_ptr == 0) {
+            //printf("sp Destroy %lld\n", sp_counter--);
+            delete counter_ptr;
             delete ptr;
         }
     }
 
     void operator=(Shared_Pointer other) {
+	    //printf("operator=\n");
         if (ptr != other.ptr) {
-            if (ptr && counter) {
-                counter->count--;
-                if (counter->count == 0) {
-                    delete counter;
-                    delete ptr;
-                }
-            }
+            decrement_counter();
             ptr = other.ptr;
             if (ptr) {
-                counter = other.counter;
-                counter->count++;
+                counter_ptr = other.counter_ptr;
+                (*counter_ptr)++;
             }
         }
     }
 
-    T& operator*() const { return *ptr; }
+    T& operator*() const { 
+        if (ptr == nullptr) {
+            throw "npe"s;
+        }
+        return *ptr;
+    }
     
-    T* operator->() { return ptr; }
+    T* operator->() const { 
+        if (ptr == nullptr) {
+            throw "npe"s;
+        }
+        return ptr; 
+    }
     
     bool operator==(const Shared_Pointer& other) const {
         return (*ptr == *other.ptr);
     }
     
     static Shared_Pointer create() {
-        Shared_Pointer sp = new T();
+        Shared_Pointer sp(new T());
         return sp;
     }
 };
@@ -119,14 +138,14 @@ void map_add_or_update(_sm_<K, V> hashmap, K key, V value) {
 }
 
 template <typename K, typename V>
-void map_add_or_update(_sm_<_sp_<K>, V>, _sp_<K> key, V value) {
+void map_add_or_update(_sm_<_sp_<K>, V> map, _sp_<K> key, V value) {
     if (map.find(key) != map.end()) {
-        (*hashmap)[key] = value;
+        (*map)[key] = value;
     } else {
         K* new_key_data = new K();
         std::memcpy(new_key_data, key.ptr, sizeof(K));
         _sp_<K> new_key(new_key_data);
-        (*hashmap)[new_key] = value;
+        (*map)[new_key] = value;
     }
 }
 
@@ -150,15 +169,15 @@ _sv_<K> map_keys(_sm_<K, V> h) {
 
 
 /// dyn array utils
-template <typename T> i64 len(_sv_<T> a) { return a->size(); }
-template <typename T> i64 arr_contains(_sv_<T> a, T value) { return std::find(a->begin(), a->end(), value) != a->end(); }
-template <typename T> void push(_sv_<T> a, T elem) { a->push_back(elem); }
+template <typename T> i64 len(_sv_<T>& a) { return a->size(); }
+template <typename T> i64 arr_contains(_sv_<T>& a, T value) { return std::find(a->begin(), a->end(), value) != a->end(); }
+template <typename T> void push(_sv_<T>& a, T elem) { a->push_back(elem); }
 template <typename T> void arr_push_front(_sv_<T> a, T elem) { a->insert(a->begin(), elem); }
-template <typename T> void arr_set_len(_sv_<T> a, i64 new_len) { a->resize(new_len); }
-template <typename T> void sort(_sv_<T> a) { std::sort(a->begin(), a->end()); }
-template <typename T> void arr_remove(_sv_<T> a, T value) { a->erase(std::remove_if(a->begin(), a->end(), [value](T item){ return item == value; }), a->end()); }
-template <typename T> void arr_remove_at(_sv_<T> a, i64 index) { a->erase(a->begin() + index); }
-template <typename T> T arr_last(_sv_<T> a) { return a->back(); }
+template <typename T> void arr_set_len(_sv_<T>& a, i64 new_len) { a->resize(new_len); }
+template <typename T> void sort(_sv_<T>& a) { std::sort(a->begin(), a->end()); }
+template <typename T> void arr_remove(_sv_<T>& a, T value) { a->erase(std::remove_if(a->begin(), a->end(), [value](T item){ return item == value; }), a->end()); }
+template <typename T> void arr_remove_at(_sv_<T>& a, i64 index) { a->erase(a->begin() + index); }
+template <typename T> T arr_last(_sv_<T>& a) { return a->back(); }
 
 template <typename T>
 T pop(_sv_<T> a) {
@@ -176,7 +195,8 @@ T arr_pop_front(_sv_<T> a) {
 
 template <typename T>
 i64 arr_index_of(_sv_<T> a, T value) {
-    if (std::find(a->begin(), a->end(), value) != a->end()) {
+    auto it = std::find(a->begin(), a->end(), value);
+    if (it != a->end()) {
         return std::distance(a->begin(), it);
     }
     return -1;
@@ -286,6 +306,10 @@ int main() {
 
     try {
         run();
+        if (sp_counter) {
+            printf("\nsp_counter = %lld\n", sp_counter);
+            //throw "shared pointer error"s;
+        }
     }
     catch (const std::string& ex) {
         SetConsoleTextAttribute(hConsole, 12);

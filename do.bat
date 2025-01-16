@@ -7,9 +7,9 @@
 @SET LIB=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\lib\x64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.22621.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\10\\lib\10.0.22621.0\\um\x64
 @SET LIBPATH=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\lib\x86\store\references;C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.22621.0;C:\Program Files (x86)\Windows Kits\10\References\10.0.22621.0;C:\Windows\Microsoft.NET\Framework64\v4.0.30319
 
-cl.exe generated.cpp /EHsc /Od /WX /std:c++17
-
-generated.exe 
+rem cl.exe generated.cpp /std:c++17 /EHsc /Od /W4 /WX /permissive-
+cl.exe generated.cpp /std:c++17 /EHsc /Od /W3 /WX /permissive-
+generated.exe
 
 @del generated.exe > nul
 @del generated.obj > nul
