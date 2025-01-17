@@ -1,19 +1,11 @@
-#include <stdio.h>
-#include <windows.h>
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include <algorithm> 
-#include <tuple>
-#include <functional>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <type_traits>
-
 using namespace std::literals;
 using i64 = long long;
-                                   
+//#define _throw(msg) throw std::string{} + "'{}' at '{}', line {}", msg, __FILE__, __LINE__);
+#define _throw(msg) throw std::string{} + msg + " at '" + __FILE__ +"', line " + std::to_string(__LINE__);
+
+
+
+/// shared pointers
 i64 shared_pointer_debug_counter = 0;
 
 template <typename T> struct Shared_Pointer {
@@ -28,7 +20,7 @@ template <typename T> struct Shared_Pointer {
 
     Shared_Pointer(const Shared_Pointer& other) {
         if (ptr || counter_ptr) {
-            throw "improper shared copy constructor call\n"s;
+            _throw("improper shared copy constructor call\n");
         }
 
         ptr = other.ptr;
@@ -65,14 +57,14 @@ template <typename T> struct Shared_Pointer {
 
     T& operator*() const { 
         if (ptr == nullptr) {
-            throw "npe"s;
+            _throw("npe");
         }
         return *ptr;
     }
     
     T* operator->() const { 
         if (ptr == nullptr) {
-            throw "npe"s;
+            _throw("npe");
         }
         return ptr; 
     }
@@ -95,27 +87,23 @@ struct std::hash<Shared_Pointer<T>> {
     }
 };
 
-template <typename T> 
-using shared_pointer = Shared_Pointer<T>;
-template <typename T> 
-using shared_vector = Shared_Pointer<std::vector<T>>;
-template <typename K, typename V> 
-using shared_map = Shared_Pointer<std::unordered_map<K, V> >;
-template <typename T> 
-constexpr auto create_shared_pointer = &Shared_Pointer<T>::create;
-template <typename T> 
-constexpr auto create_shared_vector = &Shared_Pointer<std::vector<T>>::create;
-template <typename K, typename V> 
-const auto create_shared_map = &Shared_Pointer<std::unordered_map<K, V>>::create;
+template <typename T>             using shared_pointer = Shared_Pointer<T>;
+template <typename T>             using shared_vector = Shared_Pointer<std::vector<T>>;
+template <typename K, typename V> using shared_map = Shared_Pointer<std::unordered_map<K, V> >;
+template <typename T>             constexpr auto create_shared_pointer = &Shared_Pointer<T>::create;
+template <typename T>             constexpr auto create_shared_vector = &Shared_Pointer<std::vector<T>>::create;
+template <typename K, typename V> const auto create_shared_map = &Shared_Pointer<std::unordered_map<K, V>>::create;
 
-/// hash utils
+
+
+/// hashmap utils
 template <typename K, typename V> i64 map_has_key(shared_map<K, V> h, K k) { return h->find(k) != h->end(); }
 template <typename K, typename V> i64 map_len(shared_map<K, V> h) { return h->size(); }
 
 template <typename K, typename V>
 void map_add(shared_map<K, V> hashmap, K key, V value) {
     auto result = hashmap->insert(std::make_pair(key, value));
-    if (!result.second) throw "Error adding to hashmap: key already exist"s;
+    if (!result.second) _throw("Error adding to hashmap: key already exist");
 }
 
 template <typename K, typename V>
@@ -125,14 +113,14 @@ void map_add(shared_map<shared_pointer<K>, V> hashmap, shared_pointer<K> key, V 
     std::memcpy(new_key_data, key.ptr, sizeof(K));
     shared_pointer<K> new_key(new_key_data);
     auto result = hashmap->insert(std::make_pair(new_key, value));
-    if (!result.second) throw "Error adding to hashmap: key already exist"s;
+    if (!result.second) _throw("Error adding to hashmap: key already exist");
 }
 
 template <typename K, typename V>
 V map_get_value(shared_map<K, V> hashmap, K key) {
     auto it = hashmap->find(key);
     if (it != hashmap->end()) return it->second;
-    throw "Error getting value from hashmap: key not found"s;
+    _throw("Error getting value from hashmap : key not found");
 }
 
 template <typename K, typename V>
@@ -155,7 +143,7 @@ void map_add_or_update(shared_map<shared_pointer<K>, V> map, shared_pointer<K> k
 template <typename K, typename V>
 void map_remove(shared_map<K, V> h, K key) {
     if (h->find(key) == h->end()) {
-        throw "Error removing value from hashmap: key not found"s;
+        _throw("Error removing value from hashmap: key not found");
     }
     h->erase(key);
 }
@@ -262,8 +250,12 @@ std::string str_arr_join(shared_vector<std::string> a, std::string delimiter) {
     return ss.str();
 }
 
+
+
 /// misc utils
-[[noreturn]] void err(std::string s) { throw s; }
+[[noreturn]] void err(std::string s) { 
+    _throw(s); 
+}
 
 std::string readln() {
     std::string line;
@@ -316,7 +308,7 @@ int main() {
     }
     catch (const std::string& ex) {
         SetConsoleTextAttribute(hConsole, 12);
-        printf("Exception: %s\n", ex.c_str());
+        printf("Error: %s\n", ex.c_str());
         return -1;
     }
     catch (const std::exception& e) {

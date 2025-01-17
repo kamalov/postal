@@ -292,8 +292,8 @@ impl TypeChecker {
 
                 match get_common_type(&left_side_type_info, &right_side_type_info) {
                     Ok(common_type) => {
-                        if ["<", "<=", ">", ">=", "=", "<>"].contains(&operator.as_str()) {
-                            return Ok(TypeInfo::new_scalar("int"));
+                        if ["<", "<=", ">", ">=", "=", "<>", "and", "or"].contains(&operator.as_str()) {
+                            return Ok(TypeInfo::new_scalar("bool"));
                         }
                         return Ok(common_type);
                     }
@@ -312,6 +312,7 @@ impl TypeChecker {
     fn fill_expression_type(&mut self, expression: &mut Expression) -> TypeCheckResult<TypeInfo> {
         let type_info = match &mut *expression.kind {
             ExpressionKind::IntegerLiteral(..) => TypeInfo::new_scalar("int"),
+            ExpressionKind::BooleanLiteral(..) => TypeInfo::new_scalar("bool"),
             ExpressionKind::RealLiteral(..) => TypeInfo::new_scalar("real"),
             ExpressionKind::StringLiteral(..) => TypeInfo::new_scalar("str"),
             ExpressionKind::Identifier(identifier_name) => {
@@ -333,13 +334,20 @@ impl TypeChecker {
                         match self.get_function_param_or_var_type(&identifier_name) {
                             Some(type_info) => type_info.clone(),
                             None => {
-                                return Err(TypeCheckError::new(&expression.token, "undeclared variable"));
+                                return Err(TypeCheckError::new(&expression.token, "undeclared variablem"));
                             }
                         }
                     }
                 }
             }
-            ExpressionKind::UnaryOperation { operator, expr } => self.fill_expression_type(expr)?,
+            ExpressionKind::UnaryOperation { operator, expr } => {
+                let type_info = self.fill_expression_type(expr)?;
+                if operator == "not" {
+                    TypeInfo::new_scalar("bool")
+                } else {
+                    type_info
+                }
+            },
             ExpressionKind::BinaryOperation { operator, left, right } => self.fill_binary_op_type_info(expression)?,
             ExpressionKind::Group(group_expressions) => {
                 if group_expressions.is_empty() {

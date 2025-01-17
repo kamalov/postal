@@ -35,20 +35,21 @@ Phase zero.1:
 ...
 -- enums
 -- exceptions
--- booleans
 
 Phase one:
 -- multiple source files (modules)
 -- utf-8 strings
--- some kind of dynamic dispatch or discriminated unions (or both)
+-- some kind of dynamic dispatch and/or tagget unions
+-- value types
+-- standard library
+-- language server
 
 ...
 
 Phase pre-last (bells and whistles):
 -- variant data type
--- IDE support (language server, etc.)
--- semantic block comment (clojure style)
 -- better compile error messages
+-- semantic block comment (clojure style)
 
 Phase last (most likely will not be needed as transpilation to C++ should be enought):
 -- for debug mode generate x64 native code (unoptimized) 

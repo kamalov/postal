@@ -1,17 +1,16 @@
 current: 
-  -- yes/no for booleans
-  -- object initializer
   -- errors with line numbers
+  -- object initializer
   -- fix parsing panic errors (esp. in tokenizer), it/idx outside iterator
+  -- jai like generic type syntax
+  -- multiline expressions inside ( ) parenthesis
+  -- global variables
 
 
 to do:
-  -- jai like generic type syntax
 
 
 backlog:
-  -- multiline expressions inside ( ) parenthesis
-  -- global variables
 
 
 

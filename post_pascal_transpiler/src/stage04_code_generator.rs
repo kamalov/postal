@@ -6,24 +6,28 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::{format, Write};
 use std::vec;
 
-const OPERATORS_MAP: [(&str, &str); 18] = [
+const OPERATORS_MAP: [(&str, &str); 20] = [
     (".", "->"),
-    ("not", "!"),
-    ("+", " + "),
-    ("-", "-"),
-    ("%", " % "),
+
     ("=", " == "),
+    ("<>", " != "),
     (">", " > "),
     (">=", " >= "),
     ("<", " < "),
     ("<=", " <= "),
     ("and", " && "),
     ("or", " || "),
-    ("<>", " != "),
-    ("xor", "^"),
+    ("not", "!"),
+
+    ("+", " + "),
+    ("-", "-"),
+    ("%", " % "),
     ("div", "/"),
     ("mod", " % "),
-
+    
+    ("bit_and", " & "),
+    ("bit_or", "  | "),
+    ("xor", "^"),
     ("shr", " >> "),
     ("shl", " << ")
 ];
@@ -601,6 +605,13 @@ impl CodeGenerator {
             ExpressionKind::IntegerLiteral(literal) => {
                 write!(&mut r, "{}ll", literal);
             }
+            ExpressionKind::BooleanLiteral(literal) => {
+                match literal.as_str() {
+                    "yes" => write!(&mut r, "true"),
+                    "no" => write!(&mut r, "false"),
+                    _ => panic!(),
+                };
+            }
             ExpressionKind::RealLiteral(literal) => {
                 write!(&mut r, "{}", literal);
             }
@@ -610,7 +621,7 @@ impl CodeGenerator {
             ExpressionKind::UnaryOperation { operator: operation, expr } => {
                 let code = self.generate_expression_code(&expr);
                 let op_str = self.operators_map.get(operation).cloned().unwrap_or(operation.clone());
-                write!(&mut r, "({op_str}{code})");
+                write!(&mut r, "{op_str}{code}");
             }
             ExpressionKind::BinaryOperation { operator: operation, left, right } => {
                 let left = self.generate_expression_code(&left);
@@ -621,7 +632,7 @@ impl CodeGenerator {
                         write!(&mut r, "create_range({left}, {right})");
                     }
                     _ => {
-                        write!(&mut r, "({left}{op_str}{right})");
+                        write!(&mut r, "{left}{op_str}{right}");
                     }
                 }
             }

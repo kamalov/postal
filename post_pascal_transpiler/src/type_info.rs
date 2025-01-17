@@ -4,7 +4,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::vec;
 
-pub const BUILTIN_TYPES: [&str; 3] = ["int", "real", "str"];
+pub const BUILTIN_TYPES: [&str; 4] = ["int", "real", "str", "bool"];
 
 pub const BUILTIN_FUNCTIONS: [&str; 1] = ["log"];
 
@@ -144,6 +144,7 @@ impl TypeInfo {
             match s.as_str() {
                 "" => "void".to_string(),
                 "int" => "i64".to_string(),
+                "bool" => "bool".to_string(),
                 "real" => "double".to_string(),
                 "str" => "std::string".to_string(),
                 _ => s.clone(),

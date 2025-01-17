@@ -1,38 +1,12 @@
-rec A {
-    b: int
-    i: [int]
+rec B {
+    i: int
 }
 
-fn test 
-    arr = [A]
-    arr_set_len(arr, 1)
-    for arr {
-        a = A {}
-        a.i = [int]
-        push(a.i, idx)
-        arr[idx] = a
-    }
-    ret arr
-end 
-
-fn test1
-    i = 0
-    loop {
-        i = i + 1
-        if i > 100 do break
-        a = test()
-        log(i, arr_last(a).i[0])
-    }
-end 
+rec A {
+    b: B
+}
 
 fn run
-    test1()
-    // arr = [A]
-    // arr_set_len(arr, 10)
-    // for arr {
-    //     a = A {}
-    //     arr[idx] = a
-    // }
-    log('done')
-    //readln()
+    a = A {}
+    log('done', 3)
 end

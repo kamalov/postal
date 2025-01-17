@@ -24,7 +24,11 @@ fn handle_error(token: Token, expected: &String, text: &String, tokenizer: &Toke
     let lines = text.lines().to_vec();
     let (line_number, column_number) = tokenizer.char_index_to_line_and_column(token.char_index);
     let line = lines[line_number].clone();
-    let (left, right) = line.split_at(column_number);
+    let (left, right) = if column_number >= line.len() {
+        (line, "")
+    } else {
+        line.split_at(column_number)
+    };
     println!("error: line {}, column {}\n", line_number + 1 - prelude_lines_count, column_number + 1);
     print!("{}", left);
     println!("\x1b[93m{}\x1b[0m\n", right);
@@ -37,9 +41,10 @@ fn main() {
     let filename = Path::new("./test.post");
     //let filename = Path::new("./../aoc2024/aoc2024.post");
     let text = read_to_string(filename).unwrap();
-    let prelude_lines_count = read_to_string(Path::new("./prelude.post")).unwrap().lines().to_vec().len() + 1;
-    let prelude = include_str!("./../prelude.post");
-    let text = format!("{}\n{}", prelude, text);
+    // let prelude_lines_count = read_to_string(Path::new("./prelude.post")).unwrap().lines().to_vec().len() + 1;
+    // let prelude = include_str!("./../prelude.post");
+    // let text = format!("{}\n{}", prelude, text);
+    let prelude_lines_count = 0;
     
     let tokenizer = Tokenizer::create_and_parse(&text);
 

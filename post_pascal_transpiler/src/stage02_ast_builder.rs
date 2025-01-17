@@ -104,6 +104,7 @@ pub enum ExpressionKind {
     FunctionCall(FunctionCall),
     IntegerLiteral(String),
     RealLiteral(String),
+    BooleanLiteral(String),
     StringLiteral(String),
     Identifier(String),
     Group(Vec<Expression>),
@@ -903,8 +904,12 @@ impl AstBuilder {
                     let expression = Expression::new(token, ExpressionKind::IntegerLiteral(value));
                     expressions.push(expression);
                 }
-                TokenKind::FloatLiteral => {
+                TokenKind::RealLiteral => {
                     let expression = Expression::new(token, ExpressionKind::RealLiteral(value));
+                    expressions.push(expression);
+                }
+                TokenKind::BooleanLiteral => {
+                    let expression = Expression::new(token, ExpressionKind::BooleanLiteral(value));
                     expressions.push(expression);
                 }
                 TokenKind::String => {

@@ -13,7 +13,8 @@ pub enum TokenKind {
     Keyword,
     String,
     IntegerLiteral,
-    FloatLiteral,
+    RealLiteral,
+    BooleanLiteral,
     Comment,
 }
 
@@ -30,11 +31,13 @@ impl Token {
     }
 }
 
-const KEYWORDS: [&str; 25] = [
+const KEYWORDS: [&str; 29] = [
     "begin", "end", "do", //
     "fn", "external", "var", "if", "for", "in", "loop", "break", "continue", "ret", //
     "int", "real", "str", "rec", //
-    "not", "and", "or", "xor", "div", "mod", "shr", "shl"//
+    "div", "mod", 
+    "yes", "no", "not", "and", "or", 
+    "xor", "shr", "shl", "bit_and", "bit_or"//
 ];
 
 const SPECIALS: [&str; 18] = [
@@ -154,10 +157,12 @@ impl Tokenizer {
         }
 
         let kind = if self.keywords.contains(&value) {
-            if ["and", "or", "not", "xor", "div", "mod", "shr", "shl"].contains(&value.as_str()) {
+            if ["div", "mod", "and", "or", "not", "bit_and", "bit_or", "shr", "shl", "xor"].contains(&value.as_str()) {
                 TokenKind::SpecialSymbol
+            } else if ["yes", "no"].contains(&value.as_str()) {
+                TokenKind::BooleanLiteral
             } else {
-                TokenKind::Keyword
+                TokenKind::Keyword 
             }
         } else {
             TokenKind::Identifier
@@ -193,7 +198,7 @@ impl Tokenizer {
             }
         }
 
-        let mut kind = if has_dot { TokenKind::FloatLiteral } else { TokenKind::IntegerLiteral };
+        let mut kind = if has_dot { TokenKind::RealLiteral } else { TokenKind::IntegerLiteral };
         Token { kind, value, char_index: index }
     }
 
@@ -295,6 +300,7 @@ impl Tokenizer {
                 self.tokens.push(t);
                 continue;
             }
+
             if c.is_numeric() {
                 let t = self.parse_number();
                 self.tokens.push(t);
