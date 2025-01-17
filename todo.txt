@@ -1,5 +1,4 @@
 current: 
-  -- errors with line numbers
   -- object initializer
   -- fix parsing panic errors (esp. in tokenizer), it/idx outside iterator
   -- jai like generic type syntax

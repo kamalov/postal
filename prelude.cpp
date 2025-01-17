@@ -92,7 +92,7 @@ template <typename T>             using shared_vector = Shared_Pointer<std::vect
 template <typename K, typename V> using shared_map = Shared_Pointer<std::unordered_map<K, V> >;
 template <typename T>             constexpr auto create_shared_pointer = &Shared_Pointer<T>::create;
 template <typename T>             constexpr auto create_shared_vector = &Shared_Pointer<std::vector<T>>::create;
-template <typename K, typename V> const auto create_shared_map = &Shared_Pointer<std::unordered_map<K, V>>::create;
+template <typename K, typename V> constexpr auto create_shared_map = &Shared_Pointer<std::unordered_map<K, V>>::create;
 
 
 
@@ -195,8 +195,14 @@ i64 arr_index_of(shared_vector<T> a, T value) {
 
 template <typename T>
 shared_vector<T> arr_slice(shared_vector<T> a, i64 from_index, i64 to_index) {
-    from_index = std::clamp(from_index, (i64)0, (i64)(a->size() - 1));
-    to_index = std::clamp(to_index, (i64)0, (i64)(a->size() - 1));
+    auto clamp = [](i64 v, i64 min, i64 max) {
+        if (v < min) return min;
+        if (v > max) return max;
+        return v;
+    };
+
+    from_index = clamp(from_index, 0, a->size() - 1);
+    to_index = clamp(to_index, 0, a->size() - 1);
     if (from_index > to_index) {
         return create_shared_vector<T>();
     }
