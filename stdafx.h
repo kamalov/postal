@@ -1,9 +1,0 @@
-#include <stdio.h>
-#include <windows.h>
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include <algorithm> 
-#include <fstream>
-#include <iostream>
-#include <sstream>

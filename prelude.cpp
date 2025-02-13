@@ -1,3 +1,12 @@
+#include <stdio.h>
+#include <windows.h>
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <algorithm> 
+#include <fstream>
+#include <iostream>
+
 using namespace std::literals;
 using i64 = long long;
 //#define _throw(msg) throw std::string{} + "'{}' at '{}', line {}", msg, __FILE__, __LINE__);
@@ -246,14 +255,12 @@ std::string str_remove(std::string s, std::string r) {
 }
 
 std::string str_arr_join(shared_vector<std::string> a, std::string delimiter) {
-    std::ostringstream ss;
-    for (size_t i = 0; i < a->size(); ++i) {
-        ss << a->at(i);
-        if (i != a->size() - 1) {
-            ss << delimiter;
-        }
+    auto s = ""s;
+    for (std::size_t i = 0; i != a->size(); i++) {
+        if (i > 0) s += delimiter;
+        s += (*a)[i];
     }
-    return ss.str();
+    return s;
 }
 
 
@@ -284,13 +291,14 @@ std::vector<std::string>* read_string_lines_from_file(std::string filename) {
 }
 
 // for built-in range 
-std::vector<i64>* create_range(i64 from, i64 to) {
-    std::vector<i64>* a = new std::vector<i64>();
-    auto size = to - from + 1;
-    if (size > 0) {
+std::vector<std::size_t>* create_range(i64 from, i64 to) {
+    std::vector<std::size_t>* a = new std::vector<std::size_t>();
+    i64 diff = (to - from + 1);
+    if (from >= 0 && to >= 0 && diff > 0) {
+        auto size = static_cast<std::size_t>(diff);
         a->resize(size);
-        for (int i = 0; i < size; i++) {
-            (*a)[i] = from + i;
+        for (std::size_t i = 0; i != size; i++) {
+            (*a)[i] = (std::size_t)(from + i);
         }
     }
     return a;

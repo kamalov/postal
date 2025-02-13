@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "prelude.cpp"
 
 struct B {
@@ -27,7 +26,7 @@ struct A {
 void run() {
     shared_pointer<A> a;
     a = create_shared_pointer<A >();
-    printf("%s %lld\n", ("done"s).c_str(), (i64)(3ll));
+    printf("%s %lld\n", ("done"s).c_str(), (i64)(4ll));
 }
 
 

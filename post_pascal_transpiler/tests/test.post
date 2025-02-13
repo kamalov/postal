@@ -8,5 +8,5 @@ rec A {
 
 fn run
     a = A {}
-    log('done', 3)
+    log('done', 4)
 end
