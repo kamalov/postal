@@ -1,7 +1,7 @@
 use crate::stage02_ast_builder::*;
 use crate::stage03_type_checker::*;
 use crate::type_info::*;
-use indexmap::IndexMap;
+use indexmap::{IndexMap, IndexSet};
 use std::collections::{HashMap, HashSet};
 use std::fmt::{format, Write};
 use std::vec;
@@ -185,11 +185,11 @@ impl CodeGenerator {
         };
 
         if function_node.is_external {
-            // writeln!(
-            //     &mut r,
-            //     "{padding}/// prelude {fn_generic_params_code}{return_type_str} {name}({fn_params_code});",
-            //     name = function_node.declaration.name
-            // );
+            writeln!(
+                &mut r,
+                "{padding}/// prelude {fn_generic_params_code}{return_type_str} {name}({fn_params_code});",
+                name = function_node.declaration.name
+            );
         } else {
             writeln!(
                 &mut r,
@@ -217,7 +217,7 @@ impl CodeGenerator {
         r
     }
 
-    fn generate_function_declaration_generic_params_code(&self, generic_params: &Vec<String>) -> String {
+    fn generate_function_declaration_generic_params_code(&self, generic_params: &IndexSet<String>) -> String {
         if generic_params.is_empty() {
             return String::new();
         }

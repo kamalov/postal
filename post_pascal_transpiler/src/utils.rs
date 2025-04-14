@@ -1,4 +1,6 @@
-pub fn intersects<T>(a: &Vec<T>, b: &Vec<T>) -> bool 
+use indexmap::{IndexSet};
+
+pub fn intersects<T>(a: &IndexSet<T>, b: &Vec<T>) -> bool 
 where T: PartialEq {
     a.iter().any(|s| b.contains(s))
 }

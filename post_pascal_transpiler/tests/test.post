@@ -1,12 +1,5 @@
-rec B {
-    i: int
-}
-
-rec A {
-    b: B
-}
-
 fn run
-    a = A {}
-    log('done', 4)
+    a = [int]
+    push(a, 1)
+    log('done', len(a))
 end

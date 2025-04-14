@@ -1,7 +1,7 @@
 use id_arena::{Arena, Id};
-use indexmap::IndexMap;
+use indexmap::{IndexMap, IndexSet};
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::{Binary, Write};
 use std::path::Iter;
 use std::{fmt, vec};
@@ -39,7 +39,7 @@ pub struct Function {
 pub struct FnDeclaration {
     pub token: Token,
     pub name: String,
-    pub generic_params: Vec<String>,
+    pub generic_params: IndexSet<String>,
     pub params: IndexMap<String, TypeInfo>,
     pub return_type: Option<TypeInfo>,
 }
@@ -448,6 +448,43 @@ impl AstBuilder {
     }
 
     fn parse_function(&mut self) -> AstResult<Function> {
+        
+        fn try_remove_generic(s: impl AsRef<str>) -> Option<String> {
+            if s.as_ref().starts_with('$') {
+                let b = &s.as_ref()[1..];
+                Some(b.to_string())
+            } else {
+                None
+            }
+        } 
+
+        fn update_generics_info(type_info: &mut TypeInfo, generics: &mut IndexSet<String>) {
+            match type_info.kind {
+                TypeInfoKind::Scalar(ref mut type_info_str) => {
+                    if let Some(s) = try_remove_generic(&type_info_str) {
+                        *type_info_str = s.clone();
+                        generics.insert(s);
+                    }
+                },
+                TypeInfoKind::Array(ref mut type_info_str) => {
+                    if let Some(s) = try_remove_generic(&type_info_str) {
+                        *type_info_str = s.clone();
+                        generics.insert(s);
+                    }
+                },
+                TypeInfoKind::HashMap(ref mut key_type_info_str, ref mut value_type_info_str) => {
+                    if let Some(s) = try_remove_generic(&key_type_info_str) {
+                        *key_type_info_str = s.clone();
+                        generics.insert(s);
+                    }
+                    if let Some(s) = try_remove_generic(&value_type_info_str) {
+                        *value_type_info_str = s.clone();
+                        generics.insert(s);
+                    }
+                }
+            }
+        }
+
         self.skip_expected("fn")?;
 
         let fn_name_token = self.next().clone();
@@ -456,9 +493,16 @@ impl AstBuilder {
         }
 
         let fn_name = fn_name_token.value.clone();
-        let fn_generic_params = self.parse_function_declaration_generic_params()?;
-        let fn_params = self.parse_function_declaration_params()?;
-        let fn_return_type = self.parse_function_return_type()?;
+        //let fn_generic_params = self.parse_function_declaration_generic_params()?;
+        let mut fn_params = self.parse_function_declaration_params()?;
+        let mut fn_generic_params = IndexSet::new();
+        for (_, type_info) in &mut fn_params {
+            update_generics_info(type_info, &mut fn_generic_params);
+        }
+        let mut fn_return_type = self.parse_function_return_type()?;
+        if let Some(ref mut type_info) = fn_return_type {
+            update_generics_info(type_info, &mut fn_generic_params);
+        }
 
         let fn_declaration = FnDeclaration {
             token: fn_name_token.clone(),

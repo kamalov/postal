@@ -38,13 +38,13 @@ fn handle_error(token: Token, expected: &String, text: &String, tokenizer: &Toke
 }
 
 fn main() {
-    let filename = Path::new("./test.post");
+    let filename = Path::new("./tests/test.post");
     //let filename = Path::new("./../aoc2024/aoc2024.post");
     let text = read_to_string(filename).unwrap();
-    // let prelude_lines_count = read_to_string(Path::new("./prelude.post")).unwrap().lines().to_vec().len() + 1;
-    // let prelude = include_str!("./../prelude.post");
-    // let text = format!("{}\n{}", prelude, text);
-    let prelude_lines_count = 0;
+    let prelude_lines_count = read_to_string(Path::new("./prelude.post")).unwrap().lines().to_vec().len() + 1;
+    let prelude = include_str!("./../prelude.post");
+    let text = format!("{}\n{}", prelude, text);
+    //let prelude_lines_count = 0;
     
     let tokenizer = Tokenizer::create_and_parse(&text);
 

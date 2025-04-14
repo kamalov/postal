@@ -1,17 +1,18 @@
 current: 
+  -- ret/cont after do, else if -> el
   -- object initializer
-  -- fix parsing panic errors (esp. in tokenizer), it/idx outside iterator
-  -- jai like generic type syntax
+  -- test on aoc after all changes
 
 
 to do:
-  -- test on aoc2022
+  -- documentation
   -- groom
 
 
 backlog:
   -- global variables
-  -- ? multiline expressions inside ( ) parenthesis
+  -- multiline expressions inside ( ) parenthesis
+  -- fix parsing panic errors (esp. in tokenizer), it/idx outside iterator
   -- pass shared data to functions by ref (&)
 
 

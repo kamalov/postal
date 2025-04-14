@@ -47,11 +47,11 @@ const SPECIALS: [&str; 18] = [
 ];
 
 fn is_identifier_char(c: char) -> bool {
-    !c.is_whitespace() && (c as u32) < 128 && (c.is_alphanumeric() || c == '_')
+    !c.is_whitespace() && (c as u32) < 128 && (c.is_alphanumeric() || c == '_' || c == '$')
 }
 
 fn is_identifier_starter_char(c: char) -> bool {
-    !c.is_whitespace() && (c as u32) < 128 && c.is_alphabetic()
+    !c.is_whitespace() && (c as u32) < 128 && c.is_alphabetic() || c == '$'
 }
 
 #[derive(Default, Clone)]
