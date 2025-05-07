@@ -351,11 +351,11 @@ impl AstBuilder {
 
             match token.kind {
                 TokenKind::Keyword => match token.value.as_str() {
-                    "fn" => {
+                    "function" => {
                         let fun = self.parse_function()?;
                         root_nodes.push(RootNode::Function(fun));
                     }
-                    "rec" => {
+                    "record" => {
                         let record = self.parse_record()?;
                         root_nodes.push(RootNode::Record(record));
                     }
@@ -408,16 +408,16 @@ impl AstBuilder {
     }
 
     fn parse_record(&mut self) -> AstResult<Record> {
-        self.skip_expected("rec")?;
+        self.skip_expected("record")?;
 
         let record_name_token = self.need_next_identifier_token()?.clone();
         let record_name = record_name_token.value.clone();
-        self.skip_expected("{")?;
+        self.skip_expected("\n")?;
 
         let mut fields = IndexMap::new();
         loop {
             self.skip_line_end_tokens();
-            if self.try_skip("}") {
+            if self.try_skip("end") {
                 break;
             }
             match self.peek_next().kind {
@@ -485,7 +485,7 @@ impl AstBuilder {
             }
         }
 
-        self.skip_expected("fn")?;
+        self.skip_expected("function")?;
 
         let fn_name_token = self.next().clone();
         if fn_name_token.kind != TokenKind::Identifier {
@@ -699,8 +699,8 @@ impl AstBuilder {
                     self.skip_expected("continue")?;
                     return Ok(Statement::Continue());
                 }
-                "ret" => {
-                    self.skip_expected("ret")?;
+                "return" => {
+                    self.skip_expected("return")?;
                     if self.try_skip("\n") {
                         return Ok(Statement::Return(None));
                     } else {
@@ -740,6 +740,7 @@ impl AstBuilder {
         if_blocks.push((condition, block));
 
         loop {
+            self.skip_line_end_tokens();
             if self.try_skip("else") {
                 if self.try_skip("if") {
                     let condition = self.parse_expression_until(&["{"])?;

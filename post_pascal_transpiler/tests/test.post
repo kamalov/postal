@@ -1,5 +1,6 @@
-fn run
-    a = [int]
-    push(a, 1)
-    log('done', len(a))
+function run
+    if 1 > 0 do return
+    // a = [integer]
+    // push(a, 1)
+    // log('done', a[0])
 end

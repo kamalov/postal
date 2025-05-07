@@ -460,7 +460,7 @@ impl CodeGenerator {
                             Some(type_info) => {
                                 //
                                 match type_info.get_scalar_type_str().as_str() {
-                                    "int" => {
+                                    "integer" => {
                                         format_parts.push("%lld");
                                         names.push(format!("(i64)({})", param_name));
                                     }
@@ -468,7 +468,7 @@ impl CodeGenerator {
                                         format_parts.push("%f");
                                         names.push(param_name.clone());
                                     }
-                                    "str" => {
+                                    "string" => {
                                         format_parts.push("%s");
                                         names.push(format!("({}).c_str()", param_name.clone()));
                                     }
@@ -575,23 +575,23 @@ impl CodeGenerator {
 
         match &*expression.kind {
             ExpressionKind::Identifier(identifier_name) => {
-                if identifier_name == "it" || identifier_name == "idx" {
+                if identifier_name == "item" || identifier_name == "index" {
                     match &self.current_function_context {
                         None => {
-                            panic!("it or idx is reserved and allowed only inside iterators inside functions");
+                            panic!("item or index is reserved and allowed only inside iterators inside functions");
                         }
                         Some(current_function_context) => {
                             let iterators = &current_function_context.iterators;
                             if iterators.is_empty() {
-                                panic!("it or idx is reserved and allowed only inside iterators");
+                                panic!("item or index is reserved and allowed only inside iterators");
                             }
 
                             let (it_name, it_type_str) = iterators.last().unwrap();
                             match identifier_name.as_str() {
-                                "it" => {
+                                "item" => {
                                     write!(&mut r, "{}", it_name.clone());
                                 }
-                                "idx" => {
+                                "index" => {
                                     write!(&mut r, "{}", it_name.clone() + "__idx");
                                 }
                                 _ => panic!(),

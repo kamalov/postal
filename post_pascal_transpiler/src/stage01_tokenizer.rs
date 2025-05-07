@@ -33,8 +33,8 @@ impl Token {
 
 const KEYWORDS: [&str; 29] = [
     "begin", "end", "do", //
-    "fn", "external", "var", "if", "for", "in", "loop", "break", "continue", "ret", //
-    "int", "real", "str", "rec", //
+    "function", "external", "var", "if", "for", "in", "loop", "break", "continue", "return", //
+    "integer", "real", "string", "record", //
     "div", "mod", 
     "yes", "no", "not", "and", "or", 
     "xor", "shr", "shl", "bit_and", "bit_or"//

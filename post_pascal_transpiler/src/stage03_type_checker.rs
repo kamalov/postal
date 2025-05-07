@@ -279,21 +279,21 @@ impl TypeChecker {
                 let right_side_type_info = self.fill_expression_type(right)?;
 
                 if operator == ".." {
-                    if !left_side_type_info.is_scalar_type_str("int") {
+                    if !left_side_type_info.is_scalar_type_str("integer") {
                         return Err(TypeCheckError::new(&left.token, format!("left side of range must be 'int': found '{left_side_type_info}'")));
                     }
 
-                    if !right_side_type_info.is_scalar_type_str("int") {
+                    if !right_side_type_info.is_scalar_type_str("integer") {
                         return Err(TypeCheckError::new(&left.token, format!("right side of range must be 'int': found '{right_side_type_info}'")));
                     }
 
-                    return Ok(TypeInfo::new_array("int"));
+                    return Ok(TypeInfo::new_array("integer"));
                 }
 
                 match get_common_type(&left_side_type_info, &right_side_type_info) {
                     Ok(common_type) => {
                         if ["<", "<=", ">", ">=", "=", "<>", "and", "or"].contains(&operator.as_str()) {
-                            return Ok(TypeInfo::new_scalar("bool"));
+                            return Ok(TypeInfo::new_scalar("boolean"));
                         }
                         return Ok(common_type);
                     }
@@ -311,16 +311,16 @@ impl TypeChecker {
 
     fn fill_expression_type(&mut self, expression: &mut Expression) -> TypeCheckResult<TypeInfo> {
         let type_info = match &mut *expression.kind {
-            ExpressionKind::IntegerLiteral(..) => TypeInfo::new_scalar("int"),
-            ExpressionKind::BooleanLiteral(..) => TypeInfo::new_scalar("bool"),
+            ExpressionKind::IntegerLiteral(..) => TypeInfo::new_scalar("integer"),
+            ExpressionKind::BooleanLiteral(..) => TypeInfo::new_scalar("boolean"),
             ExpressionKind::RealLiteral(..) => TypeInfo::new_scalar("real"),
-            ExpressionKind::StringLiteral(..) => TypeInfo::new_scalar("str"),
+            ExpressionKind::StringLiteral(..) => TypeInfo::new_scalar("string"),
             ExpressionKind::Identifier(identifier_name) => {
                 //
                 match identifier_name.as_str() {
-                    "it" => {
+                    "item" => {
                         if self.ctx.iterator_type_list.is_empty() {
-                            return Err(TypeCheckError::new(&expression.token, "Keyword 'it' is reserved and can be used only in iterations"));
+                            return Err(TypeCheckError::new(&expression.token, "Keyword 'item' is reserved and can be used only in iterations"));
                         }
                         let type_info = self.ctx.iterator_type_list.last().unwrap();
                         if !type_info.is_array() {
@@ -328,13 +328,13 @@ impl TypeChecker {
                         }
                         TypeInfo::new_scalar(type_info.get_array_type_str())
                     }
-                    "idx" => TypeInfo::new_scalar("int"),
+                    "index" => TypeInfo::new_scalar("integer"),
                     else_ => {
                         //
                         match self.get_function_param_or_var_type(&identifier_name) {
                             Some(type_info) => type_info.clone(),
                             None => {
-                                return Err(TypeCheckError::new(&expression.token, "undeclared variablem"));
+                                return Err(TypeCheckError::new(&expression.token, "undeclared variable"));
                             }
                         }
                     }
@@ -343,7 +343,7 @@ impl TypeChecker {
             ExpressionKind::UnaryOperation { operator, expr } => {
                 let type_info = self.fill_expression_type(expr)?;
                 if operator == "not" {
-                    TypeInfo::new_scalar("bool")
+                    TypeInfo::new_scalar("boolean")
                 } else {
                     type_info
                 }
@@ -365,7 +365,7 @@ impl TypeChecker {
                     return Err(TypeCheckError::new(&expression.token, format!("not an array")));
                 }
                 let accessor_type_info = self.fill_expression_type(access_expression)?;
-                if !accessor_type_info.is_scalar_type_str("int") {
+                if !accessor_type_info.is_scalar_type_str("integer") {
                     return Err(TypeCheckError::new(&expression.token, format!("incorrect index type '{accessor_type_info}'")));
                 }
                 TypeInfo::new_scalar(array_type_info.get_array_type_str())

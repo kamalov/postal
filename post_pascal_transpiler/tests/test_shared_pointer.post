@@ -1,0 +1,89 @@
+record A
+    v: integer
+end
+
+function test_equals
+    a = A {}
+    a.v = 5
+    b = A {}
+    b.v = 5
+    log('test equals', a = b)
+end
+
+function test_array
+    aa = [A]
+    a = A {}
+    a.v = 5
+    push(aa, a)
+    b = A {}
+    b.v = 5
+    push(aa, b)
+    log('object array contains A {v: 5} =', array_contains(aa, b))
+    log('object array len =', size(aa))
+    log('object array first elem v field value =', aa[0].v)
+    a.v = 6
+    log('object array contains A {v: 6} =', array_contains(aa, a))
+    log('object array contains A {v: 5} =', array_contains(aa, b))
+    slice = array_slice(aa, 0, 0)
+    log('arr slice first elem value', slice[0].v)
+end
+
+function test_map
+    i = #[integer, integer]
+    map_add(i, 1, 10)
+    map_add(i, 2, 11)
+    log('test simple map get value', map_get_value(i, 1))
+
+    m = #[A, integer]
+    a = A {}
+    a.v = 5
+    map_add(m, a, 15)
+    b = A {}
+    b.v = 5
+    log('test shared map get value', map_get_value(m, b))
+    a.v = 6
+    log('test shared map has key', map_has_key(m, a))
+    for map_keys(i) do log('simple map key', index, item)
+    for map_keys(m) do log('shared map key', index, item.v)
+end
+
+function test_string
+    s = '1 2 3'
+    a = [string]
+    for string_split(s, ' ') {
+        push(a, item)
+        log(s, 'split', item)
+    }
+    log('str_arr_join', string_array_join(a, ' + '))
+end
+
+function test_size
+    arr = [A]
+    array_set_size(arr, 1000000)
+    i = 0
+    log('array set')
+    //read_line()
+    loop {
+        if i = size(arr) do break 
+        a = A {}
+        a.v = i
+        arr[i] = a
+        i = i + 1
+    }
+end
+
+function run
+    test_equals()
+    test_array()
+    test_map()
+    test_string()
+    i = 0
+    loop {
+        i = i + 1
+        test_size()
+        log(i)
+        //read_line()
+        if i = 10 do break
+    }
+    // read_line()
+end

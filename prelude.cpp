@@ -169,15 +169,15 @@ shared_vector<K> map_keys(shared_map<K, V> h) {
 
 
 /// dyn array utils
-template <typename T> i64 len(shared_vector<T>& a) { return a->size(); }
-template <typename T> i64 arr_contains(shared_vector<T>& a, T value) { return std::find(a->begin(), a->end(), value) != a->end(); }
+template <typename T> i64 size(shared_vector<T>& a) { return a->size(); }
+template <typename T> i64 array_contains(shared_vector<T>& a, T value) { return std::find(a->begin(), a->end(), value) != a->end(); }
 template <typename T> void push(shared_vector<T>& a, T elem) { a->push_back(elem); }
-template <typename T> void arr_push_front(shared_vector<T> a, T elem) { a->insert(a->begin(), elem); }
-template <typename T> void arr_set_len(shared_vector<T>& a, i64 new_len) { a->resize(new_len); }
-template <typename T> void sort(shared_vector<T>& a) { std::sort(a->begin(), a->end()); }
-template <typename T> void arr_remove(shared_vector<T>& a, T value) { a->erase(std::remove_if(a->begin(), a->end(), [value](T item){ return item == value; }), a->end()); }
-template <typename T> void arr_remove_at(shared_vector<T>& a, i64 index) { a->erase(a->begin() + index); }
-template <typename T> T arr_last(shared_vector<T>& a) { return a->back(); }
+template <typename T> void array_push_front(shared_vector<T> a, T elem) { a->insert(a->begin(), elem); }
+template <typename T> void array_set_size(shared_vector<T>& a, i64 new_len) { a->resize(new_len); }
+template <typename T> void array_sort(shared_vector<T>& a) { std::sort(a->begin(), a->end()); }
+template <typename T> void array_remove(shared_vector<T>& a, T value) { a->erase(std::remove_if(a->begin(), a->end(), [value](T item){ return item == value; }), a->end()); }
+template <typename T> void array_remove_at(shared_vector<T>& a, i64 index) { a->erase(a->begin() + index); }
+template <typename T> T array_last(shared_vector<T>& a) { return a->back(); }
 
 template <typename T>
 T pop(shared_vector<T> a) {
@@ -187,14 +187,14 @@ T pop(shared_vector<T> a) {
 }
 
 template <typename T>
-T arr_pop_front(shared_vector<T> a) {
+T array_pop_front(shared_vector<T> a) {
     T first = a->at(0);
     a->erase(a->begin());
     return first;
 }
 
 template <typename T>
-i64 arr_index_of(shared_vector<T> a, T value) {
+i64 array_index_of(shared_vector<T> a, T value) {
     auto it = std::find(a->begin(), a->end(), value);
     if (it != a->end()) {
         return std::distance(a->begin(), it);
@@ -203,7 +203,7 @@ i64 arr_index_of(shared_vector<T> a, T value) {
 }
 
 template <typename T>
-shared_vector<T> arr_slice(shared_vector<T> a, i64 from_index, i64 to_index) {
+shared_vector<T> array_slice(shared_vector<T> a, i64 from_index, i64 to_index) {
     auto clamp = [](i64 v, i64 min, i64 max) {
         if (v < min) return min;
         if (v > max) return max;
@@ -221,12 +221,12 @@ shared_vector<T> arr_slice(shared_vector<T> a, i64 from_index, i64 to_index) {
 
 
 /// string utils
-i64 str_to_int(std::string s) { return std::stoll(s); }
-i64 str_contains(std::string s, std::string subs) { return s.find(subs) != std::string::npos; }
-i64 str_len(std::string s) { return s.length(); }
-std::string int_to_str(i64 i) { return std::to_string(i); }
+i64 string_to_intger(std::string s) { return std::stoll(s); }
+i64 string_contains(std::string s, std::string subs) { return s.find(subs) != std::string::npos; }
+i64 string_size(std::string s) { return s.length(); }
+std::string integer_to_string(i64 i) { return std::to_string(i); }
 
-shared_vector<std::string> str_split(std::string s, std::string delimiter) {
+shared_vector<std::string> string_split(std::string s, std::string delimiter) {
     auto tokens = create_shared_vector<std::string>();
     size_t pos = 0;
     std::string token;
@@ -239,13 +239,13 @@ shared_vector<std::string> str_split(std::string s, std::string delimiter) {
     return tokens;
 }
 
-shared_vector<std::string> str_to_chars(std::string s) {
+shared_vector<std::string> string_to_chars(std::string s) {
     auto chars = create_shared_vector<std::string>();
     for (char c : s) chars->push_back(std::string(1, c));
     return chars;
 }
 
-std::string str_remove(std::string s, std::string r) {
+std::string string_remove(std::string s, std::string r) {
     std::string result = s;
     size_t start_pos = 0;
     while ((start_pos = result.find(r)) != std::string::npos) {
@@ -254,7 +254,7 @@ std::string str_remove(std::string s, std::string r) {
     return result;
 }
 
-std::string str_arr_join(shared_vector<std::string> a, std::string delimiter) {
+std::string string_array_join(shared_vector<std::string> a, std::string delimiter) {
     auto s = ""s;
     for (std::size_t i = 0; i != a->size(); i++) {
         if (i > 0) s += delimiter;
@@ -266,11 +266,11 @@ std::string str_arr_join(shared_vector<std::string> a, std::string delimiter) {
 
 
 /// misc utils
-[[noreturn]] void err(std::string s) { 
+[[noreturn]] void error(std::string s) { 
     _throw(s); 
 }
 
-std::string readln() {
+std::string read_line() {
     std::string line;
     std::getline(std::cin, line);
     return line;

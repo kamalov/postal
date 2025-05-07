@@ -4,7 +4,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::vec;
 
-pub const BUILTIN_TYPES: [&str; 4] = ["int", "real", "str", "bool"];
+pub const BUILTIN_TYPES: [&str; 4] = ["integer", "real", "string", "boolean"];
 
 pub const BUILTIN_FUNCTIONS: [&str; 1] = ["log"];
 
@@ -27,7 +27,7 @@ pub fn get_common_type(a: &TypeInfo, b: &TypeInfo) -> Result<TypeInfo, ()> {
 
     if let TypeInfoKind::Scalar(a_type_str) = &a.kind {
         if let TypeInfoKind::Scalar(b_type_str) = &b.kind {
-            if a_type_str == "real" && b_type_str == "int" || a_type_str == "int" && b_type_str == "real" {
+            if a_type_str == "real" && b_type_str == "integer" || a_type_str == "integer" && b_type_str == "real" {
                 return Ok(TypeInfo::new_scalar("real"));
             }
         }
@@ -43,7 +43,7 @@ pub fn can_lift_type_from_to(from: &TypeInfo, to: &TypeInfo) -> bool {
 
     if let TypeInfoKind::Scalar(from_type_str) = &from.kind {
         if let TypeInfoKind::Scalar(to_type_str) = &to.kind {
-            if from_type_str == "int" && to_type_str == "real" {
+            if from_type_str == "integer" && to_type_str == "real" {
                 return true;
             }
         }
@@ -143,10 +143,10 @@ impl TypeInfo {
         fn type_str_to_cpp_type_str(s: &String) -> String {
             match s.as_str() {
                 "" => "void".to_string(),
-                "int" => "i64".to_string(),
-                "bool" => "bool".to_string(),
+                "integer" => "i64".to_string(),
+                "boolean" => "bool".to_string(),
                 "real" => "double".to_string(),
-                "str" => "std::string".to_string(),
+                "string" => "std::string".to_string(),
                 _ => s.clone(),
             }
         }
