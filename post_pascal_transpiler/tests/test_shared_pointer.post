@@ -15,7 +15,7 @@ function test_array
     a = A {}
     a.v = 5
     push(aa, a)
-    b = A {}
+    b = A { a: 5, d: 1613, c: asldkjsdlkf }
     b.v = 5
     push(aa, b)
     log('object array contains A {v: 5} =', array_contains(aa, b))
@@ -50,26 +50,35 @@ end
 function test_string
     s = '1 2 3'
     a = [string]
-    for string_split(s, ' ') {
+    for string_split(s, ' ')
         push(a, item)
         log(s, 'split', item)
-    }
+    end
     log('str_arr_join', string_array_join(a, ' + '))
 end
 
 function test_size
-    arr = [A]
-    array_set_size(arr, 1000000)
+    log('test size')
     i = 0
-    log('array set')
-    //read_line()
-    loop {
-        if i = size(arr) do break 
-        a = A {}
-        a.v = i
-        arr[i] = a
+    loop
+        arr = [A]
+        array_set_size(arr, 1000000)
+        //read_line()
+        j = 0
+        loop
+            if j = size(arr) do break 
+            a = A {}
+            a.v = j
+            arr[j] = a
+            j = j + 1
+        end
+
+        log(i)
+        //read_line()
+
         i = i + 1
-    }
+        if i = 10 do break
+    end
 end
 
 function run
@@ -77,13 +86,5 @@ function run
     test_array()
     test_map()
     test_string()
-    i = 0
-    loop {
-        i = i + 1
-        test_size()
-        log(i)
-        //read_line()
-        if i = 10 do break
-    }
-    // read_line()
+    test_size()
 end

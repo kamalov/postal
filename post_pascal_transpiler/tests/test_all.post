@@ -5,28 +5,23 @@ end
 
 function test_if
     a = 5
-    if a < 0 {
+    if a < 0 
         log('a < 0')
-    } 
-    else if a > 10 {
+    else if a > 10 
         log('a > 10')
-    } 
-    else {
+    else
         log('a >= 0 and <= 10')
         log(a + 10)
-    }
+    end
 end
 
 function test_loop
     i = 0
-    loop {
+    loop
         i = i + 1
         log(i)
-        if i = 10 {
-            break
-        }
-        if i > 5 do break
-    }
+        if i = 10 do break
+    end
 end
 
 function test_iterator
@@ -36,10 +31,10 @@ function test_iterator
     push(numbers, 789)
 
 //    for numbers {
-        // log(index) 
-        // log('numbers ', index, ' ', item) 
-        // for numbers do log('    ', index, ' ', item) 
-        // log('<< ', index, ' ', item) 
+//         log(index) 
+//         log('numbers ', index, ' ', item) 
+//         for numbers do log('    ', index, ' ', item) 
+//         log('<< ', index, ' ', item) 
 //    }
 end
 
