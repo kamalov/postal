@@ -1,42 +1,53 @@
-use id_arena::{Arena, Id};
-use indexmap::{IndexMap, IndexSet};
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Binary, Write};
+use std::mem::uninitialized;
 use std::path::Iter;
 use std::{fmt, vec};
-use to_vec::ToVec;
 
-use crate::stage01_tokenizer::*;
+use id_arena::{Arena, Id};
+use indexmap::{IndexMap, IndexSet};
+
+use crate::compiler::*;
+use crate::tokenizer::*;
 use crate::type_info::*;
-use crate::utils::readln;
+use crate::utils::*;
 
 pub struct AstError {
     pub token: Token,
-    pub expected: String,
+    pub message: String,
 }
 
 impl AstError {
     pub fn new(token: &Token, s: impl Into<String>) -> AstError {
         AstError {
             token: token.clone(),
-            expected: s.into(),
+            message: s.into(),
         }
     }
 }
 
 type AstResult<T> = Result<T, AstError>;
 
+type AstNodeId = u32;
+
+#[derive(Debug, Clone)]
+pub enum RootNode {
+    Function(Function),
+    //Record(Record),
+    //Comment(String),
+}
+
 #[derive(Debug, Clone)]
 pub struct Function {
     pub is_external: bool,
-    pub declaration: FnDeclaration,
+    pub declaration: FunctionDeclaration,
     pub vars: IndexMap<String, TypeInfo>,
     pub body: Block,
 }
 
 #[derive(Debug, Clone)]
-pub struct FnDeclaration {
+pub struct FunctionDeclaration {
     pub token: Token,
     pub name: String,
     pub generic_params: IndexSet<String>,
@@ -168,13 +179,6 @@ pub enum Statement {
     Comment(String),
 }
 
-#[derive(Debug, Clone)]
-pub enum RootNode {
-    Function(Function),
-    Record(Record),
-    Comment(String),
-}
-
 impl fmt::Display for TypeInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match &self.kind {
@@ -196,7 +200,7 @@ fn create_priorities() -> HashMap<(String, OpPriorityKind), usize> {
     fn add_op_priority(priorities: &mut HashMap<(String, OpPriorityKind), usize>, op: impl Into<String>, op_kind: OpPriorityKind, value: usize) {
         priorities.insert((op.into(), op_kind), value);
     }
-    
+
     let mut p = HashMap::new();
     add_op_priority(&mut p, ".", OpPriorityKind::Binary, 200);
     add_op_priority(&mut p, "()", OpPriorityKind::Binary, 200);
@@ -236,105 +240,32 @@ fn create_priorities() -> HashMap<(String, OpPriorityKind), usize> {
 }
 
 #[derive(Clone)]
-pub struct AstBuilder {
-    current_token_index: usize,
+pub struct AstBuilder<'compiler> {
+    compiler: &'compiler Compiler,
+    tokens: &'compiler Vec<Token>,
+    token_cursor: usize,
     pub root_nodes: Vec<RootNode>,
-    pub tokenizer: Tokenizer,
-    pub tokens: Vec<Token>,
     pub records: HashMap<String, Record>,
     pub priorities: HashMap<(String, OpPriorityKind), usize>,
 }
 
-impl AstBuilder {
-    pub fn new(tokenizer: &Tokenizer) -> AstBuilder {
+pub fn build_ast_from_tokens(compiler: &Compiler) -> AstResult<()> {
+    let mut builder = AstBuilder::new(compiler);
+
+    builder.parse_tokens_to_ast()?;
+
+    Ok(())
+}
+
+impl<'compiler> AstBuilder<'compiler> {
+    pub fn new(compiler: &'compiler Compiler) -> AstBuilder<'compiler> {
         AstBuilder {
-            current_token_index: 0,
+            compiler,
+            tokens: &compiler.tokens,
+            token_cursor: 0,
             root_nodes: vec![],
-            tokenizer: tokenizer.clone(),
-            tokens: tokenizer.tokens.clone(),
             records: HashMap::new(),
-            priorities: create_priorities()
-        }
-    }
-
-    fn peek_next(&self) -> &Token {
-        if self.current_token_index < self.tokens.len() {
-            &self.tokens[self.current_token_index]
-        } else {
-            panic!()
-        }
-    }
-
-    fn peek_next_next(&self) -> &Token {
-        if self.current_token_index < self.tokens.len() - 1 {
-            &self.tokens[self.current_token_index + 1]
-        } else {
-            panic!()
-        }
-    }
-
-    fn next(&mut self) -> &Token {
-        if self.current_token_index < self.tokens.len() {
-            let t = &self.tokens[self.current_token_index];
-            self.current_token_index += 1;
-            return t;
-        } else {
-            todo!();
-        }
-    }
-
-    fn need_next_identifier_token(&mut self) -> AstResult<&Token> {
-        let token = self.next();
-        if token.kind != TokenKind::Identifier {
-            return Err(AstError::new(token, "expected identifier"));
-        }
-
-        return Ok(&token);
-    }
-
-    fn skip_line_end_tokens(&mut self) {
-        while self.tokens[self.current_token_index].kind == TokenKind::LineEnd {
-            self.current_token_index += 1;
-        }
-    }
-
-    fn skip_expected(&mut self, check: &str) -> AstResult<()> {
-        if self.current_token_index < self.tokens.len() {
-            let token = &self.tokens[self.current_token_index];
-            if token.value != check {
-                return Err(AstError::new(&token, check));
-            }
-            self.current_token_index += 1;
-            Ok(())
-        } else {
-            let token = Token {
-                kind: TokenKind::Eof,
-                char_index: self.tokenizer.chars.len() - 1,
-                value: "eof".to_string(),
-            };
-            Err(AstError::new(&token, check))
-        }
-    }
-
-    fn try_skip(&mut self, check: &str) -> bool {
-        if self.peek_next().is_eof() {
-            todo!();
-        };
-
-        let t = self.peek_next();
-        if t.value == check {
-            self.skip_expected(check);
-            true
-        } else {
-            false
-        }
-    }
-
-    fn skip(&mut self) {
-        if self.current_token_index < self.tokens.len() {
-            self.current_token_index += 1;
-        } else {
-            todo!();
+            priorities: create_priorities(),
         }
     }
 
@@ -345,10 +276,11 @@ impl AstBuilder {
             self.skip_line_end_tokens();
 
             let token = self.peek_next();
-            if token.is_eof() {
+            if token.is_none() {
                 break;
             };
 
+            let token = token.unwrap();
             match token.kind {
                 TokenKind::Keyword => match token.value.as_str() {
                     "function" => {
@@ -376,6 +308,80 @@ impl AstBuilder {
 
         self.root_nodes = root_nodes;
         Ok(())
+    }
+
+    fn peek_next(&self) -> Option<&Token> {
+        self.tokens.get(self.token_cursor)
+    }
+
+    fn peek_next_next(&self) -> Option<&Token> {
+        self.tokens.get(self.token_cursor + 1)
+    }
+
+    fn next(&mut self) -> &Token {
+        if self.token_cursor < self.tokens.len() {
+            let t = &self.tokens[self.token_cursor];
+            self.token_cursor += 1;
+            return t;
+        } else {
+            todo!();
+        }
+    }
+
+    fn need_next_identifier_token(&mut self) -> AstResult<&Token> {
+        let token = self.next();
+        if token.kind != TokenKind::Identifier {
+            return Err(AstError::new(token, "expected identifier"));
+        }
+
+        return Ok(&token);
+    }
+
+    fn skip_line_end_tokens(&mut self) {
+        while self.tokens[self.token_cursor].kind == TokenKind::LineEnd {
+            self.token_cursor += 1;
+        }
+    }
+
+    fn skip_expected(&mut self, check: &str) -> AstResult<()> {
+        if self.token_cursor < self.tokens.len() {
+            let token = &self.tokens[self.token_cursor];
+            if self.compiler.get_token_value(&token) != check {
+                return Err(AstError::new(&token, check));
+            }
+            self.token_cursor += 1;
+            Ok(())
+        } else {
+            // let token = Token {
+            //     kind: TokenKind::Eof,
+            //     char_index: self.tokenizer.chars.len() - 1,
+            //     value: "eof".to_string(),
+            // };
+            // Err(AstError::new(&token, check))
+            unimplemented!();
+        }
+    }
+
+    fn try_skip(&mut self, check: &str) -> bool {
+        match self.peek_next() {
+            None => unimplemented!(),
+            Some(token) => {
+                if self.compiler.get_token_value(token) == check {
+                    self.skip_expected(check);
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+    }
+
+    fn skip(&mut self) {
+        if self.token_cursor < self.tokens.len() {
+            self.token_cursor += 1;
+        } else {
+            todo!();
+        }
     }
 
     fn parse_type_info(&mut self) -> AstResult<TypeInfo> {
@@ -429,7 +435,7 @@ impl AstBuilder {
                     self.skip_expected(":")?;
                     let type_info = self.parse_type_info()?;
                     fields.insert(field_name, type_info);
-                } 
+                }
             }
         }
 
@@ -448,7 +454,6 @@ impl AstBuilder {
     }
 
     fn parse_function(&mut self) -> AstResult<Function> {
-        
         fn try_remove_generic(s: impl AsRef<str>) -> Option<String> {
             if s.as_ref().starts_with('$') {
                 let b = &s.as_ref()[1..];
@@ -456,7 +461,7 @@ impl AstBuilder {
             } else {
                 None
             }
-        } 
+        }
 
         fn update_generics_info(type_info: &mut TypeInfo, generics: &mut IndexSet<String>) {
             match type_info.kind {
@@ -465,13 +470,13 @@ impl AstBuilder {
                         *type_info_str = s.clone();
                         generics.insert(s);
                     }
-                },
+                }
                 TypeInfoKind::Array(ref mut type_info_str) => {
                     if let Some(s) = try_remove_generic(&type_info_str) {
                         *type_info_str = s.clone();
                         generics.insert(s);
                     }
-                },
+                }
                 TypeInfoKind::HashMap(ref mut key_type_info_str, ref mut value_type_info_str) => {
                     if let Some(s) = try_remove_generic(&key_type_info_str) {
                         *key_type_info_str = s.clone();
@@ -504,7 +509,7 @@ impl AstBuilder {
             update_generics_info(type_info, &mut fn_generic_params);
         }
 
-        let fn_declaration = FnDeclaration {
+        let fn_declaration = FunctionDeclaration {
             token: fn_name_token.clone(),
             name: fn_name.clone(),
             generic_params: fn_generic_params,
@@ -672,7 +677,7 @@ impl AstBuilder {
                         token: token.clone(),
                         lvalue: left_side_expression,
                         rvalue: right_side_expression,
-                    })); 
+                    }));
                 } else {
                     return Ok(Statement::Expression(left_side_expression));
                 }
@@ -708,7 +713,7 @@ impl AstBuilder {
                         return Ok(Statement::Return(Some(expression)));
                     }
                 }
-                _ => return Err(AstError::new(&token, "unexpected keyword"))
+                _ => return Err(AstError::new(&token, "unexpected keyword")),
             },
 
             TokenKind::Comment => {
@@ -717,7 +722,7 @@ impl AstBuilder {
                 Ok(Statement::Comment(value))
             }
 
-            _ => return Err(AstError::new(&token, "unexpected token when parsing statement"))
+            _ => return Err(AstError::new(&token, "unexpected token when parsing statement")),
         }
     }
 
@@ -1050,7 +1055,7 @@ impl AstBuilder {
                             nodes[prev_id].expression = expression;
                             break;
                         }
-                        else_ => return Err(AstError::new(&nodes[node_id].expression.token, "unexpected token"))
+                        else_ => return Err(AstError::new(&nodes[node_id].expression.token, "unexpected token")),
                     }
                 }
 
@@ -1090,23 +1095,20 @@ impl AstBuilder {
                         left: left,
                         right: right,
                     };
-    
+
                     let expression = Expression::new(&nodes[id].expression.token, kind);
                     return Ok(expression);
                 } else {
                     let expr = self.node_to_expression(nodes, nodes[id].right_id.unwrap())?.clone();
-                    let kind = ExpressionKind::UnaryOperation {
-                        operator: op.clone(),
-                        expr,
-                    };
-    
+                    let kind = ExpressionKind::UnaryOperation { operator: op.clone(), expr };
+
                     let expression = Expression::new(&nodes[id].expression.token, kind);
                     return Ok(expression);
                 }
             }
 
             ExpressionKind::ArrayBrackets(access_expression) => {
-                if let Some(left_id) = nodes[id].left_id { 
+                if let Some(left_id) = nodes[id].left_id {
                     let array_expression = self.node_to_expression(&nodes, left_id)?;
                     let kind = ExpressionKind::ArrayItemAccess {
                         array_expression,
@@ -1121,7 +1123,7 @@ impl AstBuilder {
                             let expression = Expression::new(&nodes[id].expression.token, kind);
                             return Ok(expression);
                         }
-                        _ => return Err(AstError::new(&access_expression.token, "expected identifier in array initializer"))
+                        _ => return Err(AstError::new(&access_expression.token, "expected identifier in array initializer")),
                     }
                 }
             }
