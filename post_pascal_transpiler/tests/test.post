@@ -1,3 +1,4 @@
-function run
+sub run
     log('done')
 end
+

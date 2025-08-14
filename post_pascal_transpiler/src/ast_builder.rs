@@ -14,14 +14,20 @@ use crate::type_info::*;
 use crate::utils::*;
 
 pub struct AstError {
-    pub token: Token,
+    pub token: Option<Token>,
     pub message: String,
 }
 
 impl AstError {
-    pub fn new(token: &Token, s: impl Into<String>) -> AstError {
+    pub fn new(token: Token, s: impl Into<String>) -> AstError {
         AstError {
-            token: token.clone(),
+            token: Some(token),
+            message: s.into(),
+        }
+    }
+    pub fn new_without_token(s: impl Into<String>) -> AstError {
+        AstError {
+            token: None,
             message: s.into(),
         }
     }
@@ -34,8 +40,8 @@ type AstNodeId = u32;
 #[derive(Debug, Clone)]
 pub enum RootNode {
     Function(Function),
-    //Record(Record),
-    //Comment(String),
+    Record(Record),
+    Comment(String),
 }
 
 #[derive(Debug, Clone)]
@@ -140,9 +146,9 @@ pub struct Expression {
 }
 
 impl Expression {
-    pub fn new(token: &Token, kind: ExpressionKind) -> Expression {
+    pub fn new(token: Token, kind: ExpressionKind) -> Expression {
         Expression {
-            token: token.clone(),
+            token: token,
             kind: Box::new(kind),
             type_info: None,
         }
@@ -241,9 +247,9 @@ fn create_priorities() -> HashMap<(String, OpPriorityKind), usize> {
 
 #[derive(Clone)]
 pub struct AstBuilder<'compiler> {
-    compiler: &'compiler Compiler,
+    c: &'compiler Compiler,
     tokens: &'compiler Vec<Token>,
-    token_cursor: usize,
+    current_token_index: usize,
     pub root_nodes: Vec<RootNode>,
     pub records: HashMap<String, Record>,
     pub priorities: HashMap<(String, OpPriorityKind), usize>,
@@ -260,29 +266,83 @@ pub fn build_ast_from_tokens(compiler: &Compiler) -> AstResult<()> {
 impl<'compiler> AstBuilder<'compiler> {
     pub fn new(compiler: &'compiler Compiler) -> AstBuilder<'compiler> {
         AstBuilder {
-            compiler,
+            c: compiler,
             tokens: &compiler.tokens,
-            token_cursor: 0,
+            current_token_index: 0,
             root_nodes: vec![],
             records: HashMap::new(),
             priorities: create_priorities(),
         }
     }
 
+    /// token iteration helpers
+    
+    fn peek_next_token(&self) -> Token {
+        self.tokens[self.current_token_index]
+    }
+
+    fn peek_next_next_token(&self) -> Token {
+        self.tokens[self.current_token_index + 1]
+    }
+
+    fn next_token(&mut self) -> Token {
+        let token = self.tokens[self.current_token_index];
+        self.current_token_index += 1;
+        token
+    }
+
+    fn need_next_identifier_token(&mut self) -> AstResult<Token> {
+        let token = self.next_token();
+        if token.kind != TokenKind::Identifier {
+            return Err(AstError::new(token, "expected identifier"));
+        }
+
+        return Ok(token);
+    }
+
+    fn skip_line_end_tokens(&mut self) {
+        while self.tokens[self.current_token_index].kind == TokenKind::LineEnd {
+            self.current_token_index += 1;
+        }
+    }
+
+    fn skip_expected_token(&mut self, check: &str) -> AstResult<()> {
+        let token = self.next_token();
+        if self.c.get_token_value(&token) != check {
+            return Err(AstError::new(token, check));
+        }
+        Ok(())
+    }
+
+    fn try_skip_token(&mut self, check: &str) -> bool {
+        let token = self.peek_next_token();
+        if self.c.get_token_value(&token) == check {
+            self.skip_expected_token(check);
+            true
+        } else {
+            false
+        }
+    }
+
+    fn skip_token(&mut self) {
+        self.current_token_index += 1;
+    }
+
+    /// parsing 
+    
     pub fn parse_tokens_to_ast(&mut self) -> AstResult<()> {
         let mut root_nodes = vec![];
 
         loop {
             self.skip_line_end_tokens();
 
-            let token = self.peek_next();
-            if token.is_none() {
+            let token = self.peek_next_token();
+            if token.kind == TokenKind::Eof {
                 break;
             };
 
-            let token = token.unwrap();
             match token.kind {
-                TokenKind::Keyword => match token.value.as_str() {
+                TokenKind::Keyword => match self.c.get_token_value(&token) {
                     "function" => {
                         let fun = self.parse_function()?;
                         root_nodes.push(RootNode::Function(fun));
@@ -292,16 +352,16 @@ impl<'compiler> AstBuilder<'compiler> {
                         root_nodes.push(RootNode::Record(record));
                     }
                     else_ => {
-                        return Err(AstError::new(&token, "unexpected token"));
+                        return Err(AstError::new(token, "unexpected token"));
                     }
                 },
                 TokenKind::Comment => {
-                    let value = token.value.clone();
-                    self.skip();
+                    let value = self.c.get_token_value(&token).to_string();
+                    self.skip_token();
                     root_nodes.push(RootNode::Comment(value));
                 }
                 _ => {
-                    return Err(AstError::new(&token, "unexpected token"));
+                    return Err(AstError::new(token, "unexpected token"));
                 }
             }
         }
@@ -310,103 +370,29 @@ impl<'compiler> AstBuilder<'compiler> {
         Ok(())
     }
 
-    fn peek_next(&self) -> Option<&Token> {
-        self.tokens.get(self.token_cursor)
-    }
-
-    fn peek_next_next(&self) -> Option<&Token> {
-        self.tokens.get(self.token_cursor + 1)
-    }
-
-    fn next(&mut self) -> &Token {
-        if self.token_cursor < self.tokens.len() {
-            let t = &self.tokens[self.token_cursor];
-            self.token_cursor += 1;
-            return t;
-        } else {
-            todo!();
-        }
-    }
-
-    fn need_next_identifier_token(&mut self) -> AstResult<&Token> {
-        let token = self.next();
-        if token.kind != TokenKind::Identifier {
-            return Err(AstError::new(token, "expected identifier"));
-        }
-
-        return Ok(&token);
-    }
-
-    fn skip_line_end_tokens(&mut self) {
-        while self.tokens[self.token_cursor].kind == TokenKind::LineEnd {
-            self.token_cursor += 1;
-        }
-    }
-
-    fn skip_expected(&mut self, check: &str) -> AstResult<()> {
-        if self.token_cursor < self.tokens.len() {
-            let token = &self.tokens[self.token_cursor];
-            if self.compiler.get_token_value(&token) != check {
-                return Err(AstError::new(&token, check));
-            }
-            self.token_cursor += 1;
-            Ok(())
-        } else {
-            // let token = Token {
-            //     kind: TokenKind::Eof,
-            //     char_index: self.tokenizer.chars.len() - 1,
-            //     value: "eof".to_string(),
-            // };
-            // Err(AstError::new(&token, check))
-            unimplemented!();
-        }
-    }
-
-    fn try_skip(&mut self, check: &str) -> bool {
-        match self.peek_next() {
-            None => unimplemented!(),
-            Some(token) => {
-                if self.compiler.get_token_value(token) == check {
-                    self.skip_expected(check);
-                    true
-                } else {
-                    false
-                }
-            }
-        }
-    }
-
-    fn skip(&mut self) {
-        if self.token_cursor < self.tokens.len() {
-            self.token_cursor += 1;
-        } else {
-            todo!();
-        }
-    }
-
     fn parse_type_info(&mut self) -> AstResult<TypeInfo> {
         let mut is_array = false;
         let mut type_str: String;
-        let next = self.next().clone();
-        let kind = match next.value.as_str() {
+        let next_token = self.next_token();
+        let kind = match self.c.get_token_value(&next_token) {
             "#" => {
-                self.skip_expected("[")?;
-                let key = self.next().value.clone();
-                self.skip_expected(",")?;
-                let value = self.next().value.clone();
-                self.skip_expected("]")?;
+                self.skip_expected_token("[")?;
+                let key = self.next_token().get_string_value(self.c);
+                self.skip_expected_token(",")?;
+                let value = self.next_token().get_string_value(self.c);
+                self.skip_expected_token("]")?;
                 TypeInfoKind::HashMap(key, value)
             }
             "[" => {
-                let value = self.next().value.clone();
-                self.skip_expected("]")?;
+                let value = self.next_token().get_string_value(self.c);
+                self.skip_expected_token("]")?;
                 TypeInfoKind::Array(value)
             }
             _ => {
-                if ![TokenKind::Identifier, TokenKind::Keyword].contains(&next.kind) {
-                    return Err(AstError::new(&next, "unexpected token when parsing function return type"));
+                if ![TokenKind::Identifier, TokenKind::Keyword].contains(&next_token.kind) {
+                    return Err(AstError::new(next_token, "unexpected token when parsing function return type"));
                 }
-                TypeInfoKind::Scalar(next.value.clone())
+                TypeInfoKind::Scalar(next_token.get_string_value(self.c))
             }
         };
 
@@ -414,25 +400,25 @@ impl<'compiler> AstBuilder<'compiler> {
     }
 
     fn parse_record(&mut self) -> AstResult<Record> {
-        self.skip_expected("record")?;
+        self.skip_expected_token("record")?;
 
         let record_name_token = self.need_next_identifier_token()?.clone();
-        let record_name = record_name_token.value.clone();
-        self.skip_expected("\n")?;
+        let record_name = record_name_token.get_string_value(self.c);
+        self.skip_expected_token("\n")?;
 
         let mut fields = IndexMap::new();
         loop {
             self.skip_line_end_tokens();
-            if self.try_skip("end") {
+            if self.try_skip_token("end") {
                 break;
             }
-            match self.peek_next().kind {
+            match self.peek_next_token().kind {
                 TokenKind::Comment => {
-                    self.skip();
+                    self.skip_token();
                 }
                 _ => {
-                    let field_name = self.need_next_identifier_token()?.value.clone();
-                    self.skip_expected(":")?;
+                    let field_name = self.need_next_identifier_token()?.get_string_value(self.c);
+                    self.skip_expected_token(":")?;
                     let type_info = self.parse_type_info()?;
                     fields.insert(field_name, type_info);
                 }
@@ -443,7 +429,7 @@ impl<'compiler> AstBuilder<'compiler> {
 
         match self.records.entry(record_name) {
             Entry::Occupied(occupied_entry) => {
-                return Err(AstError::new(&record_name_token, "duplicate record identifier"));
+                return Err(AstError::new(record_name_token, "duplicate record identifier"));
             }
             Entry::Vacant(vacant_entry) => {
                 vacant_entry.insert(record_node.clone());
@@ -490,14 +476,14 @@ impl<'compiler> AstBuilder<'compiler> {
             }
         }
 
-        self.skip_expected("function")?;
+        self.skip_expected_token("function")?;
 
-        let fn_name_token = self.next().clone();
+        let fn_name_token = self.next_token().clone();
         if fn_name_token.kind != TokenKind::Identifier {
-            return Err(AstError::new(&fn_name_token, "identifier expected"));
+            return Err(AstError::new(fn_name_token, "identifier expected"));
         }
 
-        let fn_name = fn_name_token.value.clone();
+        let fn_name = fn_name_token.get_string_value(self.c);
         //let fn_generic_params = self.parse_function_declaration_generic_params()?;
         let mut fn_params = self.parse_function_declaration_params()?;
         let mut fn_generic_params = IndexSet::new();
@@ -511,13 +497,13 @@ impl<'compiler> AstBuilder<'compiler> {
 
         let fn_declaration = FunctionDeclaration {
             token: fn_name_token.clone(),
-            name: fn_name.clone(),
+            name: fn_name,
             generic_params: fn_generic_params,
             params: fn_params,
             return_type: fn_return_type,
         };
 
-        if self.try_skip("external") {
+        if self.try_skip_token("external") {
             self.skip_line_end_tokens();
             return Ok(Function {
                 is_external: true,
@@ -539,56 +525,57 @@ impl<'compiler> AstBuilder<'compiler> {
     fn parse_function_declaration_generic_params(&mut self) -> AstResult<Vec<String>> {
         let mut params = vec![];
 
-        if !self.try_skip("<") {
+        if !self.try_skip_token("<") {
             return Ok(params);
         }
 
         loop {
-            let generic_param_name = self.next().value.clone();
+            let generic_param_name = self.next_token().get_string_value(self.c);
             params.push(generic_param_name);
-            if self.try_skip(">") {
+            if self.try_skip_token(">") {
                 break;
             }
-            self.skip_expected(",");
+            self.skip_expected_token(",");
         }
 
         Ok(params)
     }
 
     fn parse_function_declaration_params(&mut self) -> AstResult<IndexMap<String, TypeInfo>> {
-        if !self.try_skip("(") {
+        if !self.try_skip_token("(") {
             return Ok(IndexMap::new());
         }
 
         let mut params = IndexMap::new();
         loop {
-            if self.try_skip(")") {
+            if self.try_skip_token(")") {
                 break;
             }
 
             let (name, type_info) = self.parse_function_declaration_param_until(&[",", ")"])?;
             params.insert(name, type_info);
 
-            self.try_skip(",");
+            self.try_skip_token(",");
         }
 
         Ok(params)
     }
 
     fn parse_function_declaration_param_until(&mut self, terminators: &[&str]) -> AstResult<(String, TypeInfo)> {
-        let name_token = self.next().clone();
+        let name_token = self.next_token().clone();
         if name_token.kind != TokenKind::Identifier {
-            return Err(AstError::new(&name_token, "identifier expected"));
+            return Err(AstError::new(name_token, "identifier expected"));
         }
-        let var_name = name_token.value.clone();
-        self.skip_expected(":")?;
+        let var_name = name_token.get_string_value(self.c);
+        self.skip_expected_token(":")?;
         let type_info = self.parse_type_info()?;
         Ok((var_name, type_info))
     }
 
     fn parse_function_return_type(&mut self) -> AstResult<Option<TypeInfo>> {
         let next_possibles = ["external", "\n"];
-        if next_possibles.contains(&self.peek_next().value.as_str()) {
+        let value = self.c.get_token_value(&self.peek_next_token());
+        if next_possibles.contains(&value) {
             return Ok(None);
         }
         let return_type = self.parse_type_info()?;
@@ -602,10 +589,10 @@ impl<'compiler> AstBuilder<'compiler> {
         loop {
             self.skip_line_end_tokens();
 
-            let t = self.peek_next();
+            let token = self.peek_next_token();
 
-            if t.kind == TokenKind::Keyword && t.value == "end" {
-                self.skip_expected("end")?;
+            if token.kind == TokenKind::Keyword && self.c.get_token_value(&token) == "end" {
+                self.skip_expected_token("end")?;
                 break;
             }
 
@@ -617,8 +604,8 @@ impl<'compiler> AstBuilder<'compiler> {
     }
 
     fn parse_function_call(&mut self) -> AstResult<FunctionCall> {
-        let token = self.next().clone();
-        let name = token.value.clone();
+        let token = self.next_token().clone();
+        let name = token.get_string_value(self.c);
         let group = self.parse_group()?;
         if let ExpressionKind::Group(expressions) = *group.kind {
             Ok(FunctionCall { name, params: expressions })
@@ -628,14 +615,14 @@ impl<'compiler> AstBuilder<'compiler> {
     }
 
     fn parse_block(&mut self) -> AstResult<Block> {
-        self.skip_expected("{")?;
+        self.skip_expected_token("{")?;
         let mut statements = vec![];
         loop {
             self.skip_line_end_tokens();
 
-            let t = self.peek_next();
-            if t.kind == TokenKind::SpecialSymbol && t.value == "}" {
-                self.skip_expected("}")?;
+            let token = self.peek_next_token();
+            if token.kind == TokenKind::SpecialSymbol && self.c.get_token_value(&token) == "}" {
+                self.skip_expected_token("}")?;
                 break;
             }
 
@@ -647,10 +634,10 @@ impl<'compiler> AstBuilder<'compiler> {
     }
 
     fn parse_statement(&mut self) -> AstResult<Statement> {
-        let token = self.peek_next().clone();
+        let token = self.peek_next_token().clone();
         match token.kind {
             TokenKind::Identifier => {
-                match self.peek_next_next().value.as_str() {
+                match self.c.get_token_value(&self.peek_next_next_token()) {
                     // "(" => {
                     //     let f = self.parse_function_call()?;
                     //     return Ok(Statement::FunctionCall(f));
@@ -671,7 +658,7 @@ impl<'compiler> AstBuilder<'compiler> {
                 }
 
                 let left_side_expression = self.parse_expression_until(&["=", "\n"])?;
-                if self.try_skip("=") {
+                if self.try_skip_token("=") {
                     let right_side_expression = self.parse_expression_until(&["\n"])?;
                     return Ok(Statement::Assignment(Assignment {
                         token: token.clone(),
@@ -683,7 +670,7 @@ impl<'compiler> AstBuilder<'compiler> {
                 }
             }
 
-            TokenKind::Keyword => match token.value.as_str() {
+            TokenKind::Keyword => match self.c.get_token_value(&token) {
                 "if" => {
                     let f = self.parse_if_statement()?;
                     return Ok(Statement::If(f));
@@ -697,44 +684,44 @@ impl<'compiler> AstBuilder<'compiler> {
                     return Ok(Statement::For(statement));
                 }
                 "break" => {
-                    self.skip_expected("break")?;
+                    self.skip_expected_token("break")?;
                     return Ok(Statement::Break());
                 }
                 "continue" => {
-                    self.skip_expected("continue")?;
+                    self.skip_expected_token("continue")?;
                     return Ok(Statement::Continue());
                 }
                 "return" => {
-                    self.skip_expected("return")?;
-                    if self.try_skip("\n") {
+                    self.skip_expected_token("return")?;
+                    if self.try_skip_token("\n") {
                         return Ok(Statement::Return(None));
                     } else {
                         let expression = self.parse_expression_until(&["\n"])?;
                         return Ok(Statement::Return(Some(expression)));
                     }
                 }
-                _ => return Err(AstError::new(&token, "unexpected keyword")),
+                _ => return Err(AstError::new(token, "unexpected keyword")),
             },
 
             TokenKind::Comment => {
-                let value = token.value.clone();
-                self.skip();
+                let value = token.get_string_value(self.c);
+                self.skip_token();
                 Ok(Statement::Comment(value))
             }
 
-            _ => return Err(AstError::new(&token, "unexpected token when parsing statement")),
+            _ => return Err(AstError::new(token, "unexpected token when parsing statement")),
         }
     }
 
     fn parse_if_statement(&mut self) -> AstResult<IfStatement> {
-        self.skip_expected("if")?;
+        self.skip_expected_token("if")?;
 
         let mut if_blocks: Vec<(Expression, Block)> = Vec::new();
         let mut else_block = None;
 
         let condition = self.parse_expression_until(&["do", "{"])?;
 
-        if self.try_skip("do") {
+        if self.try_skip_token("do") {
             let statement = self.parse_statement()?;
             let block = Block { statements: vec![statement] };
             if_blocks.push((condition, block));
@@ -746,8 +733,8 @@ impl<'compiler> AstBuilder<'compiler> {
 
         loop {
             self.skip_line_end_tokens();
-            if self.try_skip("else") {
-                if self.try_skip("if") {
+            if self.try_skip_token("else") {
+                if self.try_skip_token("if") {
                     let condition = self.parse_expression_until(&["{"])?;
                     let block = self.parse_block()?;
                     if_blocks.push((condition, block));
@@ -764,22 +751,22 @@ impl<'compiler> AstBuilder<'compiler> {
     }
 
     fn parse_loop_statement(&mut self) -> AstResult<LoopStatement> {
-        self.skip_expected("loop")?;
+        self.skip_expected_token("loop")?;
 
         let block = self.parse_block()?;
         Ok(LoopStatement { block })
     }
 
     fn parse_iteration_statement(&mut self) -> AstResult<IterationStatement> {
-        let name_token = self.next().clone();
+        let name_token = self.next_token().clone();
         if name_token.kind != TokenKind::Identifier {
-            return Err(AstError::new(&name_token, "identifier expected"));
+            return Err(AstError::new(name_token, "identifier expected"));
         }
-        let iterable_name = name_token.value.clone();
+        let iterable_name = name_token.get_string_value(self.c);
 
-        self.skip_expected(">>")?;
+        self.skip_expected_token(">>")?;
 
-        let block = if self.peek_next().value != "{" {
+        let block = if self.c.get_token_value(&self.peek_next_token()) != "{" {
             let statement = self.parse_statement()?;
             Block { statements: vec![statement] }
         } else {
@@ -794,10 +781,10 @@ impl<'compiler> AstBuilder<'compiler> {
     }
 
     fn parse_for_statement(&mut self) -> AstResult<ForStatement> {
-        self.skip_expected("for")?;
+        self.skip_expected_token("for")?;
         let iterable_expression = self.parse_expression_until(&["{", "do"])?;
 
-        let block = if self.try_skip("do") {
+        let block = if self.try_skip_token("do") {
             let statement = self.parse_statement()?;
             Block { statements: vec![statement] }
         } else {
@@ -809,8 +796,8 @@ impl<'compiler> AstBuilder<'compiler> {
 
     fn parse_variable_assignment_statement(&mut self) -> AstResult<VariableAssignment> {
         let name_token = self.need_next_identifier_token()?.clone();
-        let var_name = name_token.value.clone();
-        self.skip_expected("=")?;
+        let var_name = name_token.get_string_value(self.c);
+        self.skip_expected_token("=")?;
 
         let expression = self.parse_expression_until(&["\n"])?;
 
@@ -822,66 +809,66 @@ impl<'compiler> AstBuilder<'compiler> {
     }
 
     fn parse_variable_declaration_statement(&mut self) -> AstResult<(Token, String, TypeInfo)> {
-        let name_token = self.next().clone();
+        let name_token = self.next_token().clone();
         if name_token.kind != TokenKind::Identifier {
-            return Err(AstError::new(&name_token, "identifier expected"));
+            return Err(AstError::new(name_token, "identifier expected"));
         }
-        let var_name = name_token.value.clone();
-        self.skip_expected(":")?;
+        let var_name = name_token.get_string_value(self.c);
+        self.skip_expected_token(":")?;
         let type_info = self.parse_type_info()?;
         Ok((name_token.clone(), var_name, type_info))
     }
 
     fn parse_group(&mut self) -> AstResult<Expression> {
-        let group_first_token = self.peek_next().clone();
-        self.skip_expected("(")?;
+        let group_first_token = self.peek_next_token().clone();
+        self.skip_expected_token("(")?;
         let mut expressions = vec![];
         loop {
-            if self.peek_next().kind != TokenKind::String && self.try_skip(")") {
+            if self.peek_next_token().kind != TokenKind::StringLiteral && self.try_skip_token(")") {
                 break;
             }
 
             let expression = self.parse_expression_until(&[",", ")"])?;
             expressions.push(expression);
 
-            self.try_skip(",");
+            self.try_skip_token(",");
         }
 
-        Ok(Expression::new(&group_first_token, ExpressionKind::Group(expressions)))
+        Ok(Expression::new(group_first_token, ExpressionKind::Group(expressions)))
     }
 
     fn parse_array_brackets(&mut self) -> AstResult<Expression> {
-        let token = self.peek_next().clone();
-        self.skip_expected("[")?;
+        let token = self.peek_next_token().clone();
+        self.skip_expected_token("[")?;
         let expression = self.parse_expression_until(&["]"])?;
-        self.skip_expected("]")?;
+        self.skip_expected_token("]")?;
 
-        Ok(Expression::new(&token, ExpressionKind::ArrayBrackets(expression)))
+        Ok(Expression::new(token, ExpressionKind::ArrayBrackets(expression)))
     }
 
     fn parse_hashmap_initializer(&mut self) -> AstResult<Expression> {
-        let token = self.peek_next().clone();
+        let token = self.peek_next_token().clone();
         let type_info = self.parse_type_info()?;
         match type_info.kind {
             TypeInfoKind::HashMap(k, v) => {
-                return Ok(Expression::new(&token, ExpressionKind::HashMapInitializer(k, v)));
+                return Ok(Expression::new(token, ExpressionKind::HashMapInitializer(k, v)));
             }
-            _ => return Err(AstError::new(&token, format!("error parsing hash map type"))),
+            _ => return Err(AstError::new(token, format!("error parsing hash map type"))),
         }
-        let token = self.peek_next().clone();
-        self.skip_expected("[")?;
+        let token = self.peek_next_token().clone();
+        self.skip_expected_token("[")?;
         let expression = self.parse_expression_until(&["]"])?;
-        self.skip_expected("]")?;
+        self.skip_expected_token("]")?;
 
-        Ok(Expression::new(&token, ExpressionKind::ArrayBrackets(expression)))
+        Ok(Expression::new(token, ExpressionKind::ArrayBrackets(expression)))
     }
 
     fn parse_object_initializer(&mut self) -> AstResult<Expression> {
-        let token = self.peek_next().clone();
-        self.skip_expected("{")?;
-        self.skip_expected("}")?;
+        let token = self.peek_next_token().clone();
+        self.skip_expected_token("{")?;
+        self.skip_expected_token("}")?;
 
-        Ok(Expression::new(&token, ExpressionKind::ObjectLiteral))
+        Ok(Expression::new(token, ExpressionKind::ObjectLiteral))
     }
 
     /// stage 1: parse expression tokens into list (get_expressions)
@@ -890,7 +877,7 @@ impl<'compiler> AstBuilder<'compiler> {
     fn parse_expression_until(&mut self, terminators: &[&str]) -> AstResult<Expression> {
         let mut expressions = self.get_expressions(terminators)?;
         if expressions.len() == 0 {
-            return Err(AstError::new(&self.peek_next(), "empty expression"));
+            return Err(AstError::new(self.peek_next_token(), "empty expression"));
         }
         let (nodes, root_id) = self.expressions_to_tree(&expressions)?;
         let expr = self.node_to_expression(&nodes, root_id)?;
@@ -900,14 +887,14 @@ impl<'compiler> AstBuilder<'compiler> {
     fn get_expressions(&mut self, terminators: &[&str]) -> AstResult<Vec<Expression>> {
         let mut expressions = vec![];
         loop {
-            let t = self.peek_next();
+            let token = self.peek_next_token();
 
-            if t.kind != TokenKind::String && terminators.contains(&t.value.as_str()) {
+            if token.kind != TokenKind::StringLiteral && terminators.contains(&self.c.get_token_value(&token)) {
                 break;
             }
 
-            if t.kind == TokenKind::SpecialSymbol {
-                match t.value.as_str() {
+            if token.kind == TokenKind::SpecialSymbol {
+                match self.c.get_token_value(&token) {
                     "(" => {
                         let expression = self.parse_group()?;
                         expressions.push(expression);
@@ -932,8 +919,8 @@ impl<'compiler> AstBuilder<'compiler> {
                 }
             }
 
-            let token = self.next();
-            let value = token.value.clone();
+            let token = self.next_token();
+            let value = token.get_string_value(self.c);
             match token.kind {
                 TokenKind::LineEnd => {
                     break;
@@ -962,7 +949,7 @@ impl<'compiler> AstBuilder<'compiler> {
                     let expression = Expression::new(token, ExpressionKind::BooleanLiteral(value));
                     expressions.push(expression);
                 }
-                TokenKind::String => {
+                TokenKind::StringLiteral => {
                     let expression = Expression::new(token, ExpressionKind::StringLiteral(value));
                     expressions.push(expression);
                 }
@@ -996,7 +983,7 @@ impl<'compiler> AstBuilder<'compiler> {
                         break;
                     }
                 }
-                _ => return Err(AstError::new(&parent.expression.token, "unexpected token")),
+                _ => return Err(AstError::new(parent.expression.token, "unexpected token")),
             }
             cur = parent;
             cur_id = parent_id;
@@ -1040,7 +1027,7 @@ impl<'compiler> AstBuilder<'compiler> {
                             name: identifier_name.clone(),
                             params: group_expressions.clone(),
                         });
-                        let expression = Expression::new(&nodes[prev_id].expression.token, kind);
+                        let expression = Expression::new(nodes[prev_id].expression.token, kind);
                         nodes[prev_id].expression = expression;
                         continue;
                     }
@@ -1051,11 +1038,11 @@ impl<'compiler> AstBuilder<'compiler> {
                     match &*nodes[prev_id].expression.kind {
                         ExpressionKind::Identifier(identifier_name) => {
                             let kind = ExpressionKind::ObjectInitializer(identifier_name.clone());
-                            let expression = Expression::new(&nodes[prev_id].expression.token, kind);
+                            let expression = Expression::new(nodes[prev_id].expression.token, kind);
                             nodes[prev_id].expression = expression;
                             break;
                         }
-                        else_ => return Err(AstError::new(&nodes[node_id].expression.token, "unexpected token")),
+                        else_ => return Err(AstError::new(nodes[node_id].expression.token, "unexpected token")),
                     }
                 }
 
@@ -1096,13 +1083,13 @@ impl<'compiler> AstBuilder<'compiler> {
                         right: right,
                     };
 
-                    let expression = Expression::new(&nodes[id].expression.token, kind);
+                    let expression = Expression::new(nodes[id].expression.token, kind);
                     return Ok(expression);
                 } else {
                     let expr = self.node_to_expression(nodes, nodes[id].right_id.unwrap())?.clone();
                     let kind = ExpressionKind::UnaryOperation { operator: op.clone(), expr };
 
-                    let expression = Expression::new(&nodes[id].expression.token, kind);
+                    let expression = Expression::new(nodes[id].expression.token, kind);
                     return Ok(expression);
                 }
             }
@@ -1114,16 +1101,16 @@ impl<'compiler> AstBuilder<'compiler> {
                         array_expression,
                         access_expression: access_expression.clone(),
                     };
-                    let expression = Expression::new(&nodes[id].expression.token, kind);
+                    let expression = Expression::new(nodes[id].expression.token, kind);
                     return Ok(expression);
                 } else {
                     match &*access_expression.kind {
                         ExpressionKind::Identifier(identifier) => {
                             let kind = ExpressionKind::ArrayInitializer(identifier.clone());
-                            let expression = Expression::new(&nodes[id].expression.token, kind);
+                            let expression = Expression::new(nodes[id].expression.token, kind);
                             return Ok(expression);
                         }
-                        _ => return Err(AstError::new(&access_expression.token, "expected identifier in array initializer")),
+                        _ => return Err(AstError::new(access_expression.token, "expected identifier in array initializer")),
                     }
                 }
             }

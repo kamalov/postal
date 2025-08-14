@@ -51,7 +51,7 @@ fn main() {
 
     debug_print_tokens(&compiler);
 
-    let ast_builder_result = build_ast_from_tokens(&compiler);
+    // let ast_builder_result = build_ast(&compiler);
     // if ast_builder_result.is_err() {
     //     let ast_error = ast_builder_result.unwrap_err();
     //     handle_error(ast_error.token, &ast_error.expected, &text, &tokenizer, prelude_lines_count);

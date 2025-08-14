@@ -28,6 +28,12 @@ pub struct Compiler {
     pub tokens: Vec<Token>
 }
 
+impl Token {
+    pub fn get_string_value(&self, c: &Compiler) -> String {
+        c.get_token_value(self).to_string()
+    }
+}
+
 impl Compiler {
     pub fn new(source_text: String) -> Self {
         Self {
@@ -38,9 +44,15 @@ impl Compiler {
         }
     }
 
-    pub fn get_token_value(&self, token_id: TokenId) -> &str {
-        let token = &self.tokens[token_id as usize];
-        let s = &self.source_text[token.first_char_index..token.first_char_index + token.length];
+    pub fn get_token_value(&self, token: &Token) -> &str {
+        let fci = token.first_char_index as usize;
+        let length = token.length as usize;
+        let s = &self.source_text[fci..fci + length];
         return s;
+    }
+
+    pub fn get_token_value_by_token_id(&self, token_id: TokenId) -> &str {
+        let token = &self.tokens[token_id as usize];
+        self.get_token_value(token)
     }
 }
