@@ -1,59 +1,54 @@
-Postal (POST pascAL) programming language
+Post Pascal Programming Language (aka Postal) 
 
-Goal: easy syntax (like TypeScript), fast compilation (like Delphi), fast runtime (like C++)
+Goal: easy syntax (TypeScript like), fast compilation (Jai like), fast runtime (C like)
 
 Priorities (by desc):
 1. Typed 
 2. Memsafe
-3. Run time     :: At least C++ runtime performance (speed and memory wise)
-4. Compile time :: At least Free/Object Pascal compilation speed
-5. Design time  :: At least TypeScript code writing speed (low friction)
+3. Design time  :: Better than TypeScript code writing speed (and TypeScript is smooth)
+4. Run time     :: Close to C runtime performance (speed and memory wise, with bump memory allocation)
+5. Compile time :: Close to Jai compilation speed
 
 Implementation
 
-Phase zero (basic syntax and type checking):
+Phase zero (basic syntax and type checking, proof of concept):
 -- features:
    -- type checking
    -- type inference
    -- refcounted memory management
-   -- C++/Pascal hybrid syntax
+   -- Pascal/C++ hybrid syntax
    -- built-in dyn array and hash table
    -- structs only
--- limitations:
    -- transpilation to C++
+-- limitations:
+   -- no polymorpism
    -- single source file
    -- ansi strings
-   -- no nested built-in collections (i.e array of array, hashmap of array, etc.)
+   -- no nested built-in collections (i.e. array of array, hashmap of array, etc.)
 
-Phase zero.1:
--- generics
--- first class functions
--- function overload
--- scope variables
--- nested collections
--- iterators (+ mapping with >>)
-...
+Phase one (critical):
+-- declarative? bump memory allocation mechanizm (and probably value types). Never ever been done before? 
+-- polymorphism (generics, tagget unions)
+-- error handling mechanizm (exceptions or result or smth.)
+-- transpilation to C99 (or C89, needs research)
+
+Phase two (non critical):
+-- function pointers
 -- enums
--- exceptions
-
-Phase one:
--- multiple source files (modules)
--- utf-8 strings
--- some kind of dynamic dispatch and/or tagget unions
--- value types
--- standard library
+-- global variables
+-- nested collections
 -- language server
-
 ...
+-- multiple source files (modules?)
+-- utf-8 strings
+-- iterators (+ mapping with >>)
+-- function overload
+-- standard library
 
-Phase pre-last (bells and whistles):
--- variant data type
+... 
+
+Backlog:
 -- better compile error messages
 -- semantic block comment (clojure style)
-
-Phase last (most likely will not be needed as transpilation to C++ should be enought):
--- for debug mode generate x64 native code (unoptimized) 
--- for production generate LLVM code 
--- debug mode compile speed (cold start) >= 100k loc per second
--- debug mode compile speed (hot) == instant (less than 0.1ms)
--- production mode compile speed >= 10k loc per second
+-- scope variables
+-- ??? variant data type
