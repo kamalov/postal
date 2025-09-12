@@ -1,24 +1,26 @@
-use crate::stage01_tokenizer::*;
-use crate::stage02_ast_builder::*;
-use crate::type_info;
-use crate::type_info::*;
-use crate::utils::*;
-use indexmap::IndexMap;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::vec;
 
+use indexmap::IndexMap;
+
+use crate::compiler::*;
+use crate::tokenizer::*;
+use crate::ast_builder::*;
+use crate::type_info::*;
+use crate::utils::*;
+
 #[derive(Debug)]
 pub struct TypeCheckError {
     pub token: Token,
-    pub expected: String,
+    pub message: String,
 }
 
 impl TypeCheckError {
-    pub fn new(token: &Token, s: impl Into<String>) -> TypeCheckError {
+    pub fn new(token: Token, s: impl Into<String>) -> TypeCheckError {
         TypeCheckError {
-            token: token.clone(),
-            expected: s.into(),
+            token: token,
+            message: s.into(),
         }
     }
 }
@@ -33,25 +35,31 @@ struct CurrentFunctionContext {
     return_type: Option<TypeInfo>,
 }
 
-pub struct TypeChecker {
-    pub ast_builder: AstBuilder,
-    pub fn_declarations: HashMap<String, FnDeclaration>,
+pub struct TypeChecker<'compiler> {
+    c: &'compiler Compiler,
+    fn_declarations: HashMap<String, FunctionDeclaration>,
     ctx: CurrentFunctionContext,
 }
 
-impl TypeChecker {
-    pub fn new(ast_builder: AstBuilder) -> TypeChecker {
+pub fn build_new_ast_with_types(compiler: &Compiler) -> TypeCheckResult<Ast> {
+    let mut type_checker = TypeChecker::new(compiler);
+    let new_root_nodes = type_checker.build_new_ast_with_types()?;
+    return Ok(Ast { root_nodes: new_root_nodes, records: compiler.ast.records.clone() });
+}
+
+impl<'compiler> TypeChecker<'compiler> {
+    pub fn new(compiler: &'compiler Compiler) -> TypeChecker<'compiler> {
         TypeChecker {
-            ast_builder,
+            c: compiler,
             fn_declarations: HashMap::new(),
             ctx: CurrentFunctionContext::default(),
         }
     }
 
-    pub fn build_new_ast_with_types(&mut self) -> TypeCheckResult<AstBuilder> {
-        let mut ast_builder = self.ast_builder.clone();
+    pub fn build_new_ast_with_types(&mut self) -> TypeCheckResult<Vec<RootNode>> {
+        let mut root_nodes = self.c.ast.root_nodes.clone();
 
-        for (idx, root_node) in ast_builder.root_nodes.iter_mut().enumerate() {
+        for (idx, root_node) in root_nodes.iter_mut().enumerate() {
             match root_node {
                 RootNode::Function(function) => {
                     self.preprocess_function(function, idx)?;
@@ -60,7 +68,7 @@ impl TypeChecker {
             }
         }
 
-        for root_node in &mut ast_builder.root_nodes {
+        for root_node in &mut root_nodes {
             match root_node {
                 RootNode::Function(function) => {
                     self.process_function(function)?;
@@ -69,7 +77,7 @@ impl TypeChecker {
             }
         }
 
-        Ok(ast_builder)
+        Ok(root_nodes)
     }
 
     fn preprocess_function(&mut self, fun: &mut Function, idx: usize) -> TypeCheckResult<()> {
@@ -85,7 +93,7 @@ impl TypeChecker {
 
         let fn_name = &fun.declaration.name;
         if self.fn_declarations.contains_key(fn_name) {
-            return Err(TypeCheckError::new(&fun.declaration.token, "duplicate function name"));
+            return Err(TypeCheckError::new(fun.declaration.token, "duplicate function name"));
         } else {
             self.fn_declarations.insert(fn_name.clone(), fun.declaration.clone());
         }
@@ -122,7 +130,7 @@ impl TypeChecker {
         Ok(())
     }
 
-    fn get_function_declaration(&self, name: &String) -> Option<&FnDeclaration> {
+    fn get_function_declaration(&self, name: &String) -> Option<&FunctionDeclaration> {
         self.fn_declarations.get(name)
     }
 
@@ -136,7 +144,7 @@ impl TypeChecker {
         }
     }
 
-    fn fill_function_call_type_info(&mut self, function_call: &mut FunctionCall, token: &Token) -> TypeCheckResult<TypeInfo> {
+    fn fill_function_call_type_info(&mut self, function_call: &mut FunctionCall, token: Token) -> TypeCheckResult<TypeInfo> {
         let mut actual_param_types = vec![];
         for expr in &mut function_call.params {
             let type_info = self.fill_expression_type(expr)?;
@@ -151,11 +159,11 @@ impl TypeChecker {
         let decl = if let Some(decl) = self.get_function_declaration(&function_call.name) {
             decl
         } else {
-            return Err(TypeCheckError::new(&token, "no such function"));
+            return Err(TypeCheckError::new(token, "no such function"));
         };
 
         if decl.params.len() != actual_param_types.len() {
-            return Err(TypeCheckError::new(&token, "wrong number of parameters in function call"));
+            return Err(TypeCheckError::new(token, "wrong number of parameters in function call"));
         }
 
         let mut generic_type_str_to_actual_type_str = HashMap::<String, String>::new();
@@ -165,7 +173,7 @@ impl TypeChecker {
 
             if actual_param_type_info.kind_discriminant() != formal_param_type_info.kind_discriminant() {
                 return Err(TypeCheckError::new(
-                    &token,
+                    token,
                     format!("incompatible param types for function {}, field {}", function_call.name, formal_param_name),
                 ));
             }
@@ -180,7 +188,7 @@ impl TypeChecker {
                             let found_type_str = occupied_entry.get();
                             if found_type_str != actual_type_str {
                                 return Err(TypeCheckError::new(
-                                    &token,
+                                    token,
                                     format!("Ambigous generic type {formal_type_str}, field {formal_param_name}: {found_type_str}, {actual_type_str}"),
                                 ));
                             }
@@ -192,7 +200,7 @@ impl TypeChecker {
                 } else {
                     if formal_type_str != actual_type_str {
                         return Err(TypeCheckError::new(
-                            &token,
+                            token,
                             format!("incompatible param types for field {formal_param_name}: expected {formal_type_str}, found {actual_type_str}"),
                         ));
                     }
@@ -218,7 +226,7 @@ impl TypeChecker {
 
         for generic_type_str in &decl.generic_params {
             if !generic_type_str_to_actual_type_str.contains_key(generic_type_str) {
-                return Err(TypeCheckError::new(&token, format!("can't infer generic param {generic_type_str}")));
+                return Err(TypeCheckError::new(token, format!("can't infer generic param {generic_type_str}")));
             }
         }
 
@@ -256,23 +264,23 @@ impl TypeChecker {
 
                 if operator == "." {
                     if let ExpressionKind::Identifier(right_identifier_name) = &*right.kind {
-                        match self.ast_builder.records.get(left_side_type_info.get_scalar_type_str()) {
+                        match self.c.ast.records.get(left_side_type_info.get_scalar_type_str()) {
                             Some(record) => {
                                 let field_name = right_identifier_name;
                                 match record.fields.get(field_name) {
                                     Some(type_info) => return Ok(type_info.clone()),
                                     None => {
-                                        return Err(TypeCheckError::new(&right.token, format!("unknown field: '{field_name}'")));
+                                        return Err(TypeCheckError::new(right.token, format!("unknown field: '{field_name}'")));
                                     }
                                 }
                             }
                             None => {
-                                return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{left_side_type_info}'")));
+                                return Err(TypeCheckError::new(expression.token, format!("unknown type: '{left_side_type_info}'")));
                             }
                         }
                         return Ok(left_side_type_info);
                     } else {
-                        return Err(TypeCheckError::new(&expression.token, format!("must be identifier after .: '{right:?}'")));
+                        return Err(TypeCheckError::new(expression.token, format!("must be identifier after .: '{right:?}'")));
                     }
                 }
 
@@ -280,11 +288,11 @@ impl TypeChecker {
 
                 if operator == ".." {
                     if !left_side_type_info.is_scalar_type_str("integer") {
-                        return Err(TypeCheckError::new(&left.token, format!("left side of range must be 'int': found '{left_side_type_info}'")));
+                        return Err(TypeCheckError::new(left.token, format!("left side of range must be 'int': found '{left_side_type_info}'")));
                     }
 
                     if !right_side_type_info.is_scalar_type_str("integer") {
-                        return Err(TypeCheckError::new(&left.token, format!("right side of range must be 'int': found '{right_side_type_info}'")));
+                        return Err(TypeCheckError::new(left.token, format!("right side of range must be 'int': found '{right_side_type_info}'")));
                     }
 
                     return Ok(TypeInfo::new_array("integer"));
@@ -299,7 +307,7 @@ impl TypeChecker {
                     }
                     Err(_) => {
                         return Err(TypeCheckError::new(
-                            &expression.token,
+                            expression.token,
                             format!("incompatible types: '{left_side_type_info}' and '{right_side_type_info}'"),
                         ));
                     }
@@ -320,11 +328,11 @@ impl TypeChecker {
                 match identifier_name.as_str() {
                     "item" => {
                         if self.ctx.iterator_type_list.is_empty() {
-                            return Err(TypeCheckError::new(&expression.token, "Keyword 'item' is reserved and can be used only in iterations"));
+                            return Err(TypeCheckError::new(expression.token, "Keyword 'item' is reserved and can be used only in iterations"));
                         }
                         let type_info = self.ctx.iterator_type_list.last().unwrap();
                         if !type_info.is_array() {
-                            return Err(TypeCheckError::new(&expression.token, format!("iteratable must be of array type")));
+                            return Err(TypeCheckError::new(expression.token, format!("iteratable must be of array type")));
                         }
                         TypeInfo::new_scalar(type_info.get_array_type_str())
                     }
@@ -334,7 +342,7 @@ impl TypeChecker {
                         match self.get_function_param_or_var_type(&identifier_name) {
                             Some(type_info) => type_info.clone(),
                             None => {
-                                return Err(TypeCheckError::new(&expression.token, "undeclared variable"));
+                                return Err(TypeCheckError::new(expression.token, "undeclared variable"));
                             }
                         }
                     }
@@ -351,7 +359,7 @@ impl TypeChecker {
             ExpressionKind::BinaryOperation { operator, left, right } => self.fill_binary_op_type_info(expression)?,
             ExpressionKind::Group(group_expressions) => {
                 if group_expressions.is_empty() {
-                    return Err(TypeCheckError::new(&expression.token, "empty group"));
+                    return Err(TypeCheckError::new(expression.token, "empty group"));
                 }
                 let mut type_info = None;
                 for expression in group_expressions.iter_mut() {
@@ -362,37 +370,37 @@ impl TypeChecker {
             ExpressionKind::ArrayItemAccess { array_expression, access_expression } => {
                 let array_type_info = self.fill_expression_type(array_expression)?;
                 if !array_type_info.is_array() {
-                    return Err(TypeCheckError::new(&expression.token, format!("not an array")));
+                    return Err(TypeCheckError::new(expression.token, format!("not an array")));
                 }
                 let accessor_type_info = self.fill_expression_type(access_expression)?;
                 if !accessor_type_info.is_scalar_type_str("integer") {
-                    return Err(TypeCheckError::new(&expression.token, format!("incorrect index type '{accessor_type_info}'")));
+                    return Err(TypeCheckError::new(expression.token, format!("incorrect index type '{accessor_type_info}'")));
                 }
                 TypeInfo::new_scalar(array_type_info.get_array_type_str())
             }
             ExpressionKind::ArrayInitializer(identifier) => {
                 let type_str = identifier;
                 let type_info = TypeInfo::new_array(type_str.as_str());
-                if is_builtin_type(&type_str) || self.ast_builder.records.contains_key(type_str) {
+                if is_builtin_type(&type_str) || self.c.ast.records.contains_key(type_str) {
                     type_info
                 } else {
-                    return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{type_str}'")));
+                    return Err(TypeCheckError::new(expression.token, format!("unknown type: '{type_str}'")));
                 }
             }
             ExpressionKind::HashMapInitializer(key_type_str, value_type_str) => {
-                if !is_builtin_type(key_type_str) && !self.ast_builder.records.contains_key(key_type_str) {
-                    return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{key_type_str}'")));
+                if !is_builtin_type(key_type_str) && !self.c.ast.records.contains_key(key_type_str) {
+                    return Err(TypeCheckError::new(expression.token, format!("unknown type: '{key_type_str}'")));
                 }
                 TypeInfo::new_hashmap(key_type_str.clone(), value_type_str.clone())
             }
             ExpressionKind::ObjectInitializer(record_name) => {
                 //
-                match self.ast_builder.records.get(record_name) {
+                match self.c.ast.records.get(record_name) {
                     Some(record) => TypeInfo::new_scalar(record.name.clone()),
-                    None => return Err(TypeCheckError::new(&expression.token, format!("unknown type: '{record_name}'"))),
+                    None => return Err(TypeCheckError::new(expression.token, format!("unknown type: '{record_name}'"))),
                 }
             }
-            ExpressionKind::FunctionCall(function_call) => self.fill_function_call_type_info(function_call, &expression.token)?,
+            ExpressionKind::FunctionCall(function_call) => self.fill_function_call_type_info(function_call, expression.token)?,
             _ => panic!(), /* println!("{expression:?}"); */
         };
 
@@ -428,7 +436,7 @@ impl TypeChecker {
                                         self.ctx.return_type = Some(return_type);
                                     }
                                     Err(_) => {
-                                        return Err(TypeCheckError::new(&expression.token, "return type differs from previous"));
+                                        return Err(TypeCheckError::new(expression.token, "return type differs from previous"));
                                     }
                                 },
                                 None => self.ctx.return_type = Some(return_type),
@@ -445,7 +453,7 @@ impl TypeChecker {
                             self.ctx.iterator_type_list.pop();
                         }
                         None => {
-                            return Err(TypeCheckError::new(token, format!("unknown iteratable: '{iterable_name}'")));
+                            return Err(TypeCheckError::new(*token, format!("unknown iteratable: '{iterable_name}'")));
                         }
                     }
                 }
@@ -469,7 +477,7 @@ impl TypeChecker {
                                     *occupied_entry.get_mut() = new_type
                                 }
                                 Err(_) => {
-                                    return Err(TypeCheckError::new(&variable_assignment.token, format!("incompatible types: '{current_var_type}' and '{var_type}'")));
+                                    return Err(TypeCheckError::new(variable_assignment.token, format!("incompatible types: '{current_var_type}' and '{var_type}'")));
                                 }
                             }
                         }
@@ -482,7 +490,7 @@ impl TypeChecker {
                     //
                     match self.get_function_param_or_var_type(&name) {
                         Some(type_info) => {
-                            return Err(TypeCheckError::new(token, format!("variable already defined: '{name}'")));
+                            return Err(TypeCheckError::new(*token, format!("variable already defined: '{name}'")));
                         }
                         None => {
                             self.ctx.vars.insert(name.clone(), type_info.clone());
@@ -494,7 +502,7 @@ impl TypeChecker {
                     let right_side_type_info = self.fill_expression_type(rvalue)?;
                     if !can_lift_type_from_to(&right_side_type_info, &left_side_type_info) {
                         return Err(TypeCheckError::new(
-                            token,
+                            *token,
                             format!("incompatible types, can't assign to '{left_side_type_info}' from '{right_side_type_info}'"),
                         ));
                     }

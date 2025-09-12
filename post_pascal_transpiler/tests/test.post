@@ -1,4 +1,6 @@
-sub run
-    log('done')
+function run
+    a = 10
+    log('done', a, 20)
 end
+
 

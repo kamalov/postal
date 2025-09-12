@@ -1,9 +1,11 @@
 use std::collections::{HashMap, HashSet};
 use std::fs::{read_dir, read_to_string};
 use std::hash::Hash;
-use std::{array, default, fs};
+use std::{array, default, fs, vec};
 
 use crate::tokenizer::*;
+use crate::ast_builder::*;
+use crate::type_info::*;
 
 pub const KEYWORDS: [&str; 29] = [
     "begin", "end", "do", //
@@ -25,7 +27,8 @@ pub struct Compiler {
     pub keywords: HashSet<&'static str>,
     pub special_symbols: HashSet<&'static str>,
     pub source_text: String,
-    pub tokens: Vec<Token>
+    pub tokens: Vec<Token>,
+    pub ast: Ast,
 }
 
 impl Token {
@@ -40,7 +43,8 @@ impl Compiler {
             keywords: HashSet::from_iter(KEYWORDS.iter().cloned()),
             special_symbols: HashSet::from_iter(SPECIAL_SYMBOLS.iter().cloned()),
             source_text,
-            tokens: vec![]
+            tokens: vec![],
+            ast: Ast { root_nodes: vec![], records: HashMap::new() },
         }
     }
 
@@ -54,5 +58,21 @@ impl Compiler {
     pub fn get_token_value_by_token_id(&self, token_id: TokenId) -> &str {
         let token = &self.tokens[token_id as usize];
         self.get_token_value(token)
+    }
+}
+
+// pub fn get_type_info_mut(&mut self, type_id: TypeInfoId) -> &mut TypeInfo {
+//     let type_info = &mut self.type_infos[type_id as usize];
+//     type_info
+// }
+
+pub fn ensure_type_info(type_infos: &mut Vec<TypeInfo>, type_info: &TypeInfo) -> TypeInfoId {
+    let position = type_infos.iter().position(|t| t == type_info);
+    match position {
+        Some(type_id) => type_id as TypeInfoId,
+        None => {
+            type_infos.push(type_info.clone());
+            (type_infos.len() - 1) as TypeInfoId
+        }
     }
 }

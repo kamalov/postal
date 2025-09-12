@@ -3,8 +3,8 @@
 mod compiler;
 mod tokenizer;
 mod ast_builder;
-// mod stage03_type_checker;
-// mod stage04_code_generator;
+mod type_checker;
+mod code_generator;
 mod type_info;
 mod utils;
 
@@ -14,28 +14,48 @@ use std::fs::{read_dir, read_to_string};
 use std::path::Path;
 use std::{array, default, fs};
 
+use indexmap::{IndexMap, IndexSet};
+use std::mem;
+
 use compiler::*;
 use tokenizer::*;
 use ast_builder::*;
-// use stage03_type_checker::*;
-// use stage04_code_generator::*;
+use type_checker::*;
+use code_generator::*;
 
-// fn handle_error(token: Token, expected: &String, text: &String, tokenizer: &Tokenizer, prelude_lines_count: usize) {
-//     let lines = text.lines().to_vec();
-//     let (line_number, column_number) = tokenizer.char_index_to_line_and_column(token.char_index);
-//     let line = lines[line_number].clone();
-//     let (left, right) = if column_number >= line.len() {
-//         (line, "")
-//     } else {
-//         line.split_at(column_number)
-//     };
-//     println!("error: line {}, column {}\n", line_number + 1 - prelude_lines_count, column_number + 1);
-//     print!("{}", left);
-//     println!("\x1b[93m{}\x1b[0m\n", right);
-//     let v = token.value;
-//     let v = if v == "\n" { "line end".to_string() } else { v };
-//     println!("\x1b[93m{}\x1b[0m, token: \x1b[93m{}\x1b[0m", expected, v);
-// }
+fn char_index_to_line_and_column(chars: &Vec<char>, index: usize) -> (usize, usize) {
+    let mut line = 0;
+    let mut last_new_line_index = 0;
+    let mut prev_char = 0 as char;
+    for i in 0..(index + 1) {
+        if prev_char == '\n' {
+            line += 1;
+            last_new_line_index = i;
+        }
+        prev_char = chars[i];
+    }
+
+    let column = index - last_new_line_index;
+    (line, column)
+}
+
+fn handle_error(compiler: &Compiler, token: Token, message: &String, prelude_lines_count: usize) {
+    let lines = compiler.source_text.lines().collect::<Vec<_>>();
+    let chars = compiler.source_text.chars().collect::<Vec<_>>();
+    let (line_number, column_number) = char_index_to_line_and_column(&chars, token.first_char_index as usize);
+    let line = lines[line_number].clone();
+    let (left, right) = if column_number >= line.len() {
+        (line, "")
+    } else {
+        line.split_at(column_number)
+    };
+    println!("error: line {}, column {}\n", line_number + 1 - prelude_lines_count, column_number + 1);
+    print!("{}", left);
+    println!("\x1b[93m{}\x1b[0m\n", right);
+    let v = compiler.get_token_value(&token);
+    let v = if v == "\n" { "line end" } else { v };
+    println!("\x1b[93m{}\x1b[0m, token: \x1b[93m{}\x1b[0m", message, v);
+}
 
 fn main() {
     let filename = Path::new("./tests/test.post");
@@ -47,31 +67,37 @@ fn main() {
     //let source_text = format!("{prelude}\n{source_text}");
     
     let mut compiler = Compiler::new(source_text);
+    
+    // tokenizing
     compiler.tokens = fill_tokens(&compiler);
-
     debug_print_tokens(&compiler);
 
-    // let ast_builder_result = build_ast(&compiler);
-    // if ast_builder_result.is_err() {
-    //     let ast_error = ast_builder_result.unwrap_err();
-    //     handle_error(ast_error.token, &ast_error.expected, &text, &tokenizer, prelude_lines_count);
-    // }
+    // building ast
+    let ast_builder_result = build_ast(&compiler);
+    match ast_builder_result {
+        Ok(ast) => {
+            compiler.ast = ast;
+        }
+        Err(ast_error) => {
+            handle_error(&compiler, ast_error.token, &ast_error.message, prelude_lines_count);
+            return;
+        }
+    }
 
-    // let mut type_checker = TypeChecker::new(ast_builder.clone());
-    // let ast_with_types_result = type_checker.build_new_ast_with_types();
-    // let ast = match ast_with_types_result {
-    //     Ok(ast) => ast,
-    //     Err(err) => {
-    //         handle_error(err.token, &err.expected, &text, &tokenizer, prelude_lines_count);
-    //         return;
-    //     }
-    // };
+    // filling types
+    let ast_with_types_result = build_new_ast_with_types(&compiler);
+    let ast = match ast_with_types_result {
+        Ok(ast) => compiler.ast = ast,
+        Err(type_check_error) => {
+            handle_error(&compiler, type_check_error.token, &type_check_error.message, prelude_lines_count);
+            return;
+        }
+    };
 
-    // let mut generator = CodeGenerator::new(ast);
-    // let generated_code = generator.generate_code();
-    // println!("\x1b[93m{generated_code}\x1b[0m");
-    // let filename = Path::new("./../template.cpp");
-    // let text = read_to_string(filename).unwrap();
-    // let text = text.replace("%GENERATED_CODE%", &generated_code);
-    // fs::write("./../generated.cpp", text);
+    let generated_code_text = generate_code(&compiler);
+    println!("\x1b[93m{generated_code_text}\x1b[0m");
+    let filename = Path::new("./../template.cpp");
+    let text = read_to_string(filename).unwrap();
+    let text = text.replace("%GENERATED_CODE%", &generated_code_text);
+    fs::write("./../generated.cpp", text);
 }

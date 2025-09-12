@@ -5,13 +5,7 @@ use std::{array, default, fs};
 
 use crate::compiler::Compiler;
 
-fn is_identifier_char(c: char) -> bool {
-    !c.is_whitespace() && (c as u32) < 128 && (c.is_alphanumeric() || c == '_' || c == '$')
-}
-
-fn is_identifier_starter_char(c: char) -> bool {
-    !c.is_whitespace() && (c as u32) < 128 && c.is_alphabetic() || c == '$'
-}
+pub type TokenId = u32;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum TokenKind {
@@ -27,22 +21,12 @@ pub enum TokenKind {
     Comment,
 }
 
-pub type TokenId = u32;
-
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Token {
     pub id: TokenId,
     pub kind: TokenKind,
     pub first_char_index: u32,
     pub length: u16,
-}
-
-struct Tokenizer<'compiler> {
-    compiler: &'compiler Compiler,
-    source_text: &'compiler str,
-    chars: Vec<char>,
-    current_token_index: usize,
-    tokens: Vec<Token>,
 }
 
 pub fn fill_tokens(compiler: &Compiler) -> Vec<Token> {
@@ -54,34 +38,19 @@ pub fn fill_tokens(compiler: &Compiler) -> Vec<Token> {
         tokens: vec![],
     };
     tokenizer.parse_chars_to_tokens();
-    return tokenizer.tokens;
+    
+    tokenizer.tokens
 }
 
-pub fn debug_print_tokens(compiler: &Compiler) {
-    for token in &compiler.tokens {
-        let s = &compiler.get_token_value(token);
-        println!("\x1b[93m{:?}\x1b[0m {:?} ", s, token.kind);
-    }
-    println!("");
+struct Tokenizer<'compiler> {
+    compiler: &'compiler Compiler,
+    source_text: &'compiler str,
+    chars: Vec<char>,
+    current_token_index: usize,
+    tokens: Vec<Token>,
 }
 
 impl Tokenizer<'_> {
-    pub fn char_index_to_line_and_column(&self, index: usize) -> (usize, usize) {
-        let mut line = 0;
-        let mut last_new_line_index = 0;
-        let mut prev_char = 0 as char;
-        for i in 0..(index + 1) {
-            if prev_char == '\n' {
-                line += 1;
-                last_new_line_index = i;
-            }
-            prev_char = self.chars[i];
-        }
-
-        let column = index - last_new_line_index;
-        (line, column)
-    }
-
     fn get_next_char(&mut self) -> char {
         if self.current_token_index < self.chars.len() {
             let c = self.chars[self.current_token_index];
@@ -322,4 +291,22 @@ impl Tokenizer<'_> {
 
         self.add_token(TokenKind::Eof, self.source_text.len(), 0);
     }
+}
+
+/// utils 
+
+pub fn debug_print_tokens(compiler: &Compiler) {
+    for token in &compiler.tokens {
+        let s = &compiler.get_token_value(token);
+        println!("\x1b[93m{:?}\x1b[0m {:?} ", s, token.kind);
+    }
+    println!("");
+}
+
+fn is_identifier_char(c: char) -> bool {
+    !c.is_whitespace() && (c as u32) < 128 && (c.is_alphanumeric() || c == '_' || c == '$')
+}
+
+fn is_identifier_starter_char(c: char) -> bool {
+    !c.is_whitespace() && (c as u32) < 128 && c.is_alphabetic() || c == '$'
 }

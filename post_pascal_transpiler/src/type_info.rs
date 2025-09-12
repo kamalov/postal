@@ -2,7 +2,7 @@ use crate::utils::*;
 use indexmap::IndexMap;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use std::vec;
+use std::{fmt, vec};
 
 pub const BUILTIN_TYPES: [&str; 4] = ["integer", "real", "string", "boolean"];
 
@@ -52,6 +52,8 @@ pub fn can_lift_type_from_to(from: &TypeInfo, to: &TypeInfo) -> bool {
     return false;
 }
 
+pub type TypeInfoId = u32;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum TypeInfoKind {
     Scalar(String),
@@ -63,6 +65,17 @@ pub enum TypeInfoKind {
 pub struct TypeInfo {
     pub is_generic: bool,
     pub kind: TypeInfoKind,
+}
+
+impl fmt::Display for TypeInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match &self.kind {
+            TypeInfoKind::HashMap(key_type, value_type) => format!("#[{key_type}, {value_type}]"),
+            TypeInfoKind::Array(item_type) => format!("#[{item_type}]"),
+            TypeInfoKind::Scalar(scalar_type) => format!("{scalar_type}"),
+        };
+        write!(f, "{s}")
+    }
 }
 
 impl TypeInfo {

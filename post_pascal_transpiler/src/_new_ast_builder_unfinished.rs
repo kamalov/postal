@@ -42,7 +42,7 @@ pub enum RootNode {
 pub struct Function {
     pub is_external: bool,
     pub declaration: FunctionDeclaration,
-    pub vars: IndexMap<String, TypeInfo>,
+    pub vars: IndexMap<String, TypeInfoId>,
     pub body: Block,
 }
 
@@ -51,14 +51,14 @@ pub struct FunctionDeclaration {
     pub token: Token,
     pub name: String,
     pub generic_params: IndexSet<String>,
-    pub params: IndexMap<String, TypeInfo>,
-    pub return_type: Option<TypeInfo>,
+    pub params: IndexMap<String, TypeInfoId>,
+    pub return_type_id: Option<TypeInfoId>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Record {
     pub name: String,
-    pub fields: IndexMap<String, TypeInfo>,
+    pub fields: IndexMap<String, TypeInfoId>,
 }
 
 #[derive(Debug, Clone)]
@@ -136,7 +136,7 @@ pub enum ExpressionKind {
 pub struct Expression {
     pub token: Token,
     pub kind: Box<ExpressionKind>,
-    pub type_info: Option<TypeInfo>,
+    pub type_info_id: Option<TypeInfoId>,
 }
 
 impl Expression {
@@ -144,7 +144,7 @@ impl Expression {
         Expression {
             token: token,
             kind: Box::new(kind),
-            type_info: None,
+            type_info_id: None,
         }
     }
 
@@ -175,35 +175,75 @@ pub enum Statement {
     VariableAssignment(VariableAssignment),
     Assignment(Assignment),
     Expression(Expression),
-    VariableDeclaration((Token, String, TypeInfo)),
+    VariableDeclaration((Token, String, TypeInfoId)),
     Comment(String),
 }
 
-#[derive(PartialEq, Eq, Hash, Clone)]
+#[derive(PartialEq, Eq, Hash)]
 pub enum OpPriorityKind {
     Unary,
     Binary,
+}
+
+fn create_priorities() -> HashMap<(String, OpPriorityKind), usize> {
+    fn add_op_priority(priorities: &mut HashMap<(String, OpPriorityKind), usize>, op: impl Into<String>, op_kind: OpPriorityKind, value: usize) {
+        priorities.insert((op.into(), op_kind), value);
+    }
+
+    let mut p = HashMap::new();
+    add_op_priority(&mut p, ".", OpPriorityKind::Binary, 200);
+    add_op_priority(&mut p, "()", OpPriorityKind::Binary, 200);
+    add_op_priority(&mut p, "[]", OpPriorityKind::Binary, 200);
+
+    add_op_priority(&mut p, "not", OpPriorityKind::Unary, 110);
+    add_op_priority(&mut p, "-", OpPriorityKind::Unary, 110);
+
+    add_op_priority(&mut p, "*", OpPriorityKind::Binary, 100);
+    add_op_priority(&mut p, "/", OpPriorityKind::Binary, 100);
+    add_op_priority(&mut p, "div", OpPriorityKind::Binary, 100);
+    add_op_priority(&mut p, "mod", OpPriorityKind::Binary, 100);
+
+    add_op_priority(&mut p, "+", OpPriorityKind::Binary, 90);
+    add_op_priority(&mut p, "-", OpPriorityKind::Binary, 90);
+
+    add_op_priority(&mut p, "..", OpPriorityKind::Binary, 80);
+
+    add_op_priority(&mut p, "shl", OpPriorityKind::Binary, 60);
+    add_op_priority(&mut p, "shr", OpPriorityKind::Binary, 60);
+
+    add_op_priority(&mut p, "<", OpPriorityKind::Binary, 50);
+    add_op_priority(&mut p, "<=", OpPriorityKind::Binary, 50);
+    add_op_priority(&mut p, ">", OpPriorityKind::Binary, 50);
+    add_op_priority(&mut p, ">=", OpPriorityKind::Binary, 50);
+
+    add_op_priority(&mut p, "=", OpPriorityKind::Binary, 40);
+    add_op_priority(&mut p, "<>", OpPriorityKind::Binary, 40);
+
+    add_op_priority(&mut p, "xor", OpPriorityKind::Binary, 35);
+
+    add_op_priority(&mut p, "and", OpPriorityKind::Binary, 30);
+
+    add_op_priority(&mut p, "or", OpPriorityKind::Binary, 20);
+
+    return p;
 }
 
 pub struct AstBuilder<'compiler> {
     c: &'compiler Compiler,
     tokens: &'compiler Vec<Token>,
     current_token_index: usize,
-    priorities: HashMap<(String, OpPriorityKind), usize>,
+    type_infos: Vec<TypeInfo>,
     root_nodes: Vec<RootNode>,
     records: HashMap<String, Record>,
+    priorities: HashMap<(String, OpPriorityKind), usize>,
 }
 
-#[derive(Debug, Clone)]
-pub struct Ast {
-    pub root_nodes: Vec<RootNode>,
-    pub records: HashMap<String, Record>,
-}
-
-pub fn build_ast(compiler: &Compiler) -> AstResult<Ast> {
+pub fn build_ast(compiler: &Compiler) -> AstResult<(Vec<RootNode>, Vec<TypeInfo>)> {
     let mut builder = AstBuilder::new(compiler);
+
     builder.parse_tokens_to_ast()?;
-    return Ok(Ast { root_nodes: builder.root_nodes, records: builder.records });
+
+    Ok((builder.root_nodes, builder.type_infos))
 }
 
 impl<'compiler> AstBuilder<'compiler> {
@@ -212,13 +252,14 @@ impl<'compiler> AstBuilder<'compiler> {
             c: compiler,
             tokens: &compiler.tokens,
             current_token_index: 0,
+            type_infos: vec![],
             root_nodes: vec![],
             records: HashMap::new(),
             priorities: create_priorities(),
         }
     }
 
-    /// token iteration helpers
+    /// token helpers
     
     fn peek_next_token(&self) -> Token {
         self.tokens[self.current_token_index]
@@ -273,7 +314,7 @@ impl<'compiler> AstBuilder<'compiler> {
 
     /// parsing 
     
-    pub fn parse_tokens_to_ast(&mut self) -> AstResult<()> {
+    fn parse_tokens_to_ast(&mut self) -> AstResult<()> {
         let mut root_nodes = vec![];
 
         loop {
@@ -291,8 +332,9 @@ impl<'compiler> AstBuilder<'compiler> {
                         root_nodes.push(RootNode::Function(fun));
                     }
                     "record" => {
-                        let record = self.parse_record()?;
-                        root_nodes.push(RootNode::Record(record));
+                        todo!();
+                        // let record = self.parse_record()?;
+                        // root_nodes.push(RootNode::Record(record));
                     }
                     else_ => {
                         return Err(AstError::new(token, "unexpected token"));
@@ -313,7 +355,7 @@ impl<'compiler> AstBuilder<'compiler> {
         Ok(())
     }
 
-    fn parse_type_info(&mut self) -> AstResult<TypeInfo> {
+    fn parse_type(&mut self) -> AstResult<TypeInfoId> {
         let mut is_array = false;
         let mut type_str: String;
         let next_token = self.next_token();
@@ -339,48 +381,49 @@ impl<'compiler> AstBuilder<'compiler> {
             }
         };
 
-        Ok(TypeInfo::new(kind))
+        todo!();
+        // Ok(TypeInfo::new(kind))
     }
 
-    fn parse_record(&mut self) -> AstResult<Record> {
-        self.skip_expected_token("record")?;
+    // fn parse_record(&mut self) -> AstResult<Record> {
+    //     self.skip_expected_token("record")?;
 
-        let record_name_token = self.need_next_identifier_token()?.clone();
-        let record_name = record_name_token.get_string_value(self.c);
-        self.skip_expected_token("\n")?;
+    //     let record_name_token = self.need_next_identifier_token()?.clone();
+    //     let record_name = record_name_token.get_string_value(self.c);
+    //     self.skip_expected_token("\n")?;
 
-        let mut fields = IndexMap::new();
-        loop {
-            self.skip_line_end_tokens();
-            if self.try_skip_token("end") {
-                break;
-            }
-            match self.peek_next_token().kind {
-                TokenKind::Comment => {
-                    self.skip_token();
-                }
-                _ => {
-                    let field_name = self.need_next_identifier_token()?.get_string_value(self.c);
-                    self.skip_expected_token(":")?;
-                    let type_info = self.parse_type_info()?;
-                    fields.insert(field_name, type_info);
-                }
-            }
-        }
+    //     let mut fields = IndexMap::new();
+    //     loop {
+    //         self.skip_line_end_tokens();
+    //         if self.try_skip_token("end") {
+    //             break;
+    //         }
+    //         match self.peek_next_token().kind {
+    //             TokenKind::Comment => {
+    //                 self.skip_token();
+    //             }
+    //             _ => {
+    //                 let field_name = self.need_next_identifier_token()?.get_string_value(self.c);
+    //                 self.skip_expected_token(":")?;
+    //                 let type_info = self.parse_type_info()?;
+    //                 fields.insert(field_name, type_info);
+    //             }
+    //         }
+    //     }
 
-        let record_node = Record { name: record_name.clone(), fields };
+    //     let record_node = Record { name: record_name.clone(), fields };
 
-        match self.records.entry(record_name) {
-            Entry::Occupied(occupied_entry) => {
-                return Err(AstError::new(record_name_token, "duplicate record identifier"));
-            }
-            Entry::Vacant(vacant_entry) => {
-                vacant_entry.insert(record_node.clone());
-            }
-        }
+    //     match self.records.entry(record_name) {
+    //         Entry::Occupied(occupied_entry) => {
+    //             return Err(AstError::new(record_name_token, "duplicate record identifier"));
+    //         }
+    //         Entry::Vacant(vacant_entry) => {
+    //             vacant_entry.insert(record_node.clone());
+    //         }
+    //     }
 
-        Ok(record_node)
-    }
+    //     Ok(record_node)
+    // }
 
     fn parse_function(&mut self) -> AstResult<Function> {
         fn try_remove_generic(s: impl AsRef<str>) -> Option<String> {
@@ -392,7 +435,8 @@ impl<'compiler> AstBuilder<'compiler> {
             }
         }
 
-        fn update_generics_info(type_info: &mut TypeInfo, generics: &mut IndexSet<String>) {
+        fn update_generics_info(type_infos: &mut Vec<TypeInfo>, type_id: TypeInfoId, generics: &mut IndexSet<String>) {
+            let type_info = &mut type_infos[type_id as usize];
             match type_info.kind {
                 TypeInfoKind::Scalar(ref mut type_info_str) => {
                     if let Some(s) = try_remove_generic(&type_info_str) {
@@ -427,23 +471,26 @@ impl<'compiler> AstBuilder<'compiler> {
         }
 
         let fn_name = fn_name_token.get_string_value(self.c);
-        //let fn_generic_params = self.parse_function_declaration_generic_params()?;
+        //let fn_generic_params = self.parse_function_declaration_generic_params_old()?;
         let mut fn_params = self.parse_function_declaration_params()?;
         let mut fn_generic_params = IndexSet::new();
-        for (_, type_info) in &mut fn_params {
-            update_generics_info(type_info, &mut fn_generic_params);
+        // todo?
+        for (_, &type_info_id) in &fn_params {
+            update_generics_info(&mut self.type_infos, type_info_id, &mut fn_generic_params);
         }
         let mut fn_return_type = self.parse_function_return_type()?;
-        if let Some(ref mut type_info) = fn_return_type {
-            update_generics_info(type_info, &mut fn_generic_params);
-        }
+        
+        // todo?
+        // if let Some(ref mut type_info) = fn_return_type {
+        //     update_generics_info(type_info, &mut fn_generic_params);
+        // }
 
         let fn_declaration = FunctionDeclaration {
             token: fn_name_token.clone(),
             name: fn_name,
             generic_params: fn_generic_params,
             params: fn_params,
-            return_type: fn_return_type,
+            return_type_id: fn_return_type,
         };
 
         if self.try_skip_token("external") {
@@ -465,7 +512,7 @@ impl<'compiler> AstBuilder<'compiler> {
         });
     }
 
-    fn parse_function_declaration_generic_params(&mut self) -> AstResult<Vec<String>> {
+    fn parse_function_declaration_generic_params_old(&mut self) -> AstResult<Vec<String>> {
         let mut params = vec![];
 
         if !self.try_skip_token("<") {
@@ -484,7 +531,7 @@ impl<'compiler> AstBuilder<'compiler> {
         Ok(params)
     }
 
-    fn parse_function_declaration_params(&mut self) -> AstResult<IndexMap<String, TypeInfo>> {
+    fn parse_function_declaration_params(&mut self) -> AstResult<IndexMap<String, TypeInfoId>> {
         if !self.try_skip_token("(") {
             return Ok(IndexMap::new());
         }
@@ -504,25 +551,25 @@ impl<'compiler> AstBuilder<'compiler> {
         Ok(params)
     }
 
-    fn parse_function_declaration_param_until(&mut self, terminators: &[&str]) -> AstResult<(String, TypeInfo)> {
+    fn parse_function_declaration_param_until(&mut self, terminators: &[&str]) -> AstResult<(String, TypeInfoId)> {
         let name_token = self.next_token().clone();
         if name_token.kind != TokenKind::Identifier {
             return Err(AstError::new(name_token, "identifier expected"));
         }
         let var_name = name_token.get_string_value(self.c);
         self.skip_expected_token(":")?;
-        let type_info = self.parse_type_info()?;
-        Ok((var_name, type_info))
+        let type_info_id = self.parse_type()?;
+        Ok((var_name, type_info_id))
     }
 
-    fn parse_function_return_type(&mut self) -> AstResult<Option<TypeInfo>> {
+    fn parse_function_return_type(&mut self) -> AstResult<Option<TypeInfoId>> {
         let next_possibles = ["external", "\n"];
         let value = self.c.get_token_value(&self.peek_next_token());
         if next_possibles.contains(&value) {
             return Ok(None);
         }
-        let return_type = self.parse_type_info()?;
-        Ok(Some(return_type))
+        let return_type_info_id = self.parse_type()?;
+        Ok(Some(return_type_info_id))
     }
 
     fn parse_function_body(&mut self) -> AstResult<Block> {
@@ -590,8 +637,9 @@ impl<'compiler> AstBuilder<'compiler> {
                         return Ok(Statement::VariableAssignment(statement));
                     }
                     ":" => {
-                        let statement = self.parse_variable_declaration_statement()?;
-                        return Ok(Statement::VariableDeclaration(statement));
+                        todo!();
+                        // let statement = self.parse_variable_declaration_statement()?;
+                        // return Ok(Statement::VariableDeclaration(statement));
                     }
                     ">>" => {
                         let statement = self.parse_iteration_statement()?;
@@ -751,16 +799,16 @@ impl<'compiler> AstBuilder<'compiler> {
         })
     }
 
-    fn parse_variable_declaration_statement(&mut self) -> AstResult<(Token, String, TypeInfo)> {
-        let name_token = self.next_token().clone();
-        if name_token.kind != TokenKind::Identifier {
-            return Err(AstError::new(name_token, "identifier expected"));
-        }
-        let var_name = name_token.get_string_value(self.c);
-        self.skip_expected_token(":")?;
-        let type_info = self.parse_type_info()?;
-        Ok((name_token.clone(), var_name, type_info))
-    }
+    // fn parse_variable_declaration_statement(&mut self) -> AstResult<(Token, String, TypeInfo)> {
+    //     let name_token = self.next_token().clone();
+    //     if name_token.kind != TokenKind::Identifier {
+    //         return Err(AstError::new(name_token, "identifier expected"));
+    //     }
+    //     let var_name = name_token.get_string_value(self.c);
+    //     self.skip_expected_token(":")?;
+    //     let type_info = self.parse_type()?;
+    //     Ok((name_token.clone(), var_name, type_info))
+    // }
 
     fn parse_group(&mut self) -> AstResult<Expression> {
         let group_first_token = self.peek_next_token().clone();
@@ -789,22 +837,22 @@ impl<'compiler> AstBuilder<'compiler> {
         Ok(Expression::new(token, ExpressionKind::ArrayBrackets(expression)))
     }
 
-    fn parse_hashmap_initializer(&mut self) -> AstResult<Expression> {
-        let token = self.peek_next_token().clone();
-        let type_info = self.parse_type_info()?;
-        match type_info.kind {
-            TypeInfoKind::HashMap(k, v) => {
-                return Ok(Expression::new(token, ExpressionKind::HashMapInitializer(k, v)));
-            }
-            _ => return Err(AstError::new(token, format!("error parsing hash map type"))),
-        }
-        let token = self.peek_next_token().clone();
-        self.skip_expected_token("[")?;
-        let expression = self.parse_expression_until(&["]"])?;
-        self.skip_expected_token("]")?;
+    // fn parse_hashmap_initializer(&mut self) -> AstResult<Expression> {
+    //     let token = self.peek_next_token().clone();
+    //     let type_info = self.parse_type()?;
+    //     match type_info.kind {
+    //         TypeInfoKind::HashMap(k, v) => {
+    //             return Ok(Expression::new(token, ExpressionKind::HashMapInitializer(k, v)));
+    //         }
+    //         _ => return Err(AstError::new(token, format!("error parsing hash map type"))),
+    //     }
+    //     let token = self.peek_next_token().clone();
+    //     self.skip_expected_token("[")?;
+    //     let expression = self.parse_expression_until(&["]"])?;
+    //     self.skip_expected_token("]")?;
 
-        Ok(Expression::new(token, ExpressionKind::ArrayBrackets(expression)))
-    }
+    //     Ok(Expression::new(token, ExpressionKind::ArrayBrackets(expression)))
+    // }
 
     fn parse_object_initializer(&mut self) -> AstResult<Expression> {
         let token = self.peek_next_token().clone();
@@ -849,9 +897,10 @@ impl<'compiler> AstBuilder<'compiler> {
                         continue;
                     }
                     "#" => {
-                        let expression = self.parse_hashmap_initializer()?;
-                        expressions.push(expression);
-                        continue;
+                        todo!();
+                        // let expression = self.parse_hashmap_initializer()?;
+                        // expressions.push(expression);
+                        // continue;
                     }
                     "{" => {
                         let expression = self.parse_object_initializer()?;
@@ -1095,49 +1144,4 @@ fn get_root_id(nodes: &Arena<Node>, id: Id<Node>) -> Id<Node> {
         root_id = parent_id;
     }
     root_id
-}
-
-/// utils 
-
-fn create_priorities() -> HashMap<(String, OpPriorityKind), usize> {
-    fn add_op_priority(priorities: &mut HashMap<(String, OpPriorityKind), usize>, op: impl Into<String>, op_kind: OpPriorityKind, value: usize) {
-        priorities.insert((op.into(), op_kind), value);
-    }
-
-    let mut p = HashMap::new();
-    add_op_priority(&mut p, ".", OpPriorityKind::Binary, 200);
-    add_op_priority(&mut p, "()", OpPriorityKind::Binary, 200);
-    add_op_priority(&mut p, "[]", OpPriorityKind::Binary, 200);
-
-    add_op_priority(&mut p, "not", OpPriorityKind::Unary, 110);
-    add_op_priority(&mut p, "-", OpPriorityKind::Unary, 110);
-
-    add_op_priority(&mut p, "*", OpPriorityKind::Binary, 100);
-    add_op_priority(&mut p, "/", OpPriorityKind::Binary, 100);
-    add_op_priority(&mut p, "div", OpPriorityKind::Binary, 100);
-    add_op_priority(&mut p, "mod", OpPriorityKind::Binary, 100);
-
-    add_op_priority(&mut p, "+", OpPriorityKind::Binary, 90);
-    add_op_priority(&mut p, "-", OpPriorityKind::Binary, 90);
-
-    add_op_priority(&mut p, "..", OpPriorityKind::Binary, 80);
-
-    add_op_priority(&mut p, "shl", OpPriorityKind::Binary, 60);
-    add_op_priority(&mut p, "shr", OpPriorityKind::Binary, 60);
-
-    add_op_priority(&mut p, "<", OpPriorityKind::Binary, 50);
-    add_op_priority(&mut p, "<=", OpPriorityKind::Binary, 50);
-    add_op_priority(&mut p, ">", OpPriorityKind::Binary, 50);
-    add_op_priority(&mut p, ">=", OpPriorityKind::Binary, 50);
-
-    add_op_priority(&mut p, "=", OpPriorityKind::Binary, 40);
-    add_op_priority(&mut p, "<>", OpPriorityKind::Binary, 40);
-
-    add_op_priority(&mut p, "xor", OpPriorityKind::Binary, 35);
-
-    add_op_priority(&mut p, "and", OpPriorityKind::Binary, 30);
-
-    add_op_priority(&mut p, "or", OpPriorityKind::Binary, 20);
-
-    return p;
 }
