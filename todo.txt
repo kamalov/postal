@@ -1,15 +1,13 @@
 current: 
-  -- change syntax to more pascalish style
   -- object initializer
-  -- test on unfinished aoc after all changes
-  -- remove warning supression
+  -- test on aoc after all changes
 
 todo: 
+  -- groom, remove warning supression
   -- documentation
-  -- groom
+  -- ??? refactor type_info
 
 backlog:
-  -- global variables
   -- multiline expressions inside () parentheses
   -- fix parsing panic errors (esp. in tokenizer), it/idx outside iterator
   -- pass shared data to functions by ref (&)

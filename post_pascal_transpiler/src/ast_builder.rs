@@ -29,8 +29,6 @@ impl AstError {
 
 type AstResult<T> = Result<T, AstError>;
 
-type AstNodeId = u32;
-
 #[derive(Debug, Clone)]
 pub enum RootNode {
     Function(Function),
@@ -87,7 +85,7 @@ pub struct FunctionCall {
 }
 
 #[derive(Debug, Clone)]
-pub struct IfStatement {
+pub struct IfElseStatement {
     pub if_blocks: Vec<(Expression, Block)>,
     pub else_block: Option<Block>,
 }
@@ -165,7 +163,7 @@ impl Expression {
 
 #[derive(Debug, Clone)]
 pub enum Statement {
-    If(IfStatement),
+    If(IfElseStatement),
     Loop(LoopStatement),
     Iteration(IterationStatement),
     For(ForStatement),
@@ -252,19 +250,32 @@ impl<'compiler> AstBuilder<'compiler> {
     fn skip_expected_token(&mut self, check: &str) -> AstResult<()> {
         let token = self.next_token();
         if self.c.get_token_value(&token) != check {
-            return Err(AstError::new(token, check));
+            return Err(AstError::new(token, "expected ".to_string() + check));
         }
         Ok(())
     }
 
-    fn try_skip_token(&mut self, check: &str) -> bool {
+    fn check_next_non_string_token_value(&mut self, check: &str) -> bool {
         let token = self.peek_next_token();
-        if self.c.get_token_value(&token) == check {
-            self.skip_expected_token(check);
-            true
-        } else {
-            false
+        let value = self.c.get_token_value(&token);
+        return token.kind != TokenKind::StringLiteral && self.c.get_token_value(&token) == check;
+    }
+
+    fn check_next_non_string_token_values(&mut self, checks: &[&str]) -> bool {
+        for check in checks {
+            if self.check_next_non_string_token_value(check) {
+                return true;
+            }
         }
+        return false;
+    }
+
+    fn try_skip_non_string_token(&mut self, check: &str) -> bool {
+        let checked = self.check_next_non_string_token_value(check);
+        if checked {
+            self.skip_token();
+        }
+        return checked;
     }
 
     fn skip_token(&mut self) {
@@ -295,7 +306,7 @@ impl<'compiler> AstBuilder<'compiler> {
                         root_nodes.push(RootNode::Record(record));
                     }
                     else_ => {
-                        return Err(AstError::new(token, "unexpected token"));
+                        return Err(AstError::new(token, "unexpected root token"));
                     }
                 },
                 TokenKind::Comment => {
@@ -304,7 +315,7 @@ impl<'compiler> AstBuilder<'compiler> {
                     root_nodes.push(RootNode::Comment(value));
                 }
                 _ => {
-                    return Err(AstError::new(token, "unexpected token"));
+                    return Err(AstError::new(token, "unexpected root token"));
                 }
             }
         }
@@ -352,9 +363,10 @@ impl<'compiler> AstBuilder<'compiler> {
         let mut fields = IndexMap::new();
         loop {
             self.skip_line_end_tokens();
-            if self.try_skip_token("end") {
+            if self.try_skip_non_string_token("end") {
                 break;
             }
+
             match self.peek_next_token().kind {
                 TokenKind::Comment => {
                     self.skip_token();
@@ -446,7 +458,7 @@ impl<'compiler> AstBuilder<'compiler> {
             return_type: fn_return_type,
         };
 
-        if self.try_skip_token("external") {
+        if self.try_skip_non_string_token("external") {
             self.skip_line_end_tokens();
             return Ok(Function {
                 is_external: true,
@@ -456,7 +468,7 @@ impl<'compiler> AstBuilder<'compiler> {
             });
         }
 
-        let fn_body = self.parse_function_body()?;
+        let fn_body = self.parse_block()?;
         return Ok(Function {
             is_external: false,
             declaration: fn_declaration,
@@ -468,14 +480,14 @@ impl<'compiler> AstBuilder<'compiler> {
     fn parse_function_declaration_generic_params(&mut self) -> AstResult<Vec<String>> {
         let mut params = vec![];
 
-        if !self.try_skip_token("<") {
+        if !self.try_skip_non_string_token("<") {
             return Ok(params);
         }
 
         loop {
             let generic_param_name = self.next_token().get_string_value(self.c);
             params.push(generic_param_name);
-            if self.try_skip_token(">") {
+            if self.try_skip_non_string_token(">") {
                 break;
             }
             self.skip_expected_token(",");
@@ -485,20 +497,20 @@ impl<'compiler> AstBuilder<'compiler> {
     }
 
     fn parse_function_declaration_params(&mut self) -> AstResult<IndexMap<String, TypeInfo>> {
-        if !self.try_skip_token("(") {
+        if !self.try_skip_non_string_token("(") {
             return Ok(IndexMap::new());
         }
 
         let mut params = IndexMap::new();
         loop {
-            if self.try_skip_token(")") {
+            if self.try_skip_non_string_token(")") {
                 break;
             }
 
             let (name, type_info) = self.parse_function_declaration_param_until(&[",", ")"])?;
             params.insert(name, type_info);
 
-            self.try_skip_token(",");
+            self.try_skip_non_string_token(",");
         }
 
         Ok(params)
@@ -525,27 +537,6 @@ impl<'compiler> AstBuilder<'compiler> {
         Ok(Some(return_type))
     }
 
-    fn parse_function_body(&mut self) -> AstResult<Block> {
-        self.skip_line_end_tokens();
-        //self.skip_expected("begin")?;
-        let mut statements = vec![];
-        loop {
-            self.skip_line_end_tokens();
-
-            let token = self.peek_next_token();
-
-            if token.kind == TokenKind::Keyword && self.c.get_token_value(&token) == "end" {
-                self.skip_expected_token("end")?;
-                break;
-            }
-
-            let statement = self.parse_statement()?;
-            statements.push(statement);
-        }
-
-        Ok(Block { statements })
-    }
-
     fn parse_function_call(&mut self) -> AstResult<FunctionCall> {
         let token = self.next_token().clone();
         let name = token.get_string_value(self.c);
@@ -558,17 +549,18 @@ impl<'compiler> AstBuilder<'compiler> {
     }
 
     fn parse_block(&mut self) -> AstResult<Block> {
-        self.skip_expected_token("{")?;
+        let block = self.parse_block_until(&["end"])?;
+        self.skip_token();
+        return Ok(block);
+    }
+
+    fn parse_block_until(&mut self, terminators: &[&str]) -> AstResult<Block> {
         let mut statements = vec![];
         loop {
             self.skip_line_end_tokens();
-
-            let token = self.peek_next_token();
-            if token.kind == TokenKind::SpecialSymbol && self.c.get_token_value(&token) == "}" {
-                self.skip_expected_token("}")?;
+            if self.check_next_non_string_token_values(terminators) {
                 break;
             }
-
             let statement = self.parse_statement()?;
             statements.push(statement);
         }
@@ -601,7 +593,7 @@ impl<'compiler> AstBuilder<'compiler> {
                 }
 
                 let left_side_expression = self.parse_expression_until(&["=", "\n"])?;
-                if self.try_skip_token("=") {
+                if self.try_skip_non_string_token("=") {
                     let right_side_expression = self.parse_expression_until(&["\n"])?;
                     return Ok(Statement::Assignment(Assignment {
                         token: token.clone(),
@@ -615,7 +607,7 @@ impl<'compiler> AstBuilder<'compiler> {
 
             TokenKind::Keyword => match self.c.get_token_value(&token) {
                 "if" => {
-                    let f = self.parse_if_statement()?;
+                    let f = self.parse_if_else_statement()?;
                     return Ok(Statement::If(f));
                 }
                 "loop" => {
@@ -636,7 +628,7 @@ impl<'compiler> AstBuilder<'compiler> {
                 }
                 "return" => {
                     self.skip_expected_token("return")?;
-                    if self.try_skip_token("\n") {
+                    if self.try_skip_non_string_token("\n") {
                         return Ok(Statement::Return(None));
                     } else {
                         let expression = self.parse_expression_until(&["\n"])?;
@@ -656,41 +648,44 @@ impl<'compiler> AstBuilder<'compiler> {
         }
     }
 
-    fn parse_if_statement(&mut self) -> AstResult<IfStatement> {
+    fn parse_if_else_statement(&mut self) -> AstResult<IfElseStatement> {
         self.skip_expected_token("if")?;
 
         let mut if_blocks: Vec<(Expression, Block)> = Vec::new();
         let mut else_block = None;
 
-        let condition = self.parse_expression_until(&["do", "{"])?;
+        let condition = self.parse_expression_until(&["then", "\n"])?;
 
-        if self.try_skip_token("do") {
+        if self.try_skip_non_string_token("then") {
             let statement = self.parse_statement()?;
             let block = Block { statements: vec![statement] };
             if_blocks.push((condition, block));
-            return Ok(IfStatement { if_blocks, else_block: None });
+            return Ok(IfElseStatement { if_blocks, else_block: None });
         }
 
-        let block = self.parse_block()?;
+        let block = self.parse_block_until(&["else", "end"])?;
         if_blocks.push((condition, block));
 
         loop {
             self.skip_line_end_tokens();
-            if self.try_skip_token("else") {
-                if self.try_skip_token("if") {
-                    let condition = self.parse_expression_until(&["{"])?;
-                    let block = self.parse_block()?;
+            if self.try_skip_non_string_token("end") {
+                self.skip_token();
+                break;
+            } else if self.try_skip_non_string_token("else") {
+                if self.try_skip_non_string_token("if") {
+                    let condition = self.parse_expression_until(&["\n"])?;
+                    let block = self.parse_block_until(&["else", "end"])?;
                     if_blocks.push((condition, block));
                 } else {
                     else_block = Some(self.parse_block()?);
                     break;
                 }
             } else {
-                break;
+                return Err(AstError::new(self.peek_next_token(), "unexpected token in if/else statement"));
             }
         }
 
-        Ok(IfStatement { if_blocks, else_block })
+        Ok(IfElseStatement { if_blocks, else_block })
     }
 
     fn parse_loop_statement(&mut self) -> AstResult<LoopStatement> {
@@ -727,7 +722,7 @@ impl<'compiler> AstBuilder<'compiler> {
         self.skip_expected_token("for")?;
         let iterable_expression = self.parse_expression_until(&["{", "do"])?;
 
-        let block = if self.try_skip_token("do") {
+        let block = if self.try_skip_non_string_token("do") {
             let statement = self.parse_statement()?;
             Block { statements: vec![statement] }
         } else {
@@ -767,14 +762,14 @@ impl<'compiler> AstBuilder<'compiler> {
         self.skip_expected_token("(")?;
         let mut expressions = vec![];
         loop {
-            if self.peek_next_token().kind != TokenKind::StringLiteral && self.try_skip_token(")") {
+            if self.peek_next_token().kind != TokenKind::StringLiteral && self.try_skip_non_string_token(")") {
                 break;
             }
 
             let expression = self.parse_expression_until(&[",", ")"])?;
             expressions.push(expression);
 
-            self.try_skip_token(",");
+            self.try_skip_non_string_token(",");
         }
 
         Ok(Expression::new(group_first_token, ExpressionKind::Group(expressions)))

@@ -23,23 +23,23 @@ use ast_builder::*;
 use type_checker::*;
 use code_generator::*;
 
-fn char_index_to_line_and_column(chars: &Vec<char>, index: usize) -> (usize, usize) {
-    let mut line = 0;
-    let mut last_new_line_index = 0;
-    let mut prev_char = 0 as char;
-    for i in 0..(index + 1) {
-        if prev_char == '\n' {
-            line += 1;
-            last_new_line_index = i;
+fn handle_error(compiler: &Compiler, token: Token, message: &String, prelude_lines_count: usize) {
+    fn char_index_to_line_and_column(chars: &Vec<char>, index: usize) -> (usize, usize) {
+        let mut line = 0;
+        let mut last_new_line_index = 0;
+        let mut prev_char = 0 as char;
+        for i in 0..(index + 1) {
+            if prev_char == '\n' {
+                line += 1;
+                last_new_line_index = i;
+            }
+            prev_char = chars[i];
         }
-        prev_char = chars[i];
+    
+        let column = index - last_new_line_index;
+        (line, column)
     }
 
-    let column = index - last_new_line_index;
-    (line, column)
-}
-
-fn handle_error(compiler: &Compiler, token: Token, message: &String, prelude_lines_count: usize) {
     let lines = compiler.source_text.lines().collect::<Vec<_>>();
     let chars = compiler.source_text.chars().collect::<Vec<_>>();
     let (line_number, column_number) = char_index_to_line_and_column(&chars, token.first_char_index as usize);
@@ -58,26 +58,24 @@ fn handle_error(compiler: &Compiler, token: Token, message: &String, prelude_lin
 }
 
 fn main() {
-    let filename = Path::new("./tests/test.post");
+    let filename = Path::new("./tests/test_all.post");
     // let filename = Path::new("./../aoc2024/aoc2024.post");
     let source_text = read_to_string(filename).unwrap();
-    //let prelude_lines_count = read_to_string(Path::new("./prelude.post")).unwrap().lines().collect::<Vec<_>>().len() + 1;
-    let prelude_lines_count = 0;
-    //let prelude = include_str!("./../prelude.post");
-    //let source_text = format!("{prelude}\n{source_text}");
+    let prelude_lines_count = read_to_string(Path::new("./prelude.post")).unwrap().lines().collect::<Vec<_>>().len() + 1;
+    //let prelude_lines_count = 0;
+    let prelude = include_str!("./../prelude.post");
+    let source_text = format!("{prelude}\n{source_text}");
     
     let mut compiler = Compiler::new(source_text);
     
     // tokenizing
     compiler.tokens = fill_tokens(&compiler);
-    debug_print_tokens(&compiler);
+    //debug_print_tokens(&compiler);
 
     // building ast
     let ast_builder_result = build_ast(&compiler);
     match ast_builder_result {
-        Ok(ast) => {
-            compiler.ast = ast;
-        }
+        Ok(ast) => compiler.ast = ast,
         Err(ast_error) => {
             handle_error(&compiler, ast_error.token, &ast_error.message, prelude_lines_count);
             return;
@@ -86,14 +84,15 @@ fn main() {
 
     // filling types
     let ast_with_types_result = build_new_ast_with_types(&compiler);
-    let ast = match ast_with_types_result {
+    match ast_with_types_result {
         Ok(ast) => compiler.ast = ast,
         Err(type_check_error) => {
             handle_error(&compiler, type_check_error.token, &type_check_error.message, prelude_lines_count);
             return;
         }
-    };
+    }
 
+    // generating C++ code
     let generated_code_text = generate_code(&compiler);
     println!("\x1b[93m{generated_code_text}\x1b[0m");
     let filename = Path::new("./../template.cpp");

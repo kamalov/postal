@@ -330,7 +330,7 @@ impl CodeGenerator<'_> {
         r
     }
 
-    fn generate_if_statement_code(&mut self, f: &IfStatement, padding: &str) -> String {
+    fn generate_if_statement_code(&mut self, f: &IfElseStatement, padding: &str) -> String {
         let mut r = String::new();
 
         for i in 0..f.if_blocks.len() {

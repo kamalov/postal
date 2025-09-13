@@ -3,8 +3,7 @@ function test_multiple_params(a: integer, b: real)
     log(a, b, '  ->  ', x)
 end
 
-function test_if
-    a = 5
+function test_if(a: integer)
     if a < 0 
         log('a < 0')
     else if a > 10 
@@ -20,7 +19,7 @@ function test_loop
     loop
         i = i + 1
         log(i)
-        if i = 10 do break
+        if i = 10 then break
     end
 end
 
@@ -29,13 +28,12 @@ function test_iterator
     push(numbers, 123)
     push(numbers, 456)
     push(numbers, 789)
-
-//    for numbers {
-//         log(index) 
-//         log('numbers ', index, ' ', item) 
-//         for numbers do log('    ', index, ' ', item) 
-//         log('<< ', index, ' ', item) 
-//    }
+    for numbers
+        log(index) 
+        log('numbers ', index, ' ', item) 
+        for numbers do log('    ', index, ' ', item) 
+        log('<< ', index, ' ', item) 
+    end
 end
 
 function test_params1(a: integer, b: integer) integer
@@ -82,16 +80,18 @@ function test_strings
     log(sss)
 end
 
-function read_lines(filename: string) [string] external
+// function read_lines(filename: string) [string] external
 
-function test_read_lines
-    lines = read_string_lines_from_file('d:/test.txt')
-    for lines do log(index, item)
-end
+// function test_read_lines
+//     lines = read_string_lines_from_file('d:/test.txt')
+//     for lines do log(index, item)
+// end
 
 function run
     test_multiple_params(5, 6.0)
-    test_if()
+    test_if(-1)
+    test_if(5)
+    test_if(11)
     test_loop()
     test_iterator()
     test_array_access()

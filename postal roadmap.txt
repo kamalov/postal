@@ -17,7 +17,7 @@ Phase zero (basic syntax and type checking, proof of concept):
    -- type inference
    -- refcounted memory management
    -- Pascal/C++ hybrid syntax
-   -- built-in dyn array and hash table
+   -- built-in strings, dyn array and hash table
    -- structs only
    -- transpilation to C++
 -- limitations:

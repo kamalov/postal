@@ -4,9 +4,9 @@ use std::vec;
 
 use indexmap::IndexMap;
 
+use crate::ast_builder::*;
 use crate::compiler::*;
 use crate::tokenizer::*;
-use crate::ast_builder::*;
 use crate::type_info::*;
 use crate::utils::*;
 
@@ -18,10 +18,7 @@ pub struct TypeCheckError {
 
 impl TypeCheckError {
     pub fn new(token: Token, s: impl Into<String>) -> TypeCheckError {
-        TypeCheckError {
-            token: token,
-            message: s.into(),
-        }
+        TypeCheckError { token: token, message: s.into() }
     }
 }
 
@@ -39,12 +36,16 @@ pub struct TypeChecker<'compiler> {
     c: &'compiler Compiler,
     fn_declarations: HashMap<String, FunctionDeclaration>,
     ctx: CurrentFunctionContext,
+    type_infos: Vec<TypeInfo>,
 }
 
 pub fn build_new_ast_with_types(compiler: &Compiler) -> TypeCheckResult<Ast> {
     let mut type_checker = TypeChecker::new(compiler);
     let new_root_nodes = type_checker.build_new_ast_with_types()?;
-    return Ok(Ast { root_nodes: new_root_nodes, records: compiler.ast.records.clone() });
+    return Ok(Ast {
+        root_nodes: new_root_nodes,
+        records: compiler.ast.records.clone(),
+    });
 }
 
 impl<'compiler> TypeChecker<'compiler> {
@@ -53,6 +54,7 @@ impl<'compiler> TypeChecker<'compiler> {
             c: compiler,
             fn_declarations: HashMap::new(),
             ctx: CurrentFunctionContext::default(),
+            type_infos: vec![],
         }
     }
 
@@ -355,7 +357,7 @@ impl<'compiler> TypeChecker<'compiler> {
                 } else {
                     type_info
                 }
-            },
+            }
             ExpressionKind::BinaryOperation { operator, left, right } => self.fill_binary_op_type_info(expression)?,
             ExpressionKind::Group(group_expressions) => {
                 if group_expressions.is_empty() {
@@ -421,9 +423,11 @@ impl<'compiler> TypeChecker<'compiler> {
                         self.process_block_statements(block)?;
                     }
                 }
+
                 Statement::Loop(loop_statement) => {
                     self.process_block_statements(&mut loop_statement.block)?;
                 }
+
                 Statement::Return(expression_option) => {
                     //
                     match expression_option {
@@ -444,6 +448,7 @@ impl<'compiler> TypeChecker<'compiler> {
                         }
                     }
                 }
+
                 Statement::Iteration(IterationStatement { token, iterable_name, block }) => {
                     //
                     match self.get_function_param_or_var_type(iterable_name) {
@@ -457,14 +462,15 @@ impl<'compiler> TypeChecker<'compiler> {
                         }
                     }
                 }
+
                 Statement::For(ForStatement { iterable_expression, block }) => {
-                    //
                     let type_info = self.fill_expression_type(iterable_expression)?;
                     iterable_expression.type_info = Some(type_info.clone());
                     self.ctx.iterator_type_list.push(type_info);
                     let block = self.process_block_statements(block)?;
                     self.ctx.iterator_type_list.pop();
                 }
+
                 Statement::VariableAssignment(variable_assignment) => {
                     let name = variable_assignment.name.clone();
                     let var_type = self.fill_expression_type(&mut variable_assignment.rvalue_expression)?;
@@ -486,6 +492,7 @@ impl<'compiler> TypeChecker<'compiler> {
                         }
                     }
                 }
+
                 Statement::VariableDeclaration((token, name, type_info)) => {
                     //
                     match self.get_function_param_or_var_type(&name) {
@@ -497,6 +504,7 @@ impl<'compiler> TypeChecker<'compiler> {
                         }
                     }
                 }
+
                 Statement::Assignment(Assignment { token, lvalue, rvalue }) => {
                     let left_side_type_info = self.fill_expression_type(lvalue)?;
                     let right_side_type_info = self.fill_expression_type(rvalue)?;
@@ -507,23 +515,14 @@ impl<'compiler> TypeChecker<'compiler> {
                         ));
                     }
                 }
-                // Statement::FunctionCall(function_call) => {
-                //     let mut new_params = vec![];
-                //     for param in &function_call.params {
-                //         let type_info = self.get_expression_type(param)?;
-                //         let mut new_param = param.clone();
-                //         new_param.type_info = Some(type_info);
-                //         new_params.push(new_param);
-                //     }
-                //     function_call.params = new_params;
-                // }
+
                 Statement::Expression(expr) => {
                     let type_info = self.fill_expression_type(expr)?;
                 }
+
                 Statement::Break() => {}
                 Statement::Continue() => {}
                 Statement::Comment(_) => {}
-                _ => panic!(),
             }
         }
 
