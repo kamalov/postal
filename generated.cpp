@@ -31,24 +31,14 @@
 /// prelude void error(std::string s);
 /// prelude std::string read_line();
 /// prelude shared_vector<std::string> read_string_lines_from_file(std::string filename);
+////
 //// prelude end
+////
 void run() {
-    shared_vector<i64> a;
-    a = create_shared_vector<i64>();
-    array_push(a, 5ll);
-    array_push(a, 3ll);
-    //// array_push(a, 4)
-    //// array_push(a, 1)
-    //// array_push(a, 8)
-    //// array_push(a, 1)
-    array_quick_sort(a);
-
-    auto __expr0 = a;
-    for (i64 a__it0__idx = 0; a__it0__idx < (i64)__expr0->size(); a__it0__idx++) {
-        i64 a__it0 = (*__expr0)[a__it0__idx];
-        printf("%lld\n", (i64)(a__it0));
-    }
-    ////error("123")
+    //// lines = read_string_lines_from_file("D:\\src\\postal\\todo.txt")
+    //// for lines do log(item)
+    error(String("test errror"));
+    //printf("%s\n", String("done").c_str());
 }
 
 

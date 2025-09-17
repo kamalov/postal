@@ -1,16 +1,8 @@
 function run
-    a = [integer]
-    array_push(a, 5)
-    array_push(a, 3)
-    array_push(a, 4)
-    array_push(a, 1)
-    array_push(a, 8)
-    array_push(a, 1)
-
-    array_quick_sort(a)
-    for a do log(item)
-
-    //error("123")
+    // lines = read_string_lines_from_file("D:\\src\\postal\\todo.txt")
+    // for lines do log(item)
+    error("test errror")
+    log("done")
 end
 
 

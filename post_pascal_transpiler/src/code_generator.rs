@@ -479,7 +479,7 @@ impl CodeGenerator<'_> {
                                     }
                                     "string" => {
                                         format_parts.push("%s");
-                                        names.push(format!("({}).c_str()", param_name.clone()));
+                                        names.push(format!("{}.c_str()", param_name.clone()));
                                     }
                                     else_ => {
                                         format_parts.push("%d");
@@ -625,7 +625,7 @@ impl CodeGenerator<'_> {
                 write!(&mut r, "{}", literal);
             }
             ExpressionKind::StringLiteral(literal) => {
-                write!(&mut r, "{}s", literal);
+                write!(&mut r, "String({literal})");
             }
             ExpressionKind::UnaryOperation { operator: operation, expr } => {
                 let code = self.generate_expression_code(&expr);

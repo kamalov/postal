@@ -32,5 +32,6 @@ function integer_to_string(i: integer) string external
 function error(s: string) external
 function read_line() string external   
 function read_string_lines_from_file(filename: string) [string] external
-
+//
 // prelude end
+//
