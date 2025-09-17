@@ -175,14 +175,14 @@ impl Tokenizer<'_> {
 
         self.skip_char();
         loop {
-            if self.check_next("''") {
+            if self.check_next("\\\"") {
                 self.skip_char();
                 self.skip_char();
                 continue;
             }
 
             if let Some(c) = self.peek_char() {
-                if c == '\'' {
+                if c == '"' {
                     self.skip_char();
                     break;
                 }
@@ -245,7 +245,7 @@ impl Tokenizer<'_> {
                 continue;
             }
 
-            if c == '\'' {
+            if c == '"' {
                 let t = self.parse_string();
                 continue;
             }

@@ -1,20 +1,16 @@
-#include <stdio.h>
-#include <windows.h>
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include <algorithm> 
-#include <fstream>
-#include <iostream>
+#include <string> // todo, make local string
+#include <vector> // todo, make local vector
+#include <unordered_map> // todo, make local hashmap
+//#include <fstream>
+//#include <iostream>
 
 using namespace std::literals;
 using i64 = long long;
-//#define _throw(msg) throw std::string{} + "'{}' at '{}', line {}", msg, __FILE__, __LINE__);
-#define _throw(msg) throw std::string{} + msg + " at '" + __FILE__ +"', line " + std::to_string(__LINE__);
+#define _throw(msg) throw std::string{} + msg + " at '" + __FILE__ + "', line " + std::to_string(__LINE__);
 
 
 
-/// shared pointers
+/// Shared Pointers
 i64 shared_pointer_debug_counter = 0;
 
 template <typename T> struct Shared_Pointer {
@@ -105,7 +101,7 @@ template <typename K, typename V> constexpr auto create_shared_map = &Shared_Poi
 
 
 
-/// hashmap utils
+/// Hashmap Utils
 template <typename K, typename V> i64 map_has_key(shared_map<K, V> h, K k) { return h->find(k) != h->end(); }
 template <typename K, typename V> i64 map_len(shared_map<K, V> h) { return h->size(); }
 
@@ -168,19 +164,18 @@ shared_vector<K> map_keys(shared_map<K, V> h) {
 
 
 
-/// dyn array utils
-template <typename T> i64 size(shared_vector<T>& a) { return a->size(); }
+/// Dyn Array Utils
+template <typename T> i64 array_size(shared_vector<T>& a) { return a->size(); }
 template <typename T> i64 array_contains(shared_vector<T>& a, T value) { return std::find(a->begin(), a->end(), value) != a->end(); }
-template <typename T> void push(shared_vector<T>& a, T elem) { a->push_back(elem); }
+template <typename T> void array_push(shared_vector<T>& a, T elem) { a->push_back(elem); }
 template <typename T> void array_push_front(shared_vector<T> a, T elem) { a->insert(a->begin(), elem); }
 template <typename T> void array_set_size(shared_vector<T>& a, i64 new_len) { a->resize(new_len); }
-template <typename T> void array_sort(shared_vector<T>& a) { std::sort(a->begin(), a->end()); }
 template <typename T> void array_remove(shared_vector<T>& a, T value) { a->erase(std::remove_if(a->begin(), a->end(), [value](T item){ return item == value; }), a->end()); }
 template <typename T> void array_remove_at(shared_vector<T>& a, i64 index) { a->erase(a->begin() + index); }
 template <typename T> T array_last(shared_vector<T>& a) { return a->back(); }
 
 template <typename T>
-T pop(shared_vector<T> a) {
+T array_pop(shared_vector<T> a) {
     T last = a->back();
     a->pop_back();
     return last;
@@ -218,9 +213,42 @@ shared_vector<T> array_slice(shared_vector<T> a, i64 from_index, i64 to_index) {
     return shared_vector<T>(new std::vector<T>(a->begin() + from_index, a->begin() + to_index + 1));
 }
 
+template <typename T>
+void array_quick_sort_helper(shared_vector<T> &array, i64 begin_index, i64 end_index) {
+    if (begin_index >= end_index) return;
+    T some_value = array->at((begin_index + end_index)/2);
+    i64 i = begin_index;
+    i64 j = end_index;
+    while (true) {
+        while (array->at(i) < some_value) {
+            i++;
+        }
+
+        while (array->at(j) > some_value) {
+            j--;
+        }
+
+        if (i >= j) break;
+
+        T tmp = array->at(i);
+        array->at(i) = array->at(j);
+        array->at(j) = tmp;
+        i++;
+        j--;
+    }
+
+    array_quick_sort_helper(array, begin_index, j);
+    array_quick_sort_helper(array, j + 1, end_index);
+}
+
+template <typename T> 
+void array_quick_sort(shared_vector<T> &array) {
+    array_quick_sort_helper(array, 0, array->size() - 1);
+}   
 
 
-/// string utils
+
+/// String Utils
 i64 string_to_intger(std::string s) { return std::stoll(s); }
 i64 string_contains(std::string s, std::string subs) { return s.find(subs) != std::string::npos; }
 i64 string_size(std::string s) { return s.length(); }
@@ -265,30 +293,30 @@ std::string string_array_join(shared_vector<std::string> a, std::string delimite
 
 
 
-/// misc utils
+/// Misc Utils
 [[noreturn]] void error(std::string s) { 
     _throw(s); 
 }
 
-std::string read_line() {
-    std::string line;
-    std::getline(std::cin, line);
-    return line;
-}
-
-std::vector<std::string>* read_string_lines_from_file(std::string filename) {
-    std::ifstream infile(filename);
-    if (!infile.is_open()) {
-        throw "invalid file '"s + filename + "'";
-    }
-    std::vector<std::string>* lines = new std::vector<std::string>();
-    std::string line;
-    while (std::getline(infile, line)) {
-        lines->push_back(line);
-    }
-    infile.close();
-    return lines;
-}
+//std::string read_line() {
+//    std::string line;
+//    std::getline(std::cin, line);
+//    return line;
+//}
+//
+//std::vector<std::string>* read_string_lines_from_file(std::string filename) {
+//    std::ifstream infile(filename);
+//    if (!infile.is_open()) {
+//        throw "invalid file '"s + filename + "'";
+//    }
+//    std::vector<std::string>* lines = new std::vector<std::string>();
+//    std::string line;
+//    while (std::getline(infile, line)) {
+//        lines->push_back(line);
+//    }
+//    infile.close();
+//    return lines;
+//}
 
 // for built-in range 
 std::vector<std::size_t>* create_range(i64 from, i64 to) {
@@ -306,36 +334,38 @@ std::vector<std::size_t>* create_range(i64 from, i64 to) {
 
 
 
-/// main
+/// Main
 void run();
 
 int main() {
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(hConsole, 10);
+    //windows.h: todo
+    //HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    //SetConsoleTextAttribute(hConsole, 10);
 
     try {
         run();
+
         if (shared_pointer_debug_counter) {
             printf("\nshared_pointer_debug_counter = %lld\n", shared_pointer_debug_counter);
             throw "shared pointer error"s;
         }
     }
     catch (const std::string& ex) {
-        SetConsoleTextAttribute(hConsole, 12);
+        //SetConsoleTextAttribute(hConsole, 12);
         printf("Error: %s\n", ex.c_str());
         return -1;
     }
     catch (const std::exception& e) {
-        SetConsoleTextAttribute(hConsole, 12);
-        std::cerr << "Exception caught: " << e.what() << std::endl;
+        //SetConsoleTextAttribute(hConsole, 12);
+        printf("Exception caught: %s\n", e.what());
         return -1;
     }
     catch (...) {
-        SetConsoleTextAttribute(hConsole, 12);
-        std::cerr << "Unknown exception" << std::endl;
+        //SetConsoleTextAttribute(hConsole, 12);
+        printf("Unknown exception\n");
         return -1;
     }
 
-    SetConsoleTextAttribute(hConsole, 7);
+    //SetConsoleTextAttribute(hConsole, 7);
     return 0;
 }

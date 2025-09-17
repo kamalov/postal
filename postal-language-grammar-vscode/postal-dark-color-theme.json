@@ -23,15 +23,15 @@
         "decorator": "#c3e88d",
         "parameter": "#c3e88d",
 
-        "struct.declaration": "#ffcb6b",
-        "method.declaration": "#ffcb6b",
-        "function.declaration": "#ffcb6b",
-        "typeAlias.declaration": "#ffcb6b",
-        "enum.declaration": "#ffcb6b",
+        "struct.declaration": "#f9a646",
+        "method.declaration": "#f9a646",
+        "function.declaration": "#f9a646",
+        "typeAlias.declaration": "#f9a646",
+        "enum.declaration": "#f9a646",
 
         "boolean": "#ffffff",
         "number": "#ffffff",
-        "comment": "#11d825",
+        "comment": "#67d180",
         "punctuation": "#c2edd3",
         "escapeSequence": "#c2edd3",
 
@@ -95,41 +95,27 @@
         "titleBar.activeBackground": "#423523"
     },
 
-    "tokenColors": [
+    "tokenColors": [ 
         {
-            "scope": [
-                "keyword.control.postal",
-            ],
-            "settings": {
-                "foreground": "#ffcb6b"
-            }
+            "scope": ["keyword.control.postal"],
+            //"settings": { "foreground": "#ffcb6b" }
+            "settings": { "foreground": "#f9a646" }
         },
-
         {
-            "scope": [
-                "string.quoted.postal",
-            ],
-            "settings": {
-                "foreground": "#ff0000"
-            }
+            "scope": ["operator.postal"],
+            "settings": { "foreground": "#ffffff" }
         },
-
         {
-            "scope": [
-                "brackets1.postal",
-            ],
-            "settings": {
-                "foreground": "#4d6457"
-            }
+            "scope": ["comment.line.postal" ],
+            "settings": { "foreground": "#67d180" }
         },
-
         {
-            "scope": [
-                "operator.postal",
-            ],
-            "settings": {
-                "foreground": "#ffffff"
-            }
+            "scope": ["string.quoted.single.postal"], 
+            "settings": { "foreground": "#ffffff" }
+        },
+        {
+            "scope": ["brackets1.postal"], 
+            "settings": { "foreground": "#4d6457" }
         },
 
         {
@@ -140,7 +126,6 @@
                 "foreground": "#ffffff"            
             }
         },
-
         {
             "scope": [
                 "punctuation.definition.string.rust",
@@ -149,7 +134,6 @@
                 "foreground": "#c2edd3"            
             }
         },
-
         {
             "name": "Bold",
             "scope": [

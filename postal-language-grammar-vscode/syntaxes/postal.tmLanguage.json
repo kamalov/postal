@@ -43,8 +43,8 @@
 		},
         "strings": {
             "name": "string.quoted.single.postal",
-            "begin": "\\'",
-            "end": "\\'",
+            "begin": "\\\"",
+            "end": "\\\"",
             "patterns": [
                 {
                     "name": "constant.character.escape.postal",

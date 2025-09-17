@@ -25,9 +25,9 @@ end
 
 function test_iterator
     numbers = [integer]
-    push(numbers, 123)
-    push(numbers, 456)
-    push(numbers, 789)
+    array_push(numbers, 123)
+    array_push(numbers, 456)
+    array_push(numbers, 789)
     for numbers
         log(index) 
         log('numbers ', index, ' ', item) 
@@ -49,9 +49,9 @@ end
 
 function test_array_access
     numbers = [real]
-    push(numbers, 123.0)
-    push(numbers, 456.0)
-    push(numbers, 789.0)
+    array_push(numbers, 123.0)
+    array_push(numbers, 456.0)
+    array_push(numbers, 789.0)
 
     for numbers do log(numbers[index])        
 end

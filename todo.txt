@@ -5,9 +5,10 @@ current:
 todo: 
   -- groom, remove warning supression
   -- documentation
-  -- ??? refactor type_info
+  -- test for memory leaks for shared pointers
 
 backlog:
+  -- ??? refactor type_info
   -- multiline expressions inside () parentheses
   -- fix parsing panic errors (esp. in tokenizer), it/idx outside iterator
   -- pass shared data to functions by ref (&)

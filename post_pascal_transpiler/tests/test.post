@@ -1,6 +1,16 @@
 function run
-    a = 10
-    log('done', a, 20)
+    a = [integer]
+    array_push(a, 5)
+    array_push(a, 3)
+    array_push(a, 4)
+    array_push(a, 1)
+    array_push(a, 8)
+    array_push(a, 1)
+
+    array_quick_sort(a)
+    for a do log(item)
+
+    //error("123")
 end
 
 

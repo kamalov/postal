@@ -625,7 +625,7 @@ impl CodeGenerator<'_> {
                 write!(&mut r, "{}", literal);
             }
             ExpressionKind::StringLiteral(literal) => {
-                write!(&mut r, "\"{}\"s", literal);
+                write!(&mut r, "{}s", literal);
             }
             ExpressionKind::UnaryOperation { operator: operation, expr } => {
                 let code = self.generate_expression_code(&expr);
