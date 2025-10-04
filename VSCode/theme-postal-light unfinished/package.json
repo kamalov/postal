@@ -1,0 +1,21 @@
+{
+  "name": "theme-postal-light",
+  "displayName": "theme-postal-light",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.104.0"
+  },
+  "categories": [
+    "Themes"
+  ],
+  "contributes": {
+    "themes": [
+      {
+        "label": "Postal Light",
+        "uiTheme": "vs",
+        "path": "./Postal Light Color Theme.json"
+      }
+    ]
+  }
+}

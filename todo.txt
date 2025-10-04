@@ -1,20 +1,15 @@
 current: 
-  -- object initializer
   -- test on aoc after all changes
-
-todo: 
   -- groom, remove warning supression
   -- documentation
 
+todo: 
+  -- object initializer
+
 backlog:
+  -- self referenced structure
   -- test for memory leaks for shared pointers
   -- ??? refactor type_info
   -- multiline expressions inside () parentheses
   -- fix parsing panic errors (esp. in tokenizer), it/idx outside iterator
   -- pass shared data to functions by ref (&)
-
-
-
-
-
-

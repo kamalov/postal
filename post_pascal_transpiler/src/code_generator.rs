@@ -142,7 +142,7 @@ impl CodeGenerator<'_> {
             if type_info.is_generic {
                 continue;
             }
-
+            
             if type_info.is_scalar() {
                 let type_str = type_info.get_scalar_type_str();
                 if !is_custom_type(&type_str) {
@@ -479,7 +479,7 @@ impl CodeGenerator<'_> {
                                     }
                                     "string" => {
                                         format_parts.push("%s");
-                                        names.push(format!("{}.c_str()", param_name.clone()));
+                                        names.push(format!("({}).c_str()", param_name.clone()));
                                     }
                                     else_ => {
                                         format_parts.push("%d");
@@ -625,7 +625,8 @@ impl CodeGenerator<'_> {
                 write!(&mut r, "{}", literal);
             }
             ExpressionKind::StringLiteral(literal) => {
-                write!(&mut r, "String({literal})");
+                //write!(&mut r, "String({literal})");
+                write!(&mut r, "{literal}s");
             }
             ExpressionKind::UnaryOperation { operator: operation, expr } => {
                 let code = self.generate_expression_code(&expr);

@@ -1,14 +1,19 @@
+#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <vector> // todo, make local vector
 #include <unordered_map> // todo, make local hashmap
-//#include <fstream>
-//#include <iostream>
+#include <string> // todo, make local strings
+
+using namespace std::literals;
 
 /// type aliases
 using i64 = long long;
 
 
+
+#if 0 // todo: replace std::string with this
+#include <stdlib.h>
+#include <string.h>
 
 /// String
 class String {
@@ -69,10 +74,10 @@ public:
     }
 };
 
-
-
-//#define _throw(msg) throw String() + msg + " at '" + __FILE__ + "', line " + std::to_string(__LINE__);
 #define _throw(msg) throw String(msg) + String(" at ") + String(__FILE__); //__LINE__);
+#endif
+
+#define _throw(msg) throw std::string{} + msg + " at '" + __FILE__ +"', line " + std::to_string(__LINE__);
 
 
 
@@ -167,8 +172,8 @@ template <typename K, typename V> using shared_map = Shared_Pointer<std::unorder
 template <typename K, typename V> constexpr auto create_shared_map = &Shared_Pointer<std::unordered_map<K, V>>::create;
 
 
-/// Hashmap Utils
 
+/// Hashmap Utils
 template <typename K, typename V> i64 map_has_key(shared_map<K, V> h, K k) { return h->find(k) != h->end(); }
 template <typename K, typename V> i64 map_len(shared_map<K, V> h) { return h->size(); }
 
@@ -228,6 +233,7 @@ shared_vector<K> map_keys(shared_map<K, V> h) {
     }
     return keys;
 }
+
 
 
 /// Dyn Array Utils
@@ -315,74 +321,91 @@ void array_quick_sort(shared_vector<T> &array) {
 
 
 /// String Utils
-//i64 string_to_integer(std::string s) { return std::stoll(s); }
-//i64 string_contains(std::string s, std::string subs) { return s.find(subs) != std::string::npos; }
-//i64 string_size(std::string s) { return s.length(); }
-//std::string integer_to_string(i64 i) { return std::to_string(i); }
-//
-//shared_vector<std::string> string_split(std::string s, std::string delimiter) {
-//    auto tokens = create_shared_vector<std::string>();
-//    size_t pos = 0;
-//    std::string token;
-//    while ((pos = s.find(delimiter)) != std::string::npos) {
-//        token = s.substr(0, pos);
-//        tokens->push_back(token);
-//        s.erase(0, pos + delimiter.length());
-//    }
-//    tokens->push_back(s);
-//    return tokens;
-//}
-//
-//shared_vector<std::string> string_to_chars(std::string s) {
-//    auto chars = create_shared_vector<std::string>();
-//    for (char c : s) chars->push_back(std::string(1, c));
-//    return chars;
-//}
-//
-//std::string string_remove(std::string s, std::string r) {
-//    std::string result = s;
-//    size_t start_pos = 0;
-//    while ((start_pos = result.find(r)) != std::string::npos) {
-//        result.erase(start_pos, r.length());
-//    }
-//    return result;
-//}
-//
-//std::string string_array_join(shared_vector<std::string> a, std::string delimiter) {
-//    auto s = ""s;
-//    for (std::size_t i = 0; i != a->size(); i++) {
-//        if (i > 0) s += delimiter;
-//        s += (*a)[i];
-//    }
-//    return s;
-//}
+i64 string_to_integer(std::string s) { return std::stoll(s); }
+i64 string_contains(std::string s, std::string subs) { return s.find(subs) != std::string::npos; }
+i64 string_size(std::string s) { return s.length(); }
+std::string integer_to_string(i64 i) { return std::to_string(i); }
+
+shared_vector<std::string> string_split(std::string s, std::string delimiter) {
+    auto tokens = create_shared_vector<std::string>();
+    size_t pos = 0;
+    std::string token;
+    while ((pos = s.find(delimiter)) != std::string::npos) {
+        token = s.substr(0, pos);
+        tokens->push_back(token);
+        s.erase(0, pos + delimiter.length());
+    }
+    tokens->push_back(s);
+    return tokens;
+}
+
+shared_vector<std::string> string_to_chars(std::string s) {
+    auto chars = create_shared_vector<std::string>();
+    for (char c : s) chars->push_back(std::string(1, c));
+    return chars;
+}
+
+std::string string_remove(std::string s, std::string r) {
+    std::string result = s;
+    size_t start_pos = 0;
+    while ((start_pos = result.find(r)) != std::string::npos) {
+        result.erase(start_pos, r.length());
+    }
+    return result;
+}
+
+std::string string_array_join(shared_vector<std::string> a, std::string delimiter) {
+    auto s = ""s;
+    for (std::size_t i = 0; i != a->size(); i++) {
+        if (i > 0) s += delimiter;
+        s += (*a)[i];
+    }
+    return s;
+}
 
 
 
 /// Misc Utils
-[[noreturn]] void error(String some_str) { 
-    _throw(some_str.c_str());
+[[noreturn]] void err(std::string s) {
+    _throw(s);
 }
 
-//std::string read_line() {
-//    std::string line;
-//    std::getline(std::cin, line);
-//    return line;
-//}
+std::string read_line() {
+    char buffer[4096];
+    std::string line;
+    if (fgets(buffer, sizeof(buffer), stdin)) {
+        line = std::string(buffer);
+        if (line.back() == '\n') {
+            line.pop_back();
+        }
+    }
 
-//std::vector<std::string>* read_string_lines_from_file(std::string filename) {
-//    std::ifstream infile(filename);
-//    if (!infile.is_open()) {
-//        throw "invalid file '"s + filename + "'";
-//    }
-//    std::vector<std::string>* lines = new std::vector<std::string>();
-//    std::string line;
-//    while (std::getline(infile, line)) {
-//        lines->push_back(line);
-//    }
-//    infile.close();
-//    return lines;
-//}
+    return line;
+}
+
+std::vector<std::string>* read_string_lines_from_file(std::string filename) {
+    FILE* file;
+    char buffer[4096];
+
+    fopen_s(&file, filename.c_str(), "r");
+    if (file == NULL) {
+        throw "Error reading file '"s + filename + "'";
+    }
+    
+    std::vector<std::string>* lines = new std::vector<std::string>();
+
+    while (fgets(buffer, sizeof(buffer), file)) {
+        std::string line = std::string(buffer);
+        if (line.back() == '\n') {
+            line.pop_back();
+        }
+        lines->push_back(line);
+    }
+
+    fclose(file);
+
+    return lines;
+}
 
 // for built-in range 
 std::vector<std::size_t>* create_range(i64 from, i64 to) {
@@ -421,7 +444,7 @@ int main() {
             throw "shared pointer error";
         }
     }
-    catch (String string_exception) {
+    catch (std::string& string_exception) {
         //SetConsoleTextAttribute(hConsole, 12);
         printf("Error: %s\n", string_exception.c_str());
         return -1;

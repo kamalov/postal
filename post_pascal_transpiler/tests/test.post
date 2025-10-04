@@ -1,8 +1,9 @@
 function run
     // lines = read_string_lines_from_file("D:\\src\\postal\\todo.txt")
     // for lines do log(item)
-    error("test errror")
-    log("done")
+    // log("input smth: ")
+    // s = read_line()
+    // log(s)
 end
 
 

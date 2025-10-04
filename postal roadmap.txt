@@ -30,11 +30,12 @@ Phase one (critical):
 -- declarative? bump memory allocation mechanizm (and probably value types). Never ever been done before? 
 -- polymorphism (generics, tagget unions)
 -- error handling mechanizm (exceptions or result or smth.)
--- transpilation to C99 (or C89, needs research)
+-- transpilation to C99 (or C89, or even jai... needs research)
 
 Phase two (non critical):
 -- function pointers
 -- enums
+-- tuples
 -- global variables
 -- nested collections
 -- language server

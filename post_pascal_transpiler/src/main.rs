@@ -58,7 +58,7 @@ fn handle_error(compiler: &Compiler, token: Token, message: &String, prelude_lin
 }
 
 fn main() {
-    let filename = Path::new("./tests/test.post");
+    let filename = Path::new("./tests/test_all.post");
     // let filename = Path::new("./../aoc2024/aoc2024.post");
     let source_text = read_to_string(filename).unwrap();
     let prelude_lines_count = read_to_string(Path::new("./prelude.post")).unwrap().lines().collect::<Vec<_>>().len() + 1;

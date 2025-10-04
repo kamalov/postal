@@ -6,15 +6,8 @@ SET LIB=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14
 SET LIBPATH=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\lib\x86\store\references;C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.22621.0;C:\Program Files (x86)\Windows Kits\10\References\10.0.22621.0;C:\Windows\Microsoft.NET\Framework64\v4.0.30319
 
 set start=%time%
-cl.exe generated.cpp /Gm- /EHsc /Od /Oi /permissive- /W4 /WX /wd4100 /wd4189     /link /nologo 
+cl.exe generated.cpp /Gm- /EHsc /Od /Oi /permissive- /W4 /WX /wd4100 /wd4189     /link /nologo
 set end=%time%
-
-generated.exe
-del generated.exe > nul
-del generated.obj > nul
-
-
-
 
 rem some shit copy/paste, but working
 set options="tokens=1-4 delims=:.,"
@@ -34,5 +27,6 @@ if 1%ms% lss 100 set ms=0%ms%
 set /a totalsecs = %hours%*3600 + %mins%*60 + %secs%
 echo compiled at %totalsecs%.%ms%s
 
-
-
+generated.exe
+del generated.exe > nul
+del generated.obj > nul
