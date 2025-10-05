@@ -95,8 +95,6 @@ fn main() {
     // generating C++ code
     let generated_code_text = generate_code(&compiler);
     println!("\x1b[93m{generated_code_text}\x1b[0m");
-    let filename = Path::new("./../template.cpp");
-    let text = read_to_string(filename).unwrap();
-    let text = text.replace("%GENERATED_CODE%", &generated_code_text);
-    fs::write("./../generated.cpp", text);
+    let text = format!("#include \"prelude.cpp\"\n\n{}", generated_code_text);
+    fs::write("./cpp/generated.cpp", text);
 }

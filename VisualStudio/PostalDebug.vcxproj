@@ -19,10 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\generated.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\prelude.cpp" />
+    <ClCompile Include="..\compiler\cpp\generated.cpp" />
+    <ClInclude Include="..\compiler\cpp\prelude.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

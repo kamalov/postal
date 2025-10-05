@@ -77,6 +77,8 @@ public:
 #define _throw(msg) throw String(msg) + String(" at ") + String(__FILE__); //__LINE__);
 #endif
 
+
+
 #define _throw(msg) throw std::string{} + msg + " at '" + __FILE__ +"', line " + std::to_string(__LINE__);
 
 

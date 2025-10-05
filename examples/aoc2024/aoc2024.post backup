@@ -1,0 +1,144 @@
+rec Int_Array {
+    values: [int]
+}
+
+rec Graph {
+    names: [str]
+    vertex_names_to_index: #[str, int]
+    edges: #[int, Int_Array]
+    cons: [Int_Array]
+}
+
+fn vals_to_str(g: Graph, vals: [int])
+    s = ''
+    for vals {
+        if s <> '' do s = s + ','
+        s = s + g.names[it]
+    }
+    ret s
+end
+
+fn ensure_vertex(g: Graph, vertex_name: str)
+    if map_has_key(g.vertex_names_to_index, vertex_name) do ret map_get_value(g.vertex_names_to_index, vertex_name)
+    index = len(g.names)
+    push(g.names, vertex_name)
+    map_add(g.vertex_names_to_index, vertex_name, index)
+    ret index
+end
+
+fn add_vertex_edge(g: Graph, a: int, b: int)
+    if map_has_key(g.edges, a) {
+        to = map_get_value(g.edges, a)
+        push(to.values, b)
+    } else {
+        to = Int_Array {}
+        to.values = [int]
+        push(to.values, b)
+        map_add(g.edges, a, to)
+    }
+end
+
+fn add_edge(g: Graph, s1: str, s2: str)
+    a = ensure_vertex(g, s1)
+    b = ensure_vertex(g, s2)
+    add_vertex_edge(g, a, b)
+    add_vertex_edge(g, b, a)
+end
+
+fn fill_isle(g: Graph, visited: [int], vertices: [int], vi: int)
+    if visited[vi] > 0 do ret
+    visited[vi] = 1
+    push(vertices, vi)
+    for map_get_value(g.edges, vi).values {
+        fill_isle(g, visited, vertices, it)
+    }
+end
+
+fn get_isles(g: Graph) 
+    result = [str]
+    visited = [int]
+    arr_set_len(visited, len(g.names))
+    for 0..len(g.names) - 1 {
+        vertices = [int]
+        fill_isle(g, visited, vertices, it)
+        if len(vertices) > 0 {
+            names = [str]
+            for vertices do push(names, g.names[it])
+            push(result, str_arr_join(names, ','))
+        }
+    }
+    ret result
+end
+
+rec Three {
+    a: int
+    b: int
+    c: int
+}
+
+fn get_threes(g: Graph) 
+    result = [str]
+    visited = #[Three, int]
+    a = [int]
+    t = Three {}
+    for g.names {
+        v1 = idx
+        for map_get_value(g.edges, v1).values {
+            v2 = it
+            for map_get_value(g.edges, v2).values {
+                v3 = it
+                for map_get_value(g.edges, v3).values {
+                    v4 = it
+                    if v1 = v4 {
+                        arr_set_len(a, 0)
+                        push(a, v1)
+                        push(a, v2)
+                        push(a, v3)
+                        arr_sort(a)
+                        t.a = a[0]
+                        t.b = a[1]
+                        t.c = a[2]
+                        if map_has_key(visited, t) = 0 {
+                            map_add(visited, t, 0)
+                            push(result, vals_to_str(g, a))
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ret result
+end
+
+fn run
+    lines = read_string_lines_from_file('D:/src/postal/aoc2024/input.txt')
+    g = Graph {}
+    g.names = [str]
+    g.vertex_names_to_index = #[str, int]
+    g.edges = #[int, Int_Array]
+
+    for lines {
+        p = str_split(it, '-')
+        add_edge(g, p[0], p[1])
+    }
+
+    threes = get_threes(g)
+    total = 0
+    for threes {
+        log(it)
+        total = total + 1
+    }
+
+    // total = 0
+    // ranks = [int]
+    // for g.names {
+    //     vals = map_get_value(g.edges, idx).values
+    //     log(it, vals_to_str(g, vals))
+    //     push(ranks, len(vals))
+    // }
+
+    // arr_sort(ranks)
+    // for ranks do log(it)
+    
+    log('done', total)
+end

@@ -1,5 +1,6 @@
 **.idea/**
-/post_pascal_transpiler/target/
+/compiler/.idea
+/compiler/target/
+/compiler/Cargo.lock
 /_backup/
 /VisualStudio/
-/post_pascal_transpiler/.idea/

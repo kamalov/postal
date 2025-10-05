@@ -9,7 +9,10 @@ set start=%time%
 cl.exe generated.cpp /Gm- /EHsc /Od /Oi /permissive- /W4 /WX /wd4100 /wd4189     /link /nologo
 set end=%time%
 
-rem some shit copy/paste, but working
+
+
+
+rem Some shit copy/paste, but working
 set options="tokens=1-4 delims=:.,"
 for /f %options% %%a in ("%start%") do set start_h=%%a&set /a start_m=100%%b %% 100&set /a start_s=100%%c %% 100&set /a start_ms=100%%d %% 100
 for /f %options% %%a in ("%end%") do set end_h=%%a&set /a end_m=100%%b %% 100&set /a end_s=100%%c %% 100&set /a end_ms=100%%d %% 100

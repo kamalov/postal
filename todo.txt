@@ -7,6 +7,7 @@ todo:
   -- object initializer
 
 backlog:
+  -- remove rust external deps
   -- self referenced structure
   -- test for memory leaks for shared pointers
   -- ??? refactor type_info
