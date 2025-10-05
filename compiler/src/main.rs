@@ -23,53 +23,29 @@ use ast_builder::*;
 use type_checker::*;
 use code_generator::*;
 
-fn handle_error(compiler: &Compiler, token: Token, message: &String, prelude_lines_count: usize) {
-    fn char_index_to_line_and_column(chars: &Vec<char>, index: usize) -> (usize, usize) {
-        let mut line = 0;
-        let mut last_new_line_index = 0;
-        let mut prev_char = 0 as char;
-        for i in 0..(index + 1) {
-            if prev_char == '\n' {
-                line += 1;
-                last_new_line_index = i;
-            }
-            prev_char = chars[i];
-        }
-    
-        let column = index - last_new_line_index;
-        (line, column)
-    }
-
-    let lines = compiler.source_text.lines().collect::<Vec<_>>();
-    let chars = compiler.source_text.chars().collect::<Vec<_>>();
-    let (line_number, column_number) = char_index_to_line_and_column(&chars, token.first_char_index as usize);
-    let line = lines[line_number].clone();
-    let (left, right) = if column_number >= line.len() {
-        (line, "")
-    } else {
-        line.split_at(column_number)
-    };
-    println!("error: line {}, column {}\n", line_number + 1 - prelude_lines_count, column_number + 1);
-    print!("{}", left);
-    println!("\x1b[93m{}\x1b[0m\n", right);
-    let v = compiler.get_token_value(&token);
-    let v = if v == "\n" { "line end" } else { v };
-    println!("\x1b[93m{}\x1b[0m, token: \x1b[93m{}\x1b[0m", message, v);
-}
-
 fn main() {
-    let filename = Path::new("./tests/test_all.post");
-    // let filename = Path::new("./../aoc2024/aoc2024.post");
+    //let filename = Path::new("./tests/test_all.post");
+    let filename = Path::new("./../examples/aoc2024/aoc2024.post");
     let source_text = read_to_string(filename).unwrap();
-    let prelude_lines_count = read_to_string(Path::new("./prelude.post")).unwrap().lines().collect::<Vec<_>>().len() + 1;
-    //let prelude_lines_count = 0;
+    let prelude_text = read_to_string(Path::new("./prelude.post")).unwrap();
+    let mut prelude_lines_count = prelude_text.lines().collect::<Vec<_>>().len();
+    if prelude_text.chars().last().unwrap() == '\n' {
+        prelude_lines_count += 1;
+    }
     let prelude = include_str!("./../prelude.post");
     let source_text = format!("{prelude}\n{source_text}");
     
     let mut compiler = Compiler::new(source_text);
     
     // tokenizing
-    compiler.tokens = fill_tokens(&compiler);
+    let tokenizer_result = parse_tokens(&compiler);
+    match tokenizer_result {
+        Ok(tokens) => compiler.tokens = tokens,
+        Err(token_error) => {
+            handle_tokenizer_error(&compiler, token_error.char_index, &token_error.message, prelude_lines_count);
+            return;
+        }
+    }
     //debug_print_tokens(&compiler);
 
     // building ast
@@ -98,3 +74,58 @@ fn main() {
     let text = format!("#include \"prelude.cpp\"\n\n{}", generated_code_text);
     fs::write("./cpp/generated.cpp", text);
 }
+
+///
+ 
+fn char_index_to_line_and_column(chars: &Vec<char>, index: usize) -> (usize, usize) {
+    let mut line = 0;
+    let mut last_new_line_index = 0;
+    let mut prev_char = 0 as char;
+    for i in 0..(index + 1) {
+        if prev_char == '\n' {
+            line += 1;
+            last_new_line_index = i;
+        }
+        prev_char = chars[i];
+    }
+
+    let column = index - last_new_line_index;
+    (line, column)
+}
+
+fn handle_tokenizer_error(compiler: &Compiler, char_index: usize, message: &String, prelude_lines_count: usize) {
+    let lines = compiler.source_text.lines().collect::<Vec<_>>();
+    let chars = compiler.source_text.chars().collect::<Vec<_>>();
+    let (line_number, column_number) = char_index_to_line_and_column(&chars, char_index);
+    let line = lines[line_number].clone();
+    let (left, right) = if column_number >= line.len() {
+        (line, "")
+    } else {
+        line.split_at(column_number)
+    };
+    println!("error: line {}, column {}\n", line_number + 1 - prelude_lines_count, column_number + 1);
+    print!("{}", left);
+    println!("\x1b[93m{}\x1b[0m\n", right);
+    let v = compiler.source_text.chars().nth(char_index).unwrap();
+    let v = if v == '\n' { "line end".to_string() } else { v.to_string() };
+    println!("\x1b[93m{}\x1b[0m, token: \x1b[93m{}\x1b[0m", message, v);
+}
+
+fn handle_error(compiler: &Compiler, token: Token, message: &String, prelude_lines_count: usize) {
+    let lines = compiler.source_text.lines().collect::<Vec<_>>();
+    let chars = compiler.source_text.chars().collect::<Vec<_>>();
+    let (line_number, column_number) = char_index_to_line_and_column(&chars, token.first_char_index as usize);
+    let line = lines[line_number].clone();
+    let (left, right) = if column_number >= line.len() {
+        (line, "")
+    } else {
+        line.split_at(column_number)
+    };
+    println!("error: line {}, column {}\n", line_number + 1 - prelude_lines_count, column_number + 1);
+    print!("{}", left);
+    println!("\x1b[93m{}\x1b[0m\n", right);
+    let v = compiler.get_token_value(&token);
+    let v = if v == "\n" { "line end" } else { v };
+    println!("\x1b[93m{}\x1b[0m, token: \x1b[93m{}\x1b[0m", message, v);
+}
+

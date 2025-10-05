@@ -7,6 +7,20 @@ use crate::compiler::Compiler;
 
 pub type TokenId = u32;
 
+pub struct TokenError {
+    pub char_index: usize,
+    pub message: String,
+}
+
+impl TokenError {
+    pub fn new(char_index: usize, s: impl Into<String>) -> Self {
+        Self {
+            char_index,
+            message: s.into(),
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum TokenKind {
     Eof,
@@ -29,7 +43,7 @@ pub struct Token {
     pub length: u16,
 }
 
-pub fn fill_tokens(compiler: &Compiler) -> Vec<Token> {
+pub fn parse_tokens(compiler: &Compiler) -> Result<Vec<Token>, TokenError> {
     let mut tokenizer = Tokenizer {
         compiler,
         source_text: &compiler.source_text,
@@ -37,9 +51,9 @@ pub fn fill_tokens(compiler: &Compiler) -> Vec<Token> {
         current_token_index: 0,
         tokens: vec![],
     };
-    tokenizer.parse_chars_to_tokens();
+    tokenizer.parse_chars_to_tokens()?;
     
-    tokenizer.tokens
+    return Ok(tokenizer.tokens);
 }
 
 struct Tokenizer<'compiler> {
@@ -217,7 +231,7 @@ impl Tokenizer<'_> {
         self.add_token(TokenKind::Comment, first_char_index, value.len());
     }
 
-    fn parse_chars_to_tokens(&mut self) {
+    fn parse_chars_to_tokens(&mut self) -> Result<(), TokenError> {
         loop {
             if self.peek_char().is_none() {
                 break;
@@ -285,11 +299,12 @@ impl Tokenizer<'_> {
                 continue;
             }
 
-            println!("unexpected token {:?}", c);
-            panic!();
+            return Err(TokenError::new(self.current_token_index, "unexpected char"));
         }
 
         self.add_token(TokenKind::Eof, self.source_text.len(), 0);
+
+        return Ok(());
     }
 }
 

@@ -4,6 +4,7 @@ current:
   -- documentation
 
 todo: 
+  -- redo ranges
   -- object initializer
 
 backlog:

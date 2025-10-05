@@ -1,91 +1,94 @@
-rec Lock {
-    vals: [int]
-}
+record Lock
+    vals: [integer]
+end
 
-rec Key {
-    vals: [int]
-}
+record Key
+    vals: [integer]
+end
 
-rec Data {
+record Data
     locks: [Lock]
     keys: [Key]
-}
-
-fn int_array_to_str(a: [int]) 
-    s = ''
-    for a {
-        if s <> '' do s = s + ','
-        s = s + int_to_str(it)
-    }
-    ret s
 end
 
-fn process(d: Data, lines: [str])
-    chars = str_to_chars(str_arr_join(lines, ''))
-    vals = [int]
-    if chars[0] = '#' {
-        for 0..4 {
-            ci = it
-            for 1..6 {
-                ri = it
-                if chars[ri*5+ ci] = '.' do break
-            }
-            push(vals, ri - 1)
-        }
+function integer_array_to_string(a: [integer]) 
+    s = ""
+    for a
+        if s <> "" then s = s + ","
+        s = s + integer_to_string(item)
+    end
+    return s
+end
+
+function process(d: Data, lines: [string])
+    chars = string_to_chars(string_array_join(lines, ""))
+    vals = [integer]
+    if chars[0] = "#"
+        for 0..4
+            ci = item
+            ri = 0 // todo
+            for 1..6
+                ri = item
+                if chars[ri*5+ ci] = "." then break
+            end
+            array_push(vals, ri - 1)
+        end
         lock = Lock {}
         lock.vals = vals
-        push(d.locks, lock)
-    } else {
-        for 0..4 {
-            ci = it
+        array_push(d.locks, lock)
+    else
+        for 0..4
+            ci = item
             ri = 5
-            loop {
-                if chars[ri*5 + ci] = '.' do break
+            loop
+                if chars[ri*5 + ci] = "." then break
                 ri = ri - 1
-            }
-            push(vals, 5 - ri)
-        }
+            end
+            array_push(vals, 5 - ri)
+        end
         key = Key {}
         key.vals = vals
-        push(d.keys, key)
-    }
+        array_push(d.keys, key)
+    end
 end
 
-fn is_match(lock: Lock, key: Key)
-    for 0..4 {
-        if lock.vals[it] + key.vals[it] > 5 do ret 0
-    }
-    ret 1
+function is_match(lock: Lock, key: Key)
+    for 0..4
+        if lock.vals[item] + key.vals[item] > 5 then return 0
+    end
+    return 1
 end
 
-fn run
-    lines = read_string_lines_from_file('D:/src/postal/aoc2024/input.txt')
+function run
+    lines = read_string_lines_from_file("D:/src/postal/examples/aoc2024/input.txt")
     d = Data {}
     d.locks = [Lock]
     d.keys = [Key]
-    b = [str]
-    for lines {
-        if it = '' {
+    b = [string]
+    for lines
+        if item = ""
             process(d, b)
-            b = [str]
-        } else {
-            push(b, it)
-        }
-    }
-    process(d, b)
-    log('locks')
-    for d.locks do log(int_array_to_str(it.vals))
+            b = [string]
+        else
+            array_push(b, item)
+        end
+    end
 
-    log('\nkeys')
-    for d.keys do log(int_array_to_str(it.vals))
+    process(d, b)
+
+    log("locks")
+    for d.locks do log(integer_array_to_string(item.vals))
+
+    log("\nkeys")
+    for d.keys do log(integer_array_to_string(item.vals))
 
     total = 0
-    for d.locks {
-        lock = it
-        for d.keys {
-            total = total + is_match(lock, it)
-        }
-    }
+    for d.locks
+        lock = item
+        for d.keys
+            total = total + is_match(lock, item)
+        end
+    end
 
-    log('matches', total)
+    log("matches", total)
 end
