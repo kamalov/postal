@@ -174,7 +174,7 @@ impl TypeInfo {
                     }
 
                     if is_custom_type(value_type_str.as_str()) {
-                        key_cpp_type_str = format!("shared_pointer<{key_cpp_type_str}>");
+                        value_cpp_type_str = format!("shared_pointer<{value_cpp_type_str}>");
                     }
                 }
                 return format!("{key_cpp_type_str}, {value_cpp_type_str}");
@@ -198,6 +198,7 @@ impl TypeInfo {
 
         match &self.kind {
             TypeInfoKind::HashMap(_, _) => {
+                let cpp_type_str1 = self.to_cpp_type_string();
                 return format!("shared_map<{cpp_type_str}>");
             }
             TypeInfoKind::Array(_) => {

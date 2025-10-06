@@ -1,0 +1,127 @@
+record Int_Array
+    values: [integer]
+end
+
+function clone_int_array(arr: Int_Array)
+    r = Int_Array {}
+    r.values = [integer]
+    for arr.values do array_push(r.values, item)
+    return r
+end
+
+record Graph
+    names: [string]
+    vertex_names_to_index: #[string, integer]
+    edges: #[integer, Int_Array]
+    cons: [Int_Array]
+    matrix: [integer]
+end
+
+function set_matrix(g: Graph, a: integer, b: integer, v: integer)
+    g.matrix[a*1000 + b] = v
+end
+
+function get_matrix(g: Graph, a: integer, b: integer)
+    return g.matrix[a*1000 + b]
+end
+
+function vals_to_str(g: Graph, vals: [integer])
+    s = ""
+    for vals
+        if s <> "" then s = s + ","
+        s = s + g.names[item]
+    end
+    return s
+end
+
+function ensure_vertex(g: Graph, vertex_name: string)
+    if map_has_key(g.vertex_names_to_index, vertex_name) then return map_get_value(g.vertex_names_to_index, vertex_name)
+    idx = array_size(g.names)
+    array_push(g.names, vertex_name)
+    map_add(g.vertex_names_to_index, vertex_name, idx)
+    return idx
+end
+
+function add_vertex_edge(g: Graph, a: integer, b: integer)
+    if map_has_key(g.edges, a)
+        to = map_get_value(g.edges, a)
+        array_push(to.values, b)
+    else
+        to = Int_Array {}
+        to.values = [integer]
+        array_push(to.values, b)
+        map_add(g.edges, a, to)
+    end
+end
+
+function add_edge(g: Graph, s1: string, s2: string)
+    a = ensure_vertex(g, s1)
+    b = ensure_vertex(g, s2)
+    set_matrix(g, a, b, 1)
+    set_matrix(g, b, a, 1)
+    add_vertex_edge(g, a, b)
+    add_vertex_edge(g, b, a)
+end
+
+function next_cons(g: Graph)
+    result = [Int_Array]
+    for g.cons
+        con = item
+        for array_last(con.values)..array_size(g.names) - 1
+            candidate = item
+            is_valid = 1
+            for con.values
+                if get_matrix(g, item, candidate) = 0
+                    is_valid = 0
+                    break
+                end
+            end
+            if is_valid
+                new_con = clone_int_array(con)
+                array_push(new_con.values, candidate)
+                array_push(result, new_con)
+            end
+        end
+    end
+
+    return result
+end
+
+function run
+    lines = read_string_lines_from_file("D:/src/postal/examples/aoc2024/23/input.txt")
+    g = Graph {}
+    g.names = [string]
+    g.vertex_names_to_index = #[string, integer]
+    g.edges = #[integer, Int_Array]
+    g.cons = [Int_Array]
+    g.matrix = [integer]
+    array_set_size(g.matrix, 1000000)
+
+    for lines
+        p = string_split(item, "-")
+        add_edge(g, p[0], p[1])
+    end
+
+    for g.names
+        a = Int_Array {}
+        a.values = [integer]
+        array_push(a.values, index)
+        array_push(g.cons, a)
+    end
+
+    for 1..13
+        next = next_cons(g)
+        log("rank", item, "count", array_size(next))
+        if array_size(next) = 0 then break
+        g.cons = next
+    end
+
+    vals = g.cons[0].values
+    sa = [string]
+    for vals do array_push(sa, g.names[item])
+    array_quick_sort(sa)
+    s = string_array_join(sa, ",")
+
+    log("done", array_size(vals), vals_to_str(g, vals))
+    log("done", array_size(vals), s)
+end

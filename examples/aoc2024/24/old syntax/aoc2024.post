@@ -1,0 +1,108 @@
+rec Expr {
+    left: str
+    op: str
+    right: str
+    reg: str
+}
+
+rec Data {
+    values: #[str, int]
+    exprs: [Expr]
+    mappings: [str]
+}
+
+fn int_to_str_padded(i: int)
+    r = int_to_str(i)
+    if i < 10 do r = '0' + r
+    ret r
+end
+
+fn starts_with(s: str, a: str)
+    ret str_to_chars(s)[0] = a
+end
+
+fn expr_to_str(e: Expr)
+    ret e.op + ': ' + e.left + ' ' + e.op + ' ' + e.right + ' -> ' + e.reg
+end
+
+fn wrap_reg(s: str)
+    a = str_to_chars(s)[0]
+    if a = 'x' or a = 'y' or a = 'z' do ret s
+    ret '_' + s
+end
+
+fn create_data(lines: [str])
+    r = Data {}
+    r.values = #[str, int]
+    r.exprs = [Expr]
+    r.mappings = [str]
+    
+    for lines {
+        e = Expr {}
+        p = str_split(it, ' -> ')
+        e.reg = arr_last(p)
+        p = str_split(p[0], ' ')
+        e.left = p[0]
+        e.op = p[1]
+        e.right = p[2]
+        if starts_with(e.left, 'y') {
+            t = e.left
+            e.left = e.right
+            e.right = t
+        }
+        e.left = wrap_reg(e.left)
+        e.right = wrap_reg(e.right)
+        e.reg = wrap_reg(e.reg)
+        push(r.exprs, e)
+    }
+    ret r
+end
+
+fn update_reg(d: Data, from: str, to: str)
+    push(d.mappings, to + ' <- ' + from)
+    for d.exprs {
+        e = it
+        if e.left = from {
+            e.left = to
+        }
+        if e.right = from {
+            //log(from)
+            e.right = e.left
+            e.left = to
+        }
+        if e.reg = from and starts_with(e.reg, 'z') = 0 {
+            e.reg = to
+        }
+    }
+end
+
+fn update_regs(d: Data)
+    for d.exprs {
+        if starts_with(it.left, 'x') {
+            i = str_to_int(str_remove(it.left, 'x'))
+            if it.op = 'xor' {
+                new_reg = 'sum_half_' + int_to_str_padded(i)
+                update_reg(d, it.reg, new_reg)
+            }
+            if it.op = 'and' {
+                new_reg = 'carry_half_' + int_to_str_padded(i)
+                update_reg(d, it.reg, new_reg)
+            }
+        }
+    }
+end
+
+fn run
+    lines = read_string_lines_from_file('D:/src/postal/aoc2024/input.txt')
+    d = create_data(lines)
+    update_regs(d)
+    out = [str]
+    for d.exprs do push(out, expr_to_str(it))
+    sort(out)
+    for out do log(it)
+
+    sort(d.mappings)
+    log('\nmappings\n')
+    for d.mappings do log(it)
+    log('done 1')
+end

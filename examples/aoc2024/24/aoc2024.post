@@ -1,108 +1,109 @@
-rec Expr {
-    left: str
-    op: str
-    right: str
-    reg: str
-}
+record Expr
+    left: string
+    op: string
+    right: string
+    reg: string
+end
 
-rec Data {
-    values: #[str, int]
+record Data
+    values: #[string, integer]
     exprs: [Expr]
-    mappings: [str]
-}
-
-fn int_to_str_padded(i: int)
-    r = int_to_str(i)
-    if i < 10 do r = '0' + r
-    ret r
+    mappings: [string]
 end
 
-fn starts_with(s: str, a: str)
-    ret str_to_chars(s)[0] = a
+function int_to_str_padded(i: integer)
+    r = integer_to_string(i)
+    if i < 10 then r = "0" + r
+    return r
 end
 
-fn expr_to_str(e: Expr)
-    ret e.op + ': ' + e.left + ' ' + e.op + ' ' + e.right + ' -> ' + e.reg
+function starts_with(s: string, a: string)
+    return string_to_chars(s)[0] = a
 end
 
-fn wrap_reg(s: str)
-    a = str_to_chars(s)[0]
-    if a = 'x' or a = 'y' or a = 'z' do ret s
-    ret '_' + s
+function expr_to_str(e: Expr)
+    return e.op + ": " + e.left + " " + e.op + " " + e.right + " -> " + e.reg
 end
 
-fn create_data(lines: [str])
+function wrap_reg(s: string)
+    a = string_to_chars(s)[0]
+    if a = "x" or a = "y" or a = "z" then return s
+    return "_" + s
+end
+
+function create_data(lines: [string])
     r = Data {}
-    r.values = #[str, int]
+    r.values = #[string, integer]
     r.exprs = [Expr]
-    r.mappings = [str]
+    r.mappings = [string]
     
-    for lines {
+    for lines
         e = Expr {}
-        p = str_split(it, ' -> ')
-        e.reg = arr_last(p)
-        p = str_split(p[0], ' ')
+        p = string_split(item, " -> ")
+        e.reg = array_last(p)
+        p = string_split(p[0], " ")
         e.left = p[0]
         e.op = p[1]
         e.right = p[2]
-        if starts_with(e.left, 'y') {
+        if starts_with(e.left, "y")
             t = e.left
             e.left = e.right
             e.right = t
-        }
+        end
         e.left = wrap_reg(e.left)
         e.right = wrap_reg(e.right)
         e.reg = wrap_reg(e.reg)
-        push(r.exprs, e)
-    }
-    ret r
+        array_push(r.exprs, e)
+    end
+
+    return r
 end
 
-fn update_reg(d: Data, from: str, to: str)
-    push(d.mappings, to + ' <- ' + from)
-    for d.exprs {
-        e = it
-        if e.left = from {
+function update_reg(d: Data, from: string, to: string)
+    array_push(d.mappings, to + " <- " + from)
+    for d.exprs
+        e = item
+        if e.left = from
             e.left = to
-        }
-        if e.right = from {
+        end
+        if e.right = from
             //log(from)
             e.right = e.left
             e.left = to
-        }
-        if e.reg = from and starts_with(e.reg, 'z') = 0 {
+        end
+        if e.reg = from and not starts_with(e.reg, "z")
             e.reg = to
-        }
-    }
+        end
+    end
 end
 
-fn update_regs(d: Data)
-    for d.exprs {
-        if starts_with(it.left, 'x') {
-            i = str_to_int(str_remove(it.left, 'x'))
-            if it.op = 'xor' {
-                new_reg = 'sum_half_' + int_to_str_padded(i)
-                update_reg(d, it.reg, new_reg)
-            }
-            if it.op = 'and' {
-                new_reg = 'carry_half_' + int_to_str_padded(i)
-                update_reg(d, it.reg, new_reg)
-            }
-        }
-    }
+function update_regs(d: Data)
+    for d.exprs
+        if starts_with(item.left, "x")
+            i = string_to_integer(string_remove(item.left, "x"))
+            if item.op = "xor"
+                new_reg = "sum_half_" + int_to_str_padded(i)
+                update_reg(d, item.reg, new_reg)
+            end
+            if item.op = "and"
+                new_reg = "carry_half_" + int_to_str_padded(i)
+                update_reg(d, item.reg, new_reg)
+            end
+        end
+    end
 end
 
-fn run
-    lines = read_string_lines_from_file('D:/src/postal/aoc2024/input.txt')
+function run
+    lines = read_string_lines_from_file("D:/src/postal/examples/aoc2024/24/input.txt")
     d = create_data(lines)
     update_regs(d)
-    out = [str]
-    for d.exprs do push(out, expr_to_str(it))
-    sort(out)
-    for out do log(it)
+    out = [string]
+    for d.exprs do array_push(out, expr_to_str(item))
+    array_quick_sort(out)
+    for out do log(item)
 
-    sort(d.mappings)
-    log('\nmappings\n')
-    for d.mappings do log(it)
-    log('done 1')
+    array_quick_sort(d.mappings)
+    log("\nmappings\n")
+    for d.mappings do log(item)
+    log("done 1")
 end

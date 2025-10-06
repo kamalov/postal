@@ -1,9 +1,13 @@
+record Foo
+    values: [integer]
+end
+
+record Bar
+    f1: #[integer, Foo]
+end
+
 function run
-    // lines = read_string_lines_from_file("D:\\src\\postal\\todo.txt")
-    // for lines do log(item)
-    // log("input smth: ")
-    // s = read_line()
-    // log(s)
+    log("done")
 end
 
 
