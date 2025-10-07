@@ -1,9 +1,10 @@
+// prelude start
 function array_size(a: [$T]) integer external
 function array_push(a: [$T], element: T) external
 function array_pop(a: [$T]) T external
 function array_quick_sort(a: [$T]) external
 function array_push_front(a: [$T], element: T) external
-function array_pop_front(a: [$T], element: T) T external
+function array_pop_front(a: [$T]) T external
 function array_last(a: [$T]) T external
 function array_set_size(a: [$T], new_size: integer) external
 function array_contains(a: [$T], value: T) integer external
@@ -32,6 +33,4 @@ function integer_to_string(i: integer) string external
 function error(s: string) external
 function read_line() string external   
 function read_string_lines_from_file(filename: string) [string] external
-//
 // prelude end
-//

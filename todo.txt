@@ -1,5 +1,6 @@
 current: 
   -- test on aoc after all changes
+  -- test for memory leaks for shared pointers
   -- groom, remove warning supression
   -- documentation
 
@@ -10,7 +11,6 @@ todo:
 backlog:
   -- remove rust external deps
   -- self referenced structure
-  -- test for memory leaks for shared pointers
   -- ??? refactor type_info
   -- multiline expressions inside () parentheses
   -- fix parsing panic errors (esp. in tokenizer), it/idx outside iterator

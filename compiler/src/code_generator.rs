@@ -30,9 +30,9 @@ const OPERATORS_MAP: [(&str, &str); 20] = [
     
     ("bit_and", " & "),
     ("bit_or", "  | "),
-    ("xor", "^"),
-    ("shr", " >> "),
-    ("shl", " << ")
+    ("bit_xor", "^"),
+    ("bit_shift_right", " >> "),
+    ("bit_shift_left", " << ")
 ];
 
 const PADDING: &str = "    ";
@@ -196,7 +196,7 @@ impl CodeGenerator<'_> {
         if function_node.is_external {
             writeln!(
                 &mut r,
-                "{padding}/// prelude {fn_generic_params_code}{return_type_str} {name}({fn_params_code});",
+                "{padding}{fn_generic_params_code}{return_type_str} {name}({fn_params_code});",
                 name = function_node.declaration.name
             );
         } else {
@@ -457,7 +457,7 @@ impl CodeGenerator<'_> {
         let p = param_names.join(", ");
         let function_name = f.name.as_str();
         match function_name {
-            "log" => {
+            "print" => {
                 if f.params.is_empty() {
                     write!(&mut r, "printf(\"\\n\")");
                 } else {

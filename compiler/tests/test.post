@@ -1,13 +1,5 @@
-record Foo
-    values: [integer]
-end
-
-record Bar
-    f1: #[integer, Foo]
-end
-
 function run
-    log("done")
+    print("done")
 end
 
 

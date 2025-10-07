@@ -13,7 +13,7 @@ pub const KEYWORDS: [&str; 29] = [
     "integer", "real", "string", "record", //
     "div", "mod", //
     "yes", "no", "not", "and", "or", //
-    "xor", "shr", "shl", "bit_and", "bit_or"//
+    "bit_xor", "bit_shift_right", "bit_shift_left", "bit_and", "bit_or"//
 ];
 
 pub const SPECIAL_SYMBOLS: [&str; 18] = [

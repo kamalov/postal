@@ -1,0 +1,106 @@
+function next(number: integer)
+    two24 = 1 bit_shift_left 24
+    n = number
+
+    v = n bit_shift_left 6
+    n = n bit_xor v
+    n = n mod two24
+
+    v = n bit_shift_right 5
+    n = n bit_xor v
+    n = n mod two24
+
+    v = n bit_shift_left 11
+    n = n bit_xor v
+    n = n mod two24
+
+    return n
+end
+
+function int_arr_to_str(a: [integer])
+    s = ""
+    for a 
+        if s <> "" then s = s + ","
+        s = s + integer_to_string(item)
+    end
+    return s
+end
+
+function get_number(last4: [integer], base: integer)
+    if array_size(last4) <> 4 then error("get_number " + integer_to_string(array_size(last4)))
+    den = 1
+    v = 0
+    for last4 
+        v = v + den*(item + 9)
+        den = den*base
+    end
+    return v
+end
+
+function int_to_arr(n: integer, base: integer)
+    r = [integer]
+    v = n
+    loop 
+        rem = v mod base
+        array_push(r, rem - 9)
+        v = v div base
+        if v = 0 then break
+    end
+    return r
+end
+
+function run
+    lines = read_string_lines_from_file("D:/src/postal/examples/aoc2024/22/input.txt")
+    deep = 2000
+    t = 0
+    acc = [integer]
+    base = 20
+    array_set_size(acc, base*base*base*base)
+    blocked = [integer]
+    array_set_size(blocked, base*base*base*base)
+    for lines 
+        line = item
+        if line = "" then break
+        v = string_to_integer(line)
+        prev = v mod 10
+        print(v)
+
+        for 0..array_size(blocked) - 1 do blocked[item] = 0
+
+        last4 = [integer]
+        for 1..deep 
+            v = next(v)
+            rem = v mod 10
+            diff = rem - prev
+            prev = rem
+            array_push(last4, diff)
+            if array_size(last4) > 4 
+                array_pop_front(last4)
+            end
+
+            if array_size(last4) = 4 
+                //log(line, rem, int_arr_to_str(last4))
+                n = get_number(last4, base)
+                //log(line, rem, int_arr_to_str(last4), "|", int_arr_to_str(int_to_arr(n, base)))
+                if blocked[n] then continue
+                acc[n] = acc[n] + rem
+                blocked[n] = 1
+            end
+
+            //log(v, rem, "(", diff,")")
+        end
+    end
+
+    max_v = 0
+    for acc
+        if item > max_v then max_v = item
+    end
+    
+    for acc
+        if item = max_v 
+            print(item, "max seq", int_arr_to_str(int_to_arr(index, base)))
+        end
+    end
+
+    print("\ndone", max_v)
+end

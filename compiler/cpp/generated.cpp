@@ -1,223 +1,199 @@
 #include "prelude.cpp"
 
-/// prelude template <typename T>i64 array_size(shared_vector<T> a);
-/// prelude template <typename T>void array_push(shared_vector<T> a, T element);
-/// prelude template <typename T>T array_pop(shared_vector<T> a);
-/// prelude template <typename T>void array_quick_sort(shared_vector<T> a);
-/// prelude template <typename T>void array_push_front(shared_vector<T> a, T element);
-/// prelude template <typename T>T array_pop_front(shared_vector<T> a, T element);
-/// prelude template <typename T>T array_last(shared_vector<T> a);
-/// prelude template <typename T>void array_set_size(shared_vector<T> a, i64 new_size);
-/// prelude template <typename T>i64 array_contains(shared_vector<T> a, T value);
-/// prelude template <typename T>void array_remove_at(shared_vector<T> a, i64 index);
-/// prelude template <typename T>void array_remove(shared_vector<T> a, T value);
-/// prelude template <typename T>i64 array_index_of(shared_vector<T> a, T value);
-/// prelude template <typename T>shared_vector<T> array_slice(shared_vector<T> a, i64 from, i64 to);
-/// prelude template <typename K, typename V>void map_add(shared_map<K, V> map, K key, V value);
-/// prelude template <typename K, typename V>V map_get_value(shared_map<K, V> map, K key);
-/// prelude template <typename K, typename V>void map_add_or_update(shared_map<K, V> map, K key, V value);
-/// prelude template <typename K, typename V>i64 map_has_key(shared_map<K, V> map, K key);
-/// prelude template <typename K, typename V>void map_remove(shared_map<K, V> map, K key);
-/// prelude template <typename K, typename V>i64 map_size(shared_map<K, V> map);
-/// prelude template <typename K, typename V>shared_vector<K> map_keys(shared_map<K, V> map);
-/// prelude shared_vector<std::string> string_split(std::string s, std::string by);
-/// prelude i64 string_to_integer(std::string s);
-/// prelude shared_vector<std::string> string_to_chars(std::string s);
-/// prelude i64 string_contains(std::string s, std::string subs);
-/// prelude i64 string_size(std::string s);
-/// prelude std::string string_remove(std::string s, std::string r);
-/// prelude std::string string_array_join(shared_vector<std::string> a, std::string delimiter);
-/// prelude std::string integer_to_string(i64 i);
-/// prelude void error(std::string s);
-/// prelude std::string read_line();
-/// prelude shared_vector<std::string> read_string_lines_from_file(std::string filename);
-////
+//// prelude start
+template <typename T>i64 array_size(shared_vector<T> a);
+template <typename T>void array_push(shared_vector<T> a, T element);
+template <typename T>T array_pop(shared_vector<T> a);
+template <typename T>void array_quick_sort(shared_vector<T> a);
+template <typename T>void array_push_front(shared_vector<T> a, T element);
+template <typename T>T array_pop_front(shared_vector<T> a);
+template <typename T>T array_last(shared_vector<T> a);
+template <typename T>void array_set_size(shared_vector<T> a, i64 new_size);
+template <typename T>i64 array_contains(shared_vector<T> a, T value);
+template <typename T>void array_remove_at(shared_vector<T> a, i64 index);
+template <typename T>void array_remove(shared_vector<T> a, T value);
+template <typename T>i64 array_index_of(shared_vector<T> a, T value);
+template <typename T>shared_vector<T> array_slice(shared_vector<T> a, i64 from, i64 to);
+template <typename K, typename V>void map_add(shared_map<K, V> map, K key, V value);
+template <typename K, typename V>V map_get_value(shared_map<K, V> map, K key);
+template <typename K, typename V>void map_add_or_update(shared_map<K, V> map, K key, V value);
+template <typename K, typename V>i64 map_has_key(shared_map<K, V> map, K key);
+template <typename K, typename V>void map_remove(shared_map<K, V> map, K key);
+template <typename K, typename V>i64 map_size(shared_map<K, V> map);
+template <typename K, typename V>shared_vector<K> map_keys(shared_map<K, V> map);
+shared_vector<std::string> string_split(std::string s, std::string by);
+i64 string_to_integer(std::string s);
+shared_vector<std::string> string_to_chars(std::string s);
+i64 string_contains(std::string s, std::string subs);
+i64 string_size(std::string s);
+std::string string_remove(std::string s, std::string r);
+std::string string_array_join(shared_vector<std::string> a, std::string delimiter);
+std::string integer_to_string(i64 i);
+void error(std::string s);
+std::string read_line();
+shared_vector<std::string> read_string_lines_from_file(std::string filename);
 //// prelude end
-////
-struct Int_Array {
-    shared_vector<i64> values;
-};
-
-
-shared_pointer<Int_Array> clone_int_array(shared_pointer<Int_Array> arr) {
-    shared_pointer<Int_Array> r;
-    r = create_shared_pointer<Int_Array >();
-    r->values = create_shared_vector<i64>();
-
-    auto __expr0 = arr->values;
-    for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
-        i64 expr__it0 = (*__expr0)[expr__it0__idx];
-        array_push(r->values, expr__it0);
-    }
-    return r;
+i64 next(i64 number) {
+    i64 two24;
+    i64 n;
+    i64 v;
+    two24 = 1ll << 24ll;
+    n = number;
+    v = n << 6ll;
+    n = n^v;
+    n = n % two24;
+    v = n >> 5ll;
+    n = n^v;
+    n = n % two24;
+    v = n << 11ll;
+    n = n^v;
+    n = n % two24;
+    return n;
 }
 
-struct Graph {
-    shared_vector<std::string> names;
-    shared_map<std::string, i64> vertex_names_to_index;
-    shared_map<i64, shared_pointer<Int_Array>> edges;
-    shared_vector<shared_pointer<Int_Array>> cons;
-    shared_vector<i64> matrix;
-};
-
-
-void set_matrix(shared_pointer<Graph> g, i64 a, i64 b, i64 v) {
-    g->matrix->at(a*1000ll + b) = v;
-}
-
-i64 get_matrix(shared_pointer<Graph> g, i64 a, i64 b) {
-    return g->matrix->at(a*1000ll + b);
-}
-
-std::string vals_to_str(shared_pointer<Graph> g, shared_vector<i64> vals) {
+std::string int_arr_to_str(shared_vector<i64> a) {
     std::string s;
     s = ""s;
 
-    auto __expr0 = vals;
-    for (i64 vals__it0__idx = 0; vals__it0__idx < (i64)__expr0->size(); vals__it0__idx++) {
-        i64 vals__it0 = (*__expr0)[vals__it0__idx];
+    auto __expr0 = a;
+    for (i64 a__it0__idx = 0; a__it0__idx < (i64)__expr0->size(); a__it0__idx++) {
+        i64 a__it0 = (*__expr0)[a__it0__idx];
 
         if (s != ""s) {
             s = s + ","s;
         };
-        s = s + g->names->at(vals__it0);
+        s = s + integer_to_string(a__it0);
     }
     return s;
 }
 
-i64 ensure_vertex(shared_pointer<Graph> g, std::string vertex_name) {
-    i64 idx;
+i64 get_number(shared_vector<i64> last4, i64 base) {
+    i64 den;
+    i64 v;
 
-    if (map_has_key(g->vertex_names_to_index, vertex_name)) {
-        return map_get_value(g->vertex_names_to_index, vertex_name);
+    if (array_size(last4) != 4ll) {
+        error("get_number "s + integer_to_string(array_size(last4)));
     };
-    idx = array_size(g->names);
-    array_push(g->names, vertex_name);
-    map_add(g->vertex_names_to_index, vertex_name, idx);
-    return idx;
-}
+    den = 1ll;
+    v = 0ll;
 
-void add_vertex_edge(shared_pointer<Graph> g, i64 a, i64 b) {
-    shared_pointer<Int_Array> to;
-
-    if (map_has_key(g->edges, a)) {
-        to = map_get_value(g->edges, a);
-        array_push(to->values, b);
+    auto __expr0 = last4;
+    for (i64 last4__it0__idx = 0; last4__it0__idx < (i64)__expr0->size(); last4__it0__idx++) {
+        i64 last4__it0 = (*__expr0)[last4__it0__idx];
+        v = v + den*(last4__it0 + 9ll);
+        den = den*base;
     }
-    else {
-        to = create_shared_pointer<Int_Array >();
-        to->values = create_shared_vector<i64>();
-        array_push(to->values, b);
-        map_add(g->edges, a, to);
-    };
+    return v;
 }
 
-void add_edge(shared_pointer<Graph> g, std::string s1, std::string s2) {
-    i64 a;
-    i64 b;
-    a = ensure_vertex(g, s1);
-    b = ensure_vertex(g, s2);
-    set_matrix(g, a, b, 1ll);
-    set_matrix(g, b, a, 1ll);
-    add_vertex_edge(g, a, b);
-    add_vertex_edge(g, b, a);
-}
+shared_vector<i64> int_to_arr(i64 n, i64 base) {
+    shared_vector<i64> r;
+    i64 v;
+    i64 rem;
+    r = create_shared_vector<i64>();
+    v = n;
 
-shared_vector<shared_pointer<Int_Array>> next_cons(shared_pointer<Graph> g) {
-    shared_vector<shared_pointer<Int_Array>> result;
-    shared_pointer<Int_Array> con;
-    i64 candidate;
-    i64 is_valid;
-    shared_pointer<Int_Array> new_con;
-    result = create_shared_vector<shared_pointer<Int_Array>>();
+    for (;;) {
+        rem = v % base;
+        array_push(r, rem-9ll);
+        v = v/base;
 
-    auto __expr0 = g->cons;
-    for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
-        shared_pointer<Int_Array> expr__it0 = (*__expr0)[expr__it0__idx];
-        con = expr__it0;
-
-        auto __expr1 = create_range(array_last(con->values), array_size(g->names)-1ll);
-        for (i64 expr__it1__idx = 0; expr__it1__idx < (i64)__expr1->size(); expr__it1__idx++) {
-            i64 expr__it1 = (*__expr1)[expr__it1__idx];
-            candidate = expr__it1;
-            is_valid = 1ll;
-
-            auto __expr2 = con->values;
-            for (i64 expr__it2__idx = 0; expr__it2__idx < (i64)__expr2->size(); expr__it2__idx++) {
-                i64 expr__it2 = (*__expr2)[expr__it2__idx];
-
-                if (get_matrix(g, expr__it2, candidate) == 0ll) {
-                    is_valid = 0ll;
-                    break;
-                };
-            }
-
-            if (is_valid) {
-                new_con = clone_int_array(con);
-                array_push(new_con->values, candidate);
-                array_push(result, new_con);
-            };
-        }
+        if (v == 0ll) {
+            break;
+        };
     }
-    return result;
+    return r;
 }
 
 void run() {
     shared_vector<std::string> lines;
-    shared_pointer<Graph> g;
-    shared_vector<std::string> p;
-    shared_pointer<Int_Array> a;
-    shared_vector<shared_pointer<Int_Array>> next;
-    shared_vector<i64> vals;
-    shared_vector<std::string> sa;
-    std::string s;
-    lines = read_string_lines_from_file("D:/src/postal/examples/aoc2024/23/input.txt"s);
-    g = create_shared_pointer<Graph >();
-    g->names = create_shared_vector<std::string>();
-    g->vertex_names_to_index = create_shared_map<std::string, i64>();
-    g->edges = create_shared_map<i64, shared_pointer<Int_Array>>();
-    g->cons = create_shared_vector<shared_pointer<Int_Array>>();
-    g->matrix = create_shared_vector<i64>();
-    array_set_size(g->matrix, 1000000ll);
+    i64 deep;
+    i64 t;
+    shared_vector<i64> acc;
+    i64 base;
+    shared_vector<i64> blocked;
+    std::string line;
+    i64 v;
+    i64 prev;
+    shared_vector<i64> last4;
+    i64 rem;
+    i64 diff;
+    i64 n;
+    i64 max_v;
+    lines = read_string_lines_from_file("D:/src/postal/examples/aoc2024/22/input.txt"s);
+    deep = 2000ll;
+    t = 0ll;
+    acc = create_shared_vector<i64>();
+    base = 20ll;
+    array_set_size(acc, base*base*base*base);
+    blocked = create_shared_vector<i64>();
+    array_set_size(blocked, base*base*base*base);
 
     auto __expr0 = lines;
     for (i64 lines__it0__idx = 0; lines__it0__idx < (i64)__expr0->size(); lines__it0__idx++) {
         std::string lines__it0 = (*__expr0)[lines__it0__idx];
-        p = string_split(lines__it0, "-"s);
-        add_edge(g, p->at(0ll), p->at(1ll));
-    }
+        line = lines__it0;
 
-    auto __expr1 = g->names;
-    for (i64 expr__it1__idx = 0; expr__it1__idx < (i64)__expr1->size(); expr__it1__idx++) {
-        std::string expr__it1 = (*__expr1)[expr__it1__idx];
-        a = create_shared_pointer<Int_Array >();
-        a->values = create_shared_vector<i64>();
-        array_push(a->values, expr__it1__idx);
-        array_push(g->cons, a);
-    }
-
-    auto __expr2 = create_range(1ll, 13ll);
-    for (i64 expr__it2__idx = 0; expr__it2__idx < (i64)__expr2->size(); expr__it2__idx++) {
-        i64 expr__it2 = (*__expr2)[expr__it2__idx];
-        next = next_cons(g);
-        printf("%s %lld %s %lld\n", ("rank"s).c_str(), (i64)(expr__it2), ("count"s).c_str(), (i64)(array_size(next)));
-
-        if (array_size(next) == 0ll) {
+        if (line == ""s) {
             break;
         };
-        g->cons = next;
-    }
-    vals = g->cons->at(0ll)->values;
-    sa = create_shared_vector<std::string>();
+        v = string_to_integer(line);
+        prev = v % 10ll;
+        printf("%lld\n", (i64)(v));
 
-    auto __expr3 = vals;
-    for (i64 vals__it3__idx = 0; vals__it3__idx < (i64)__expr3->size(); vals__it3__idx++) {
-        i64 vals__it3 = (*__expr3)[vals__it3__idx];
-        array_push(sa, g->names->at(vals__it3));
+        auto __expr1 = create_range(0ll, array_size(blocked)-1ll);
+        for (i64 expr__it1__idx = 0; expr__it1__idx < (i64)__expr1->size(); expr__it1__idx++) {
+            i64 expr__it1 = (*__expr1)[expr__it1__idx];
+            blocked->at(expr__it1) = 0ll;
+        }
+        last4 = create_shared_vector<i64>();
+
+        auto __expr2 = create_range(1ll, deep);
+        for (i64 expr__it2__idx = 0; expr__it2__idx < (i64)__expr2->size(); expr__it2__idx++) {
+            i64 expr__it2 = (*__expr2)[expr__it2__idx];
+            v = next(v);
+            rem = v % 10ll;
+            diff = rem-prev;
+            prev = rem;
+            array_push(last4, diff);
+
+            if (array_size(last4) > 4ll) {
+                array_pop_front(last4);
+            };
+
+            if (array_size(last4) == 4ll) {
+                ////log(line, rem, int_arr_to_str(last4))
+                n = get_number(last4, base);
+                ////log(line, rem, int_arr_to_str(last4), "|", int_arr_to_str(int_to_arr(n, base)))
+
+                if (blocked->at(n)) {
+                    continue;
+                };
+                acc->at(n) = acc->at(n) + rem;
+                blocked->at(n) = 1ll;
+            };
+            ////log(v, rem, "(", diff,")")
+        }
     }
-    array_quick_sort(sa);
-    s = string_array_join(sa, ","s);
-    printf("%s %lld %s\n", ("done"s).c_str(), (i64)(array_size(vals)), (vals_to_str(g, vals)).c_str());
-    printf("%s %lld %s\n", ("done"s).c_str(), (i64)(array_size(vals)), (s).c_str());
+    max_v = 0ll;
+
+    auto __expr3 = acc;
+    for (i64 acc__it3__idx = 0; acc__it3__idx < (i64)__expr3->size(); acc__it3__idx++) {
+        i64 acc__it3 = (*__expr3)[acc__it3__idx];
+
+        if (acc__it3 > max_v) {
+            max_v = acc__it3;
+        };
+    }
+
+    auto __expr4 = acc;
+    for (i64 acc__it4__idx = 0; acc__it4__idx < (i64)__expr4->size(); acc__it4__idx++) {
+        i64 acc__it4 = (*__expr4)[acc__it4__idx];
+
+        if (acc__it4 == max_v) {
+            printf("%lld %s %s\n", (i64)(acc__it4), ("max seq"s).c_str(), (int_arr_to_str(int_to_arr(acc__it4__idx, base))).c_str());
+        };
+    }
+    printf("%s %lld\n", ("\ndone"s).c_str(), (i64)(max_v));
 }
 

@@ -6,7 +6,7 @@ use std::{fmt, vec};
 
 pub const BUILTIN_TYPES: [&str; 4] = ["integer", "real", "string", "boolean"];
 
-pub const BUILTIN_FUNCTIONS: [&str; 1] = ["log"];
+pub const BUILTIN_FUNCTIONS: [&str; 1] = ["print"];
 
 pub fn is_builtin_function(fn_name: &str) -> bool {
     BUILTIN_FUNCTIONS.contains(&fn_name)

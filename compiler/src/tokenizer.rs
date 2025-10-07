@@ -139,9 +139,9 @@ impl Tokenizer<'_> {
         let value = &self.source_text[first_char_index..self.current_token_index];
 
         let kind = if self.compiler.keywords.contains(value) {
-            if ["div", "mod", "and", "or", "not", "bit_and", "bit_or", "shr", "shl", "xor"].contains(&value) {
+            if ["div", "mod", "and", "or", "not", "bit_and", "bit_or", "bit_shift_left", "bit_shift_right", "bit_xor"].contains(&value) {
                 TokenKind::SpecialSymbol
-            } else if ["yes", "no"].contains(&value) {
+            } else if ["true", "false"].contains(&value) {
                 TokenKind::BooleanLiteral
             } else {
                 TokenKind::Keyword

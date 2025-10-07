@@ -24,8 +24,8 @@ use type_checker::*;
 use code_generator::*;
 
 fn main() {
-    //let filename = Path::new("./tests/test_all.post");
-    let filename = Path::new("./../examples/aoc2024/23/aoc2024_23.post");
+    //let filename = Path::new("./tests/test.post");
+    let filename = Path::new("./../examples/aoc2024/22/aoc2024_22.post");
     let source_text = read_to_string(filename).unwrap();
     let prelude_text = read_to_string(Path::new("./prelude.post")).unwrap();
     let mut prelude_lines_count = prelude_text.lines().collect::<Vec<_>>().len();

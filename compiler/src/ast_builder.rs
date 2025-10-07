@@ -891,7 +891,7 @@ impl<'compiler> AstBuilder<'compiler> {
                     let expression = Expression::new(token, ExpressionKind::StringLiteral(value));
                     expressions.push(expression);
                 }
-                _ => (),
+                _ => panic!(),
             }
         }
 
@@ -941,7 +941,7 @@ impl<'compiler> AstBuilder<'compiler> {
         let mut prev_id = nodes.alloc(Node::new(expr));
         while let Some(expr) = expressions_iter.next() {
             let root_id = get_root_id(&nodes, prev_id);
-            //println!("{:?}", nodes[root_id]);
+            //println!("{:?}", expr.kind);
             let mut node_id = nodes.alloc(Node::new(expr));
             match &*expr.kind {
                 ExpressionKind::Operator(op_str) => {
@@ -998,7 +998,10 @@ impl<'compiler> AstBuilder<'compiler> {
                     }
                 }
 
-                _ => {}
+                _ => {
+                    //todo: fix invalid sequences like 'identifier identifier' etc.
+                    //return Err(AstError::new(expr.token, "unexpected token"))
+                }
             }
 
             nodes[node_id].parent_id = Some(prev_id);
@@ -1117,8 +1120,8 @@ fn create_priorities() -> HashMap<(String, OpPriorityKind), usize> {
 
     add_op_priority(&mut p, "..", OpPriorityKind::Binary, 80);
 
-    add_op_priority(&mut p, "shl", OpPriorityKind::Binary, 60);
-    add_op_priority(&mut p, "shr", OpPriorityKind::Binary, 60);
+    add_op_priority(&mut p, "bit_shift_left", OpPriorityKind::Binary, 60);
+    add_op_priority(&mut p, "bit_shift_right", OpPriorityKind::Binary, 60);
 
     add_op_priority(&mut p, "<", OpPriorityKind::Binary, 50);
     add_op_priority(&mut p, "<=", OpPriorityKind::Binary, 50);
@@ -1128,7 +1131,7 @@ fn create_priorities() -> HashMap<(String, OpPriorityKind), usize> {
     add_op_priority(&mut p, "=", OpPriorityKind::Binary, 40);
     add_op_priority(&mut p, "<>", OpPriorityKind::Binary, 40);
 
-    add_op_priority(&mut p, "xor", OpPriorityKind::Binary, 35);
+    add_op_priority(&mut p, "bit_xor", OpPriorityKind::Binary, 35);
 
     add_op_priority(&mut p, "and", OpPriorityKind::Binary, 30);
 
