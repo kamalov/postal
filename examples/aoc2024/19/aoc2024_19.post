@@ -1,0 +1,113 @@
+record Part
+    vals: [integer]
+end
+
+record Data
+    parts: [Part]
+end
+
+function str_to_int_array(s: string)
+    r = [integer]
+    chars = string_to_chars("bgruw")
+    for string_to_chars(s)
+        i = array_index_of(chars, item)
+        array_push(r, i)
+    end
+    return r
+end
+
+function int_array_to_str(p: [integer])
+    chars = string_to_chars("bgruw")
+    s = ""
+    for p do s = s + chars[item]
+    return s
+end
+
+function parse_parts(line: string)
+    s = string_remove(line, " ")
+    a = string_split(s, ",")
+    array_quick_sort(a)
+    parts = [Part]
+    for a
+        p = Part {}
+        p.vals = str_to_int_array(item)
+        array_push(parts, p)
+    end
+    return parts
+end
+
+function matches(target: [integer], target_index: integer, v: [integer])
+    for v
+        i = target_index + index
+        if i >= array_size(target) then return 0
+        if item <> target[i] then return 0
+    end
+    return 1
+end
+
+record Counter
+    count: integer
+    lines: [string]
+    visited: [integer]
+end
+
+function check(d: Data, target: [integer], target_index: integer, counter: Counter, s: string) integer
+    r = 0
+    if target_index >= array_size(target)
+        counter.count = counter.count + 1
+        //print("found", s)
+        return 1
+    end
+    for d.parts
+        p = item.vals
+        if matches(target, target_index, p)
+            //print("matches", target_index, int_array_to_str(p))
+            i = target_index*1000 + index
+            v = counter.visited[i]
+            if v = 0-1 then continue
+            ns = s + ", " + int_array_to_str(p)
+            if v > 0
+                r = r + v
+            else
+                v = check(d, target, target_index + array_size(p), counter, ns)
+                if v > 0
+                    counter.visited[i] = v
+                    r = r + v
+                else
+                    counter.visited[i] = 0-1
+                end
+            end
+        end
+    end
+    return r
+end
+
+function run
+    lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt")
+    d = Data {}
+    d.parts = parse_parts(lines[0])
+    
+    for d.parts
+        print(int_array_to_str(item.vals))
+    end
+    print()
+
+    i = array_index_of(lines, "")
+    lines = array_slice(lines, i + 1, array_size(lines))
+    total = 0
+    for lines
+        target = str_to_int_array(item)
+        print(item)
+        c = Counter {}
+        c.lines = [string]
+        c.visited = [integer]
+        array_set_size(c.visited, 1000000)
+        r = check(d, target, 0, c, "")
+        print(r)
+        //total = total + c.count
+        total = total + r
+
+        //for c.visited then print(item)
+    end
+    print("total", total)
+end

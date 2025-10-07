@@ -1,0 +1,286 @@
+record IntField
+   row_count: integer
+   col_count: integer
+   cri: integer
+   cci: integer
+   values: [integer]
+end
+
+record Delta
+    dr: integer
+    dc: integer
+end
+
+record Coords
+    ri: integer
+    ci: integer
+end
+
+function new_coords(ri: integer, ci: integer)
+    c = Coords {}
+    c.ri = ri
+    c.ci = ci
+    return c
+end
+
+function create_int_field(row_count: integer, col_count: integer)
+   f = IntField {}
+   f.row_count = row_count
+   f.col_count = col_count
+   f.values = [integer]
+   array_set_size(f.values, row_count * col_count)
+   return f
+end
+
+function get_int_field_value(f: IntField, row_index: integer, col_index: integer) integer
+   return f.values[row_index*f.col_count + col_index]
+end
+
+function set_int_field_value(f: IntField, row_index: integer, col_index: integer, value: integer)
+   f.values[row_index*f.col_count + col_index] = value
+end
+
+function is_valid_field_index(f: IntField, row_index: integer, col_index: integer)
+   return row_index >= 0 and row_index < f.row_count and col_index >= 0 and col_index < f.col_count
+end
+
+function int_to_char(i: integer)
+    if i = 0 then return "."
+    if i = 1 then return "["
+    if i = 2 then return "]"
+    if i = 3 then return "#"
+    error("int_to_char")
+end
+
+function print_int_field(f: IntField, dir: string)
+   for 0..(f.row_count - 1)
+      ri = item
+      s = ""
+      for 0..(f.col_count - 1)
+         ci = item
+         v = get_int_field_value(f, ri, ci)
+         if ri = f.cri and f.cci = ci
+             s = s + "" + dir
+         else
+             s = s + "" + int_to_char(v)
+         end
+      end
+      print(s)
+   end
+   print()
+end
+
+function char_to_int(c: string)
+    if c = "." then return 0
+    if c = "@" then return 0
+    if c = "[" then return 1
+    if c = "]" then return 2
+    if c = "#" then return 3
+    error("char_to_int")
+end
+
+function char_to_new_chars(c: string) string
+    if c = "." then return ".."
+    if c = "@" then return "@."
+    if c = "O" then return "[]"
+    if c = "#" then return "##"
+    error("char_to_new_chars")
+end
+
+function lines_to_int_field(lines: [string])
+    f = create_int_field(array_size(lines), array_size(string_to_chars(lines[0]))*2)
+    for lines
+        s = ""
+        for string_to_chars(item)
+            s = s + char_to_new_chars(item)
+        end
+        ri = index
+        for string_to_chars(s)
+            ci = index
+            if item = "@"
+                f.cri = ri
+                f.cci = ci
+            end
+            v = char_to_int(item)
+            set_int_field_value(f, ri, ci, v)
+        end
+    end
+
+    return f
+end
+
+function get_delta(s: string)
+    dr = 0
+    dc = 0
+    if s = "<" then dc = 0-1
+    if s = ">" then dc = 1
+    if s = "v" then dr = 1
+    if s = "^" then dr = 0-1
+    d = Delta {}
+    d.dr = dr
+    d.dc = dc
+    return d
+end
+
+function move_many(f: IntField, box_indexes: [Coords], dir: string)
+    d = get_delta(dir)
+    for box_indexes
+        set_int_field_value(f, item.ri, item.ci, 0)
+        set_int_field_value(f, item.ri, item.ci + 1, 0)
+    end
+
+    loop
+        if array_size(box_indexes) = 0 then break
+        c = array_pop(box_indexes)
+        if dir = ">"
+            set_int_field_value(f, c.ri, c.ci + 1, 1)
+            set_int_field_value(f, c.ri, c.ci + 2, 2)
+            continue
+        end
+
+        if dir = "<"
+            set_int_field_value(f, c.ri, c.ci - 1, 1)
+            set_int_field_value(f, c.ri, c.ci - 0, 2)
+            continue
+        end
+
+        if dir = "^"
+            set_int_field_value(f, c.ri - 1, c.ci, 1)
+            set_int_field_value(f, c.ri - 1, c.ci + 1, 2)
+            continue
+        end
+
+        if dir = "v"
+            set_int_field_value(f, c.ri + 1, c.ci, 1)
+            set_int_field_value(f, c.ri + 1, c.ci + 1, 2)
+            continue
+        end
+    end
+end
+
+function try_add_boxes(f: IntField, boxes: #[Coords, integer], box: Coords, dr: integer) integer
+    if map_has_key(boxes, box) then return 1
+
+    map_add(boxes, box, 0)
+
+    ri = box.ri + dr
+    ci = box.ci
+    l = get_int_field_value(f, ri, ci)
+    r = get_int_field_value(f, ri, ci + 1)
+    if l = 3 or r = 3 then return 0
+    if l = 0 and r = 0 then return 1
+
+    if l = 1
+        return try_add_boxes(f, boxes, new_coords(ri, ci), dr)
+    end
+
+    if l = 2
+        if try_add_boxes(f, boxes, new_coords(ri, ci - 1), dr) = 0 then return 0
+    end
+
+    if r = 1
+        if try_add_boxes(f, boxes, new_coords(ri, ci + 1), dr) = 0 then return 0
+    end
+    
+    return 1
+end
+
+function move_next(f: IntField, dir: string)
+    d = get_delta(dir) 
+    ri = f.cri + d.dr
+    ci = f.cci + d.dc
+    v = get_int_field_value(f, ri, ci)
+    if v = 3 then return
+    if v = 0
+        set_int_field_value(f, f.cri, f.cci, 0) 
+        f.cri = ri
+        f.cci = ci
+        return
+    end
+    
+    if dir = "<" or dir = ">"
+        box_indexes = [Coords]
+        loop
+            v = get_int_field_value(f, ri, ci)
+            
+            if v = 3 then return
+            
+            if v = 0
+                move_many(f, box_indexes, dir)
+                f.cri = f.cri + d.dr
+                f.cci = f.cci + d.dc
+                return
+            end
+            
+            if v = 1
+                array_push(box_indexes, new_coords(ri, ci))
+            end
+            
+            ri = ri + d.dr
+            ci = ci + d.dc
+        end
+        return
+    end
+
+    if dir = "^" or dir = "v"
+        boxes = #[Coords, integer]
+        v = get_int_field_value(f, ri, ci)
+        if v = 1
+            c = new_coords(ri, ci)
+        else
+            c = new_coords(ri, ci - 1)
+        end
+
+        if try_add_boxes(f, boxes, c, d.dr) = 0 then return
+        coords = map_keys(boxes)
+        move_many(f, coords, dir)
+        f.cri = f.cri + d.dr
+        f.cci = f.cci + d.dc
+        return
+    end
+end
+
+function get_total(f: IntField)
+    total = 0
+    for 0..(f.row_count - 1)
+      ri = item
+      for 0..(f.col_count - 1)
+         ci = item
+         v = get_int_field_value(f, ri, ci)
+         if v = 1
+            total = total + ri*100 + ci
+         end
+      end
+   end
+   return total
+end
+
+function run
+    lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt")
+    i = array_index_of(lines, "")
+    f = lines_to_int_field(array_slice(lines, 0, i - 1))
+    print_int_field(f, "@")
+    commands_str = string_array_join(array_slice(lines, i + 1, array_size(lines)), "")
+    //print(commands)
+    s = ""
+    commands = string_to_chars(commands_str)
+    for 0..array_size(commands) - 1
+        c = commands[item]
+        if item >= array_size(commands) - 1
+            next = "n"
+        else
+            next = commands[item + 1]
+        end
+        delta = get_delta(c)
+        move_next(f, c)
+        // print_int_field(f, next)
+        // print("moved", c)
+        // if string_size(s) > 50 then s = ""
+        // s = s + "" + c
+        // print(s)
+        // readln()
+    end
+    print_int_field(f, "@")
+    print()
+    print("total", get_total(f))
+end

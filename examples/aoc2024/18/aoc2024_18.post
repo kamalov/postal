@@ -1,0 +1,216 @@
+record Coords
+    ri: integer
+    ci: integer
+end
+
+function new_coords(ri: integer, ci: integer)
+    c = Coords {}
+    c.ri = ri
+    c.ci = ci
+    return c
+end
+
+record IntField
+   row_count: integer
+   col_count: integer
+   values: [integer]
+end
+
+function create_int_field(row_count: integer, col_count: integer)
+   f = IntField {}
+   f.row_count = row_count
+   f.col_count = col_count
+   f.values = [integer]
+   array_set_size(f.values, row_count * col_count)
+   return f
+end
+
+function get_int_field_value(f: IntField, row_index: integer, col_index: integer) integer
+   return f.values[row_index*f.col_count + col_index]
+end
+
+function set_int_field_value(f: IntField, row_index: integer, col_index: integer, value: integer)
+   f.values[row_index*f.col_count + col_index] = value
+end
+
+function is_valid_field_index(f: IntField, row_index: integer, col_index: integer)
+   return row_index >= 0 and row_index < f.row_count and col_index >= 0 and col_index < f.col_count
+end
+
+function get_count(f: IntField)
+    count = 0
+    for 0..f.row_count - 1
+        ri = item
+        for 0..f.col_count - 1
+            ci = item
+            v = get_int_field_value(f, ri, ci)
+            if v > 0 then count = count + 1
+        end
+    end
+    return count
+end
+
+function int_to_char(i: integer)
+    if i = 0 then return "."
+    if i = 0-1 then return "#"
+    error("int_to_char")
+end
+
+record Data
+    f: IntField
+    visited: IntField
+    weights: IntField
+    visited_by_steps: [Coords]
+    fallen: #[integer, integer]
+    min_len: integer
+    count: integer
+end
+
+function print_int_field(d: Data, step: integer)
+    f = d.f
+    for 0..(f.row_count - 1)
+        ri = item
+        s = ""
+        for 0..(f.col_count - 1)
+            ci = item
+            v = get_int_field_value(f, ri, ci)
+            if v = 0-1
+                fv = map_get_value(d.fallen, ri*1000 + ci)
+                ns = "/"
+                // if fv <= step
+                //     ns = "#"
+                // else
+                //     if get_int_field_value(d.visited, ri, ci)
+                //         ns = "O"
+                //     else
+                //         ns = "?"
+                //     end
+                // end
+            end
+
+            if v = 0
+                if get_int_field_value(d.visited, ri, ci)
+                    ns = "O"
+                else
+                    ns = "."
+                end
+            end
+
+            s = s + ns
+        end
+        print(s)
+    end
+    print()
+end
+
+function create_field(lines: [string], size: integer, steps: integer)
+    f = create_int_field(size, size)
+    fallen = #[integer, integer]
+    visited_by_steps = [Coords]
+    array_push(visited_by_steps, new_coords(1000, 1000))
+    weights = create_int_field(size, size)
+    i = 0
+    for lines
+        i = i + 1
+        if i > steps then break
+        p = string_split(item, ",")
+        ci = string_to_integer(p[0])
+        ri = string_to_integer(p[1])
+        map_add(fallen, ri*1000 + ci, index + 1)
+        set_int_field_value(f, ri, ci, 0-1)
+        //set_int_field_value(weights, ri, ci, ri + ci)
+        array_push(visited_by_steps, new_coords(ri, ci))
+    end
+    d = Data {}
+    d.f = f
+    d.visited = create_int_field(size, size)
+    d.weights = weights
+    d.visited_by_steps = visited_by_steps
+    d.fallen = fallen
+    d.min_len = 1000000
+    return d
+end
+
+function is_fallen(d: Data, ri: integer, ci: integer, step: integer)
+    key = ri*1000 + ci
+    //if map_has_key(d.fallen, key) then return map_get_value(d.fallen, key) <= step
+    return map_has_key(d.fallen, key)
+end
+
+function next(d: Data, ri: integer, ci: integer, step: integer)
+    rest = d.f.row_count - ri - 1 + d.f.col_count - ci - 1
+    if step + rest > d.min_len
+        // print(ri, ci)
+        // print_int_field(d, step)
+        // readln()
+        return
+    end
+
+    if not is_valid_field_index(d.f, ri, ci) then return
+    if is_fallen(d, ri, ci, step) then return
+    v = get_int_field_value(d.f, ri, ci)
+    
+    // if step > 0
+    //     c = d.visited_by_steps[step]
+    //     if get_int_field_value(d.visited, c.ri, c.ci) then return
+    // end
+
+    if ri = d.f.row_count - 1 and ci = d.f.col_count - 1
+        if step < d.min_len
+            d.min_len = step
+            //print_int_field(d, step)
+            //print(step)
+            //readln()
+        end
+        return
+    end
+
+    if get_int_field_value(d.visited, ri, ci) then return
+    
+    w = get_int_field_value(d.weights, ri, ci)
+    if w = 0 or step < w
+        set_int_field_value(d.weights, ri, ci, step)
+    else
+        //print("if w >= step", w, step)
+        return
+    end
+
+    set_int_field_value(d.visited, ri, ci, 1)
+    d.count = d.count + 1
+    //if d.count mod 1000000 = 0
+        //print(d.count)
+        //print(step)
+        //print_int_field(d, step)
+        //readln()
+    //end
+
+    next(d, ri, ci + 1, step + 1)
+    next(d, ri + 1, ci, step + 1)
+    next(d, ri, ci - 1, step + 1)
+    next(d, ri - 1, ci, step + 1)
+
+    set_int_field_value(d.visited, ri, ci, 0)
+end
+
+function run
+    lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt")
+    //d = create_field(lines, 7, 12)
+    d = create_field(lines, 71, 1024)
+    
+    //print_int_field(d, 0)
+    i = array_size(lines)
+    //i = 1024
+    loop
+        i = i - 1
+        d = create_field(lines, 71, i)
+        next(d, 0, 0, 0)
+        print("falls count", i, "min_len", d.min_len)
+        if d.min_len <> 1000000
+            print(lines[i])
+            break
+        end
+        //readln()
+    end
+
+    //print("done", d.min_len)
+end

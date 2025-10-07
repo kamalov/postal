@@ -25,7 +25,8 @@ use code_generator::*;
 
 fn main() {
     //let filename = Path::new("./tests/test.post");
-    let filename = Path::new("./../examples/aoc2024/22/aoc2024_22.post");
+    //let filename = Path::new("./../examples/aoc2024/21/aoc2024_21.post");
+    let filename = Path::new("D:/src/rust_test/change syntax/aoc2024_20.post");
     let source_text = read_to_string(filename).unwrap();
     let prelude_text = read_to_string(Path::new("./prelude.post")).unwrap();
     let mut prelude_lines_count = prelude_text.lines().collect::<Vec<_>>().len();

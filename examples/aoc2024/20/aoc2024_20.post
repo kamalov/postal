@@ -1,0 +1,183 @@
+record Coords
+    ri: integer
+    ci: integer
+end
+
+function new_coords(ri: integer, ci: integer)
+    c = Coords {}
+    c.ri = ri
+    c.ci = ci
+    return c
+end
+
+record IntField
+   row_count: integer
+   col_count: integer
+   start: Coords
+   finish: Coords
+   values: [integer]
+end
+
+function create_int_field(row_count: integer, col_count: integer)
+   f = IntField {}
+   f.row_count = row_count
+   f.col_count = col_count
+   f.values = [integer]
+   array_set_size(f.values, row_count * col_count)
+   return f
+end
+
+function get_int_field_value(f: IntField, row_index: integer, col_index: integer) integer
+   return f.values[row_index*f.col_count + col_index]
+end
+
+function set_int_field_value(f: IntField, row_index: integer, col_index: integer, value: integer)
+   f.values[row_index*f.col_count + col_index] = value
+end
+
+function is_valid_field_index(f: IntField, row_index: integer, col_index: integer)
+   return row_index >= 0 and row_index < f.row_count and col_index >= 0 and col_index < f.col_count
+end
+
+function int_to_char(i: integer)
+    if i = 0 then return "."
+    if i = 0-1 then return "#"
+    return integer_to_string(i)
+end
+
+function char_to_int(c: string)
+    if c = "." then return 0
+    if c = "S" then return 0
+    if c = "E" then return 0
+    if c = "#" then return 0-1
+    error("char_to_int")
+end
+
+function print_int_field(f: IntField)
+   for 0..(f.row_count - 1)
+      ri = item
+      s = ""
+      for 0..(f.col_count - 1)
+         ci = item
+         v = get_int_field_value(f, ri, ci)
+        s = s + int_to_char(v)
+      end
+      print(s)
+   end
+   print()
+end
+
+function lines_to_int_field(lines: [string])
+    f = create_int_field(array_size(lines), array_size(string_to_chars(lines[0])))
+    f.start = Coords {}
+    f.finish = Coords {}
+    for lines
+        ri = index
+        for string_to_chars(item)
+            ci = index
+            if item = "S"
+                f.start.ri = ri
+                f.start.ci = ci
+            end
+            if item = "E"
+                f.finish.ri = ri
+                f.finish.ci = ci
+            end
+            v = char_to_int(item)
+            set_int_field_value(f, ri, ci, v)
+        end
+    end
+    return f
+end
+
+function prepare(f: IntField, ri: integer, ci: integer, cost: integer)
+    if not is_valid_field_index(f, ri, ci) then return
+
+    v = get_int_field_value(f, ri, ci) 
+    if v = 0-1 or v > 0 then return
+
+    set_int_field_value(f, ri, ci, cost)
+
+    prepare(f, ri + 1, ci, cost + 1)
+    prepare(f, ri - 1, ci, cost + 1)
+    prepare(f, ri, ci + 1, cost + 1)
+    prepare(f, ri, ci - 1, cost + 1)
+end
+
+function abs_val(i: integer)
+    if i < 0 then return 0 - i
+    return i
+end
+
+function check_cheat(f: IntField, ri: integer, ci: integer, ri1: integer, ci1: integer, cheat_count: [integer])
+    if not is_valid_field_index(f, ri1, ci1) then return 0
+    v = get_int_field_value(f, ri, ci)
+    v1 = get_int_field_value(f, ri1, ci1)
+    if v1 = 0-1 then return 0
+    l = abs_val(ri - ri1) + abs_val(ci - ci1)
+    diff = v1 - v - l
+    if diff > 0
+        cheat_count[diff] = cheat_count[diff] + 1
+        if diff >= 100
+        //     print("cheat=", diff, "from", ri, ci, "to", ri1, ci1)
+            return 1
+        end
+    end
+    return 0
+end
+
+function try_cheat(f: IntField)
+    r = 0 
+    cheat_count = [integer]
+    array_set_size(cheat_count, 10000)
+    max = 20
+    for 0..(f.row_count - 1)
+        ri = item
+        for 0..(f.col_count - 1)
+            ci = item
+            v = get_int_field_value(f, ri, ci)
+            if v = 0-1 then continue
+            for 0..max
+                dr = item
+                for 0..max
+                    dc = item
+                    l = dr + dc
+                    if l < 2 or l > max then continue
+                    //if dr <> 0 and dc <> 0 then continue
+                    //print("dr dc", dr, dc)
+                    if dr = 0
+                        r = r + check_cheat(f, ri, ci, ri, ci + dc, cheat_count)
+                        r = r + check_cheat(f, ri, ci, ri, ci - dc, cheat_count)
+                    else if dc = 0
+                        r = r + check_cheat(f, ri, ci, ri + dr, ci, cheat_count)
+                        r = r + check_cheat(f, ri, ci, ri - dr, ci, cheat_count)
+                    else
+                        r = r + check_cheat(f, ri, ci, ri + dr, ci + dc, cheat_count)
+                        r = r + check_cheat(f, ri, ci, ri + dr, ci - dc, cheat_count)
+                        r = r + check_cheat(f, ri, ci, ri - dr, ci + dc, cheat_count)
+                        r = r + check_cheat(f, ri, ci, ri - dr, ci - dc, cheat_count)
+                    end
+                end
+            end
+        end
+    end
+    for cheat_count
+        //if item > 0 then print("cheat", index, "count", item)
+        if item > 0 then print("count", item, "cheat", index)
+    end
+    return r
+end
+
+function run
+    lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt")
+    f = lines_to_int_field(lines)
+
+    //print_int_field(f)
+    prepare(f, f.start.ri, f.start.ci, 1)
+    //print_int_field(f)
+    print("max", get_int_field_value(f, f.finish.ri, f.finish.ci))
+
+    t = try_cheat(f)
+
+    print("done", t)
+end

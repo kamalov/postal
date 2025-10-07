@@ -891,7 +891,12 @@ impl<'compiler> AstBuilder<'compiler> {
                     let expression = Expression::new(token, ExpressionKind::StringLiteral(value));
                     expressions.push(expression);
                 }
-                _ => panic!(),
+                TokenKind::Comment => {
+                    break;
+                }
+                _ => {
+                    return Err(AstError::new(token, "unexpected token"));
+                }
             }
         }
 

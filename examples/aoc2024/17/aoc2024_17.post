@@ -1,0 +1,181 @@
+function exp(a: integer, e: integer)
+    r = 1
+    for 1..e do r = r*a
+    return r
+end
+
+record Data
+    a: integer
+    b: integer
+    c: integer
+    ip: integer
+    instructions: [integer]
+    out: string
+end
+
+function get_combo_value(d: Data, operand: integer)
+    if operand <= 3 then return operand
+    if operand = 4 then return d.a
+    if operand = 5 then return d.b
+    if operand = 6 then return d.c
+    if operand = 7 then return 7
+    error("get_combo_value opcode " + integer_to_string(operand))
+end
+
+function print(d: Data)
+    print("A=", d.a, "B=", d.b, "C=", d.c)
+    //print("instructions:", array_size(d.instructions))
+    //print("out:", d.out)
+end
+
+function print_params(d: Data)
+    if d.ip >= array_size(d.instructions)
+        op = 0
+        v = 0
+    else
+        op = d.instructions[d.ip] 
+        v = d.instructions[d.ip + 1]
+    end
+    print("op=", op, "value=", v, "combo=", get_combo_value(d, v), "out:", d.out)
+end
+
+function create_data(lines: [string])
+    d = Data {}
+    d.a = string_to_integer(string_split(lines[0], " ")[2])
+    d.b = string_to_integer(string_split(lines[1], " ")[2])
+    d.c = string_to_integer(string_split(lines[2], " ")[2])
+
+    d.instructions = [integer]
+    for string_split(string_split(lines[4], " ")[1], ",")
+        array_push(d.instructions, string_to_integer(item))
+    end
+
+    return d
+end
+
+function print1(d: Data, cmd: string)
+    return
+    print(cmd)
+    print(d)
+end
+
+function execute(d: Data)
+    loop
+        if d.ip >= array_size(d.instructions) then break
+        opcode = d.instructions[d.ip]
+        operand = d.instructions[d.ip + 1]
+        value = operand
+        combo_value = get_combo_value(d, operand)
+
+        //print(d)
+        //print_params(d)
+
+        if opcode = 0
+            /// adv
+            //print("adv", "A >> combo |", d.a, ">>", combo_value, "=", d.a rshift 3)
+            d.a = d.a rshift combo_value
+            d.ip = d.ip + 2
+        else if opcode = 1
+            /// bxl
+            //print("bxl", "B xor value => B |", d.b, "xor", value, "=>", d.bbit_xorvalue)
+            d.b = d.b bit_xor value
+            d.ip = d.ip + 2
+        else if opcode = 2
+            /// bst 
+            //print("bst: A(", d.a, ") mod 8 => B(", d.a mod 8, ")")
+            d.b = combo_value mod 8
+            d.ip = d.ip + 2
+        else if opcode = 3
+            //print("return return return return return return return return return return return return return return return return return return return return return")
+            /// jnz
+            if d.a > 0
+                d.ip = value
+            else
+                d.ip = d.ip + 2
+            end
+        else if opcode = 4
+            /// bxc
+            //print("bxc: B xor C => B(", d.b, "xor", d.c, "=>", d.b bit_xor d.c)
+            d.b = d.b bit_xor d.c
+            d.ip = d.ip + 2
+        else if opcode = 5
+            /// out
+            v = combo_value mod 8
+            //print("out: combo mod 8:", combo_value, "mod 8", v)
+            if string_size(d.out) > 0 then d.out = d.out + ","
+            d.out = d.out + integer_to_string(v)
+            d.ip = d.ip + 2
+        else if opcode = 6
+            //print("opcode = 6")
+            /// bdv
+            d.b = d.a rshift combo_value
+            d.ip = d.ip + 2
+        else if opcode = 7
+            /// cdv
+            d.c = d.a rshift combo_value
+            //print("cdv", "A >> combo => C |", d.a, ">>", combo_value, "=", d.c)
+            d.ip = d.ip + 2
+        else
+            error("err")
+        end
+        //print(d)
+        //print()
+        //readln()
+    end
+end
+
+function test(a: integer)
+    b = a mod 8
+    b = b bit_xor 5
+    c = a rshift b
+    b = b bit_xor 6
+    b = b bit_xor c
+    b = b mod 8
+    return b
+end
+
+function try_find(targets: [integer], a: integer, target_index: integer, res: [integer])
+    if target_index >= array_size(targets) then return
+    
+    target = targets[target_index]
+    for 0..7
+        a_new = a*8 + item
+        if test(a_new) = target
+            if target_index = array_size(targets) - 1
+                print("found ", a_new)
+                array_push(res, a_new)
+            end
+            try_find(targets, a_new, target_index + 1, res)
+        end
+    end
+end
+
+function generate(d: Data)
+    targets = [integer]
+    arr = string_split("2,4,1,5,7,5,1,6,0,3,4,3,5,5,3,0", ",")
+    loop
+        if array_size(arr) = 0 then break
+        array_push(targets, string_to_integer(array_pop(arr)))
+    end
+
+    res = [integer]
+    try_find(targets, 0, 0, res)
+    array_quick_sort(res)
+
+    print("reses", array_size(res))
+    print("min", res[0])
+end
+
+function run
+    lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt")
+    d = create_data(lines)
+    s = string_split(lines[4], " ")[1]
+    s = string_remove(s, ",")
+    //target = string_to_integer(s)
+    print(d)
+    execute(d)
+    print(d)
+    generate(d)
+    
+    print("\nout=", d.out)
+end

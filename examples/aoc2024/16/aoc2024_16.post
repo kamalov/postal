@@ -1,0 +1,275 @@
+record Coords
+    ri: integer
+    ci: integer
+end
+
+function new_coords(ri: integer, ci: integer)
+    c = Coords {}
+    c.ri = ri
+    c.ci = ci
+    return c
+end
+
+record IntField
+   row_count: integer
+   col_count: integer
+   start: Coords
+   finish: Coords
+   cost: integer
+   values: [integer]
+   north: Coords
+   south: Coords
+   west: Coords
+   east: Coords
+end
+
+record VisitedCosts
+    dummy: integer
+    north: IntField
+    south: IntField
+    west: IntField
+    east: IntField
+    best: IntField
+    count: integer
+end
+
+function create_int_field(row_count: integer, col_count: integer)
+   f = IntField {}
+   f.row_count = row_count
+   f.col_count = col_count
+   f.values = [integer]
+   array_set_size(f.values, row_count * col_count)
+   return f
+end
+
+function get_int_field_value(f: IntField, row_index: integer, col_index: integer) integer
+   return f.values[row_index*f.col_count + col_index]
+end
+
+function set_int_field_value(f: IntField, row_index: integer, col_index: integer, value: integer)
+   f.values[row_index*f.col_count + col_index] = value
+end
+
+function is_valid_field_index(f: IntField, row_index: integer, col_index: integer)
+   return row_index >= 0 and row_index < f.row_count and col_index >= 0 and col_index < f.col_count
+end
+
+function int_to_char(i: integer)
+    if i = 0 then return "."
+    if i = 0-1 then return "/"
+    error("int_to_char")
+end
+
+function print_int_field(f: IntField, visited: IntField)
+   for 0..(f.row_count - 1)
+      ri = item
+      s = ""
+      for 0..(f.col_count - 1)
+         ci = item
+         v = get_int_field_value(f, ri, ci)
+         vis_value = get_int_field_value(visited, ri, ci)
+         if vis_value <> 0
+             s = s + "O"
+             //integer_to_string(vis_value)
+         else
+             s = s + int_to_char(v)
+         end
+        //  if ri = f.cri and f.cci = ci
+        //      s = s + "@" + dir
+        //  else
+        //      s = s + "" + int_to_char(v)
+        //  end
+      end
+      print(s)
+   end
+   print()
+end
+
+function char_to_int(c: string)
+    if c = "." then return 0
+    if c = "S" then return 0
+    if c = "E" then return 0
+    if c = "#" then return 0-1
+    error("char_to_int")
+end
+
+function lines_to_int_field(lines: [string])
+    f = create_int_field(array_size(lines), array_size(string_to_chars(lines[0])))
+    f.start = Coords {}
+    f.finish = Coords {}
+    f.north = new_coords(0-1, 0)
+    f.south = new_coords(1, 0)
+    f.west = new_coords(0, 0-1)
+    f.east = new_coords(0, 1)
+    f.cost = 1000000000
+    for lines
+        ri = index
+        for string_to_chars(item)
+            ci = index
+            if item = "S"
+                f.start.ri = ri
+                f.start.ci = ci
+            end
+            if item = "E"
+                f.finish.ri = ri
+                f.finish.ci = ci
+                //print("finish", ri, ci)
+            end
+            v = char_to_int(item)
+            set_int_field_value(f, ri, ci, v)
+        end
+    end
+
+    return f
+end
+
+function rotate_left(f: IntField, dir: Coords)
+    if dir = f.north then return f.west
+    if dir = f.west then return f.south
+    if dir = f.south then return f.east
+    if dir = f.east then return f.north
+    error("rotate_left")
+end
+
+function get_visited_cost(f: IntField, vis: VisitedCosts, ri: integer, ci: integer, dir: Coords)
+    if dir = f.north then return get_int_field_value(vis.north, ri, ci)
+    if dir = f.south then return get_int_field_value(vis.south, ri, ci)
+    if dir = f.west then return get_int_field_value(vis.west, ri, ci)
+    if dir = f.east then return get_int_field_value(vis.east, ri, ci)
+    error("get_visited_cost")
+end
+
+function set_visited_cost(f: IntField, vis: VisitedCosts, ri: integer, ci: integer, dir: Coords, value: integer)
+    if dir = f.north
+        set_int_field_value(vis.north, ri, ci, value)
+        return
+    end
+    if dir = f.south
+        set_int_field_value(vis.south, ri, ci, value)
+        return
+    end
+    if dir = f.west
+        set_int_field_value(vis.west, ri, ci, value)
+        return
+    end
+    if dir = f.east
+        set_int_field_value(vis.east, ri, ci, value)
+        return
+    end
+    error("set_visited_cost")
+end
+
+function try_update_visited_cost(f: IntField, vis: VisitedCosts, ri: integer, ci: integer, dir: Coords, cost: integer)
+    if dir = f.north then vf = vis.north
+    if dir = f.south then vf = vis.south
+    if dir = f.west then vf = vis.west
+    if dir = f.east then vf = vis.east
+
+    v = get_int_field_value(vf, ri, ci)
+    if v = 0 or cost <= v
+        set_int_field_value(vf, ri, ci, cost)
+        return 1
+    end
+
+    return 0
+end
+
+function get_count(f: IntField)
+    count = 0
+    for 0..f.row_count - 1
+        ri = item
+        for 0..f.col_count - 1
+            ci = item
+            v = get_int_field_value(f, ri, ci)
+            if v = 1 then count = count + 1
+        end
+    end
+    return count
+end
+
+function update_best(best: IntField, visited: IntField)
+    for 0..visited.row_count - 1
+        ri = item
+        for 0..visited.col_count - 1
+            ci = item
+            v = get_int_field_value(visited, ri, ci)
+            if v = 1 then set_int_field_value(best, ri, ci, 1)
+        end
+    end
+end
+
+function try_visit(f: IntField, visited: IntField, ri: integer, ci: integer, cost: integer, dir: Coords, visited_costs: VisitedCosts) integer
+    if cost > f.cost then return 1
+    
+    if get_int_field_value(visited, ri, ci) = 1 then return 1
+    
+    v = get_int_field_value(f, ri, ci)
+    if v = 0-1 then return 0
+
+    if ri = f.finish.ri and ci = f.finish.ci
+        f.cost = cost
+        //print_int_field(f, visited)
+        print("found", cost)
+        if cost = 90460
+            update_best(visited_costs.best, visited)
+        end
+
+        return 1
+    end
+
+    set_int_field_value(visited, ri, ci, 1)
+    // visited_costs.count = visited_costs.count + 1
+    // if visited_costs.count mod 50000000 = 0
+    //     print_int_field(f, visited)
+    //     print("at step", visited_costs.count)
+    //     readln()
+    // end
+
+    rl = rotate_left(f, dir)
+    rr = rotate_left(f, rotate_left(f, rl))
+
+    //if try_update_visited_cost(f, visited_costs, ri, ci, dir, cost)
+        r1 = try_visit(f, visited, ri + dir.ri, ci + dir.ci, cost + 1, dir, visited_costs)
+    //end
+
+    if try_update_visited_cost(f, visited_costs, ri, ci, rl, cost + 1000)
+        r2 = try_visit(f, visited, ri + rl.ri, ci + rl.ci, cost + 1001, rl, visited_costs)
+    end
+
+    if try_update_visited_cost(f, visited_costs, ri, ci, rr, cost + 1000)
+        r3 = try_visit(f, visited, ri + rr.ri, ci + rr.ci, cost + 1001, rr, visited_costs)
+    end
+
+    set_int_field_value(visited, ri, ci, 0)
+
+    if r1 + r2 + r3 = 0
+        set_int_field_value(f, ri, ci, 0-1)
+        return 0
+    end
+
+    return 1
+end
+
+
+function create_visited_costs(f: IntField)
+    c = VisitedCosts {}
+    c.north = create_int_field(f.row_count, f.col_count)
+    c.south = create_int_field(f.row_count, f.col_count)
+    c.west = create_int_field(f.row_count, f.col_count)
+    c.east = create_int_field(f.row_count, f.col_count)
+    c.best = create_int_field(f.row_count, f.col_count)
+    return c
+end
+
+function run
+    lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt")
+    f = lines_to_int_field(lines)
+    visited = create_int_field(f.row_count, f.col_count)
+    visited_costs = create_visited_costs(f)
+    try_visit(f, visited, f.start.ri, f.start.ci, 0, f.east, visited_costs)
+    
+    //print_int_field(f, visited)
+    total = get_count(visited_costs.best) + 1
+
+    print("done", f.cost, "steps", total)
+end

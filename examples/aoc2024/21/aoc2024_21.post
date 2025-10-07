@@ -1,0 +1,449 @@
+//     +---+---+
+//     | ^ | A |
+// +---+---+---+
+// | < | v | > |
+// +---+---+---+
+record Navi
+    from: integer
+    to: integer
+    path: [integer]
+    path_str: string
+end
+
+function reverse_dir(dir: string)
+    if dir = "^" then return "v"
+    if dir = ">" then return "<"
+    if dir = "<" then return ">"
+    if dir = "v" then return "^"
+    error("error")
+end
+
+function char_to_int(c: string)
+    if c = "A" then return 10
+    if c = ">" then return 11
+    if c = "v" then return 12
+    if c = "<" then return 13
+    if c = "^" then return 14
+    return string_to_integer(c)
+end
+
+function int_to_char(i: integer)
+    if i = 10 then return "A"
+    if i = 11 then return ">"
+    if i = 12 then return "v"
+    if i = 13 then return "<"
+    if i = 14 then return "^"
+    return integer_to_string(i)
+end
+
+function path_to_str(p: [integer])
+    s = ""
+    for p do s = s + int_to_char(item)
+    return s
+end
+
+function str_to_path(s: string)
+    r = [integer]
+    for string_to_chars(s) do array_push(r, char_to_int(item))
+    return r
+end
+
+function print_navi(n: Navi) 
+    print(n.from + n.to)
+    s = "    "
+    for n.path do s = s + int_to_char(item) + " "
+    print(s)
+end
+
+function get_paths_str_array
+    l = [string]
+
+    array_push(l, "A^ <")
+    array_push(l, "A> v")
+    array_push(l, "Av <v v<")
+    array_push(l, "A< v<<")
+    array_push(l, "^> >v v>")
+    array_push(l, "^v v")
+    array_push(l, "^< v<")
+    array_push(l, ">v <")
+    array_push(l, ">< <<")
+    array_push(l, "v< <")
+
+    // +---+---+---+
+    // | 7 | 8 | 9 |
+    // +---+---+---+
+    // | 4 | 5 | 6 |
+    // +---+---+---+
+    // | 1 | 2 | 3 |
+    // +---+---+---+
+    //     | 0 | A |
+    //     +---+---+
+
+    array_push(l, "A0 <")
+    array_push(l, "A1 ^<<")
+    array_push(l, "A2 <^ ^<")
+    array_push(l, "A3 ^")
+    array_push(l, "A4 ^^<<")
+    array_push(l, "A5 <^^ ^^<")
+    array_push(l, "A6 ^^")
+    array_push(l, "A7 ^^^<< <^<^^ <^^<^ <^^^< ^<<^^ ^<^<^ ^<^^< ^^<<^ ^^<^<")
+    array_push(l, "A8 <^^^ ^^^<")
+    array_push(l, "A9 ^^^")
+
+    array_push(l, "01 ^<")
+    array_push(l, "02 ^")
+    array_push(l, "03 ^>")
+    array_push(l, "04 ^^<")
+    array_push(l, "05 ^^")
+    array_push(l, "06 ^^>")
+    array_push(l, "07 ^^^<")
+    array_push(l, "08 ^^^")
+    array_push(l, "09 >^^^")
+
+    array_push(l, "12 >")
+    array_push(l, "13 >>")
+    array_push(l, "14 ^")
+    array_push(l, "15 >^ ^>")
+    array_push(l, "16 >>^ ^>>")
+    array_push(l, "17 ^^")
+    array_push(l, "18 ^^> >^^")
+    array_push(l, "19 >>^^ ^^>>")
+    
+    array_push(l, "23 >")
+    array_push(l, "24 <^ ^<")
+    array_push(l, "25 ^")
+    array_push(l, "26 ^> >^")
+    array_push(l, "27 <^^ ^^<")
+    array_push(l, "28 ^^")
+    array_push(l, "29 >^^ ^^>")
+    
+    array_push(l, "34 <^< <<^ ^<<")
+    array_push(l, "35 <^ ^<")
+    array_push(l, "36 ^")
+    array_push(l, "37 <<^^ ^^<<")
+    array_push(l, "38 <^^ ^^<")
+    array_push(l, "39 ^^")
+    
+    array_push(l, "45 >")
+    array_push(l, "46 >>")
+    array_push(l, "47 ^")
+    array_push(l, "48 ^> >^")
+    array_push(l, "49 ^>> >>^")
+
+    array_push(l, "56 >")
+    array_push(l, "57 <^ ^<")
+    array_push(l, "58 ^")
+    array_push(l, "59 ^> >^")
+    
+    array_push(l, "67 <<^ ^<<")
+    array_push(l, "68 <^ ^<")
+    array_push(l, "69 ^")   
+    
+    array_push(l, "78 >")
+    array_push(l, "79 >>")
+    
+    array_push(l, "89 >")
+
+    return l
+end
+
+function create_navis(lines: [string])
+    navis = [Navi]
+    for lines 
+        p = string_split(item, " ")
+
+        from = char_to_int(string_to_chars(p[0])[0])
+        to = char_to_int(string_to_chars(p[0])[1])
+
+        for 1..array_size(p) - 1 
+            a = string_to_chars(p[item])
+            forward = Navi {}
+            forward.from = from
+            forward.to = to
+            forward.path = [integer]
+
+            backward = Navi {}
+            backward.from = to
+            backward.to = from
+            backward.path = [integer]
+
+            for a 
+                array_push(forward.path, char_to_int(item))
+                array_push_front(backward.path, char_to_int(reverse_dir(item)))
+            end
+            forward.path_str = path_to_str(forward.path)
+            backward.path_str = path_to_str(backward.path)
+            array_push(navis, forward)
+            array_push(navis, backward)
+        end
+    end
+
+    return navis
+end
+
+record Data 
+    navis: [Navi]
+    empty_path: [integer]
+end
+
+function transform_stack(d: Data, target_path: [integer], from_: integer, index_: integer, transformed_: string)
+    from = from_
+    t = [string]
+    array_push(t, transformed_)
+    current_index = index_
+    loop 
+        if current_index >= array_size(target_path) 
+            // if map_has_key(res, transformed) = 0 
+            //     map_add(res, transformed, 0)
+            // end
+            s = string_array_join(t, "")
+            array_set_size(t, 0)
+            return s
+        end
+
+        to = target_path[current_index]
+        if from = to 
+            //transform(d, target_path, to, index + 1, transformed + "A", res)
+            from = to
+            current_index = current_index + 1
+            array_push(t, "A")
+        else 
+            for d.navis 
+                if item.from = from and item.to = to 
+                    //print("item.from = from and item.to", from, to, s)
+                    //transform(d, target_path, to, index + 1, transformed + item.path_str + "A", res)
+                    from = to
+                    current_index = current_index + 1
+                    array_push(t, item.path_str + "A")
+                    break
+                end 
+            end
+        end
+    end
+end
+
+function transform(d: Data, target_path: [integer], from: integer, target_index: integer, transformed: string, res: [string])
+    if target_index >= array_size(target_path) 
+        array_push(res, transformed)
+        return
+    end
+
+    to = target_path[target_index]
+    if from = to 
+        transform(d, target_path, to, target_index + 1, transformed + "A", res)
+    else 
+        c = 0
+        for d.navis 
+            if item.from = from and item.to = to 
+                //if c > 0 then print(item.path_str)
+                //print("item.from = from and item.to", from, to, s)
+                transform(d, target_path, to, target_index + 1, transformed + item.path_str + "A", res)
+                //c = c + 1
+            end 
+        end
+    end
+end
+
+function process(d: Data, s: [string], deep: integer)
+    src = s
+    for 1..deep 
+        iter = item
+        res = [string]
+        for src 
+            p = str_to_path(item)
+            l = array_size(res)
+            transform(d, p, char_to_int("A"), 0, "", res)
+            array_set_size(p, 0)
+            if iter > 3 
+                print(item, array_size(res))
+            end
+        end
+        src = res
+        print(array_size(src))
+    end
+
+    min_len = 1000000
+    for src 
+        l = string_size(item)
+        if l < min_len then min_len = l
+    end
+    return min_len
+end
+
+function get_path(d: Data, from: integer, to: integer)
+    for d.navis 
+        if item.from = from and item.to = to 
+            return item.path
+        end 
+    end
+    s = "get_path from " +  int_to_char(from) + " to " + int_to_char(to)
+    error(s)
+end
+
+function test_single(d: Data, input_path: [integer], level: integer, max_level: integer, acc: [string], visited: [integer]) integer
+    from = char_to_int("A")
+    total = 0
+    if level = max_level 
+        total = array_size(input_path)
+        if level > 0 then total = total + 1
+    else 
+        if input_path = d.empty_path 
+            total = total + 1 //test(d, d.empty_path, level + 1, max_level, acc, visited)
+        else 
+            for input_path 
+                to = item
+                vi = level*10000 + from*100 + to
+                if visited[vi] > 0 
+                    r = visited[vi]
+                else 
+                    if from = to 
+                        r = test_single(d, d.empty_path, level + 1, max_level, acc, visited)
+                    else 
+                        next_path = get_path(d, from, to)
+                        r = test_single(d, next_path, level + 1, max_level, acc, visited)
+                    end
+                    visited[vi] = r
+                end
+                total = total + r
+                from = to
+            end
+
+            if level > 0 
+                to = char_to_int("A")
+                vi = level*10000 + from*100 + to
+                if visited[vi] > 0 
+                    r = visited[vi]
+                else 
+                    if from = to 
+                        r = test_single(d, d.empty_path, level + 1, max_level, acc, visited)
+                    else 
+                        next_path = get_path(d, from, to)
+                        r = test_single(d, next_path, level + 1, max_level, acc, visited)
+                    end
+                    visited[vi] = r
+                end
+                total = total + r
+            end
+        end
+    end
+
+    // acc[level] = acc[level] + path_to_str(input_path)
+    // if level > 0 
+    //     acc[level] = acc[level] + "A"
+    // end
+    
+    return total
+end
+
+function test_mult(d: Data, input_path: [integer], level: integer, max_level: integer, acc: [string], visited: [integer]) integer
+    from = char_to_int("A")
+    total = 0
+    if level = max_level 
+        total = array_size(input_path)
+        if level > 0 then total = total + 1
+    else 
+        if input_path = d.empty_path 
+            total = total + 1 //test(d, d.empty_path, level + 1, max_level, acc, visited)
+        else 
+            for input_path 
+                to = item
+                vi = level*10000 + from*100 + to
+                if visited[vi] > 0 
+                    r = visited[vi]
+                else 
+                    if from = to 
+                        r = test_mult(d, d.empty_path, level + 1, max_level, acc, visited)
+                    else 
+                        r = 0
+                        for d.navis 
+                            if item.from = from and item.to = to 
+                                test_r = test_mult(d, item.path, level + 1, max_level, acc, visited)
+                                if r = 0 or test_r < r then r = test_r
+                            end 
+                        end
+                    end
+                    visited[vi] = r
+                end
+                total = total + r
+                from = to
+            end
+
+            if level > 0 
+                to = char_to_int("A")
+                vi = level*10000 + from*100 + to
+                if visited[vi] > 0 
+                    r = visited[vi]
+                else 
+                    if from = to 
+                        r = test_mult(d, d.empty_path, level + 1, max_level, acc, visited)
+                    else 
+                        r = 0
+                        for d.navis 
+                            if item.from = from and item.to = to 
+                                test_r = test_mult(d, item.path, level + 1, max_level, acc, visited)
+                                if r = 0 or test_r < r then r = test_r
+                            end 
+                        end
+                    end
+                    visited[vi] = r
+                end
+                total = total + r
+            end
+        end
+    end
+
+    // acc[level] = acc[level] + path_to_str(input_path)
+    // if level > 0 
+    //     acc[level] = acc[level] + "A"
+    // end
+    
+    return total
+end
+
+function run
+    //lines = read_string_lines_from_file("D:/src/postal/examples/aoc2024/21/input.txt")
+    lines = read_string_lines_from_file("./input.txt")
+
+    d = Data {}
+    d.empty_path = [integer]
+    d.navis = create_navis(get_paths_str_array())
+
+    deep = 26
+
+    total = 0
+    // for lines 
+    //     s = item
+    //     if s = "" then break
+    //     //print(s)
+    //     v = string_to_integer(string_remove(s, "A"))
+    //     arr = [string]
+    //     array_push(arr, s)
+    //     r = process(d, arr, deep)    
+    //     //print(v, r, v*r)
+    //     total = total + v*r
+    // end
+
+    print("\nfast")
+    t1 = 0
+    t2 = 0
+    acc = [string]
+    for lines 
+        if item = "" then break
+        v = string_to_integer(string_remove(item, "A"))
+        //acc = [string]
+        //array_set_size(acc, deep + 1)
+        visited = [integer]
+        visited_mult = [integer]
+        array_set_size(visited, 1000000)
+        array_set_size(visited_mult, 1000000)
+        ts = test_single(d, str_to_path(item), 0, deep, acc, visited)
+        tm = test_mult(d, str_to_path(item), 0, deep, acc, visited_mult)
+        //for acc then print(item)
+        print(item, "single", ts, "mult", tm)
+        t1 = t1 + ts*v
+        t2 = t2 + tm*v
+    end
+
+    print("\ndone good", total)
+    print("\ndone fast", "single", t1, "mult", t2)
+end
