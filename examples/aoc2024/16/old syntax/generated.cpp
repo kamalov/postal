@@ -1,38 +1,33 @@
-#include "prelude.cpp"
+#include "prelude.h"
 
-//// prelude start
-template <typename T>i64 array_size(shared_vector<T> a);
-template <typename T>void array_push(shared_vector<T> a, T element);
-template <typename T>T array_pop(shared_vector<T> a);
-template <typename T>void array_quick_sort(shared_vector<T> a);
-template <typename T>void array_push_front(shared_vector<T> a, T element);
-template <typename T>T array_pop_front(shared_vector<T> a);
-template <typename T>T array_last(shared_vector<T> a);
-template <typename T>void array_set_size(shared_vector<T> a, i64 new_size);
-template <typename T>i64 array_contains(shared_vector<T> a, T value);
-template <typename T>void array_remove_at(shared_vector<T> a, i64 index);
-template <typename T>void array_remove(shared_vector<T> a, T value);
-template <typename T>i64 array_index_of(shared_vector<T> a, T value);
-template <typename T>shared_vector<T> array_slice(shared_vector<T> a, i64 from, i64 to);
-template <typename K, typename V>void map_add(shared_map<K, V> map, K key, V value);
-template <typename K, typename V>V map_get_value(shared_map<K, V> map, K key);
-template <typename K, typename V>void map_add_or_update(shared_map<K, V> map, K key, V value);
-template <typename K, typename V>i64 map_has_key(shared_map<K, V> map, K key);
-template <typename K, typename V>void map_remove(shared_map<K, V> map, K key);
-template <typename K, typename V>i64 map_size(shared_map<K, V> map);
-template <typename K, typename V>shared_vector<K> map_keys(shared_map<K, V> map);
-shared_vector<std::string> string_split(std::string s, std::string by);
-i64 string_to_integer(std::string s);
-shared_vector<std::string> string_to_chars(std::string s);
-i64 string_contains(std::string s, std::string subs);
-i64 string_size(std::string s);
-std::string string_remove(std::string s, std::string r);
-std::string string_array_join(shared_vector<std::string> a, std::string delimiter);
-std::string integer_to_string(i64 i);
-void error(std::string s);
-std::string read_line();
-shared_vector<std::string> read_string_lines_from_file(std::string filename);
-//// prelude end
+/// external template <typename T>i64 len(std::vector<T>* a);
+/// external template <typename T>void push(std::vector<T>* a, T elem);
+/// external template <typename T>T pop(std::vector<T>* a);
+/// external template <typename T>void arr_set_len(std::vector<T>* a, i64 new_len);
+/// external template <typename T>void arr_sort(std::vector<T>* a);
+/// external template <typename T>i64 arr_contains(std::vector<T>* a, T value);
+/// external template <typename T>void arr_remove_at(std::vector<T>* a, i64 index);
+/// external template <typename T>void arr_remove(std::vector<T>* a, T value);
+/// external template <typename T>i64 arr_index_of(std::vector<T>* a, T value);
+/// external template <typename T>std::vector<T>* arr_slice(std::vector<T>* a, i64 from, i64 to);
+/// external template <typename K, typename V>void map_add(universal_hashmap<K, V>* map, K key, V value);
+/// external template <typename K, typename V>void map_add_or_update(universal_hashmap<K, V>* map, K key, V value);
+/// external template <typename K, typename V>i64 map_has_key(universal_hashmap<K, V>* map, K key);
+/// external template <typename K, typename V>V map_get_value(universal_hashmap<K, V>* map, K key);
+/// external template <typename K, typename V>void map_remove(universal_hashmap<K, V>* map, K key);
+/// external template <typename K, typename V>i64 map_len(universal_hashmap<K, V>* map);
+/// external template <typename K, typename V>std::vector<K>* map_keys(universal_hashmap<K, V>* map);
+/// external std::vector<std::string>* str_split(std::string s, std::string by);
+/// external i64 str_to_int(std::string s);
+/// external std::vector<std::string>* str_to_chars(std::string s);
+/// external i64 str_contains(std::string s, std::string subs);
+/// external i64 str_len(std::string s);
+/// external std::string str_remove(std::string s, std::string r);
+/// external std::string str_arr_join(std::vector<std::string>* a, std::string delimiter);
+/// external std::string int_to_str(i64 i);
+/// external void err(std::string s);
+/// external std::string readln();
+/// external std::vector<std::string>* read_string_lines_from_file(std::string filename);
 struct Coords {
     i64 ri;
     i64 ci;
@@ -53,9 +48,9 @@ namespace std {
     };
 }
 
-shared_pointer<Coords> new_coords(i64 ri, i64 ci) {
-    shared_pointer<Coords> c;
-    c = create_shared_pointer<Coords >();
+Coords* new_coords(i64 ri, i64 ci) {
+    Coords* c;
+    c = new Coords();
     c->ri = ri;
     c->ci = ci;
     return c;
@@ -64,14 +59,14 @@ shared_pointer<Coords> new_coords(i64 ri, i64 ci) {
 struct IntField {
     i64 row_count;
     i64 col_count;
-    shared_pointer<Coords> start;
-    shared_pointer<Coords> finish;
+    Coords* start;
+    Coords* finish;
     i64 cost;
-    shared_vector<i64> values;
-    shared_pointer<Coords> north;
-    shared_pointer<Coords> south;
-    shared_pointer<Coords> west;
-    shared_pointer<Coords> east;
+    std::vector<i64>* values;
+    Coords* north;
+    Coords* south;
+    Coords* west;
+    Coords* east;
     friend bool operator==(const IntField& l, const IntField& r) {
         return (l.row_count == r.row_count) && (l.col_count == r.col_count) && (l.cost == r.cost);
     }
@@ -92,11 +87,11 @@ namespace std {
 
 struct VisitedCosts {
     i64 dummy;
-    shared_pointer<IntField> north;
-    shared_pointer<IntField> south;
-    shared_pointer<IntField> west;
-    shared_pointer<IntField> east;
-    shared_pointer<IntField> best;
+    IntField* north;
+    IntField* south;
+    IntField* west;
+    IntField* east;
+    IntField* best;
     i64 count;
     friend bool operator==(const VisitedCosts& l, const VisitedCosts& r) {
         return (l.dummy == r.dummy) && (l.count == r.count);
@@ -115,25 +110,25 @@ namespace std {
     };
 }
 
-shared_pointer<IntField> create_int_field(i64 row_count, i64 col_count) {
-    shared_pointer<IntField> f;
-    f = create_shared_pointer<IntField >();
+IntField* create_int_field(i64 row_count, i64 col_count) {
+    IntField* f;
+    f = new IntField();
     f->row_count = row_count;
     f->col_count = col_count;
-    f->values = create_shared_vector<i64>();
-    array_set_size(f->values, row_count*col_count);
+    f->values = new std::vector<i64>();
+    arr_set_len(f->values, row_count*col_count);
     return f;
 }
 
-i64 get_int_field_value(shared_pointer<IntField> f, i64 row_index, i64 col_index) {
+i64 get_int_field_value(IntField* f, i64 row_index, i64 col_index) {
     return f->values->at(row_index*f->col_count + col_index);
 }
 
-void set_int_field_value(shared_pointer<IntField> f, i64 row_index, i64 col_index, i64 value) {
+void set_int_field_value(IntField* f, i64 row_index, i64 col_index, i64 value) {
     f->values->at(row_index*f->col_count + col_index) = value;
 }
 
-bool is_valid_field_index(shared_pointer<IntField> f, i64 row_index, i64 col_index) {
+i64 is_valid_field_index(IntField* f, i64 row_index, i64 col_index) {
     return row_index >= 0ll && row_index < f->row_count && col_index >= 0ll && col_index < f->col_count;
 }
 
@@ -146,10 +141,10 @@ std::string int_to_char(i64 i) {
     if (i == 0ll - 1ll) {
         return "/"s;
     };
-    error("int_to_char"s);
+    err("int_to_char"s);
 }
 
-void print_int_field(shared_pointer<IntField> f, shared_pointer<IntField> visited) {
+void print_int_field(IntField* f, IntField* visited) {
     i64 ri;
     std::string s;
     i64 ci;
@@ -157,13 +152,13 @@ void print_int_field(shared_pointer<IntField> f, shared_pointer<IntField> visite
     i64 vis_value;
 
     auto __expr0 = create_range(0ll, (f->row_count - 1ll));
-    for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
+    for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
         i64 expr__it0 = (*__expr0)[expr__it0__idx];
         ri = expr__it0;
         s = ""s;
 
         auto __expr1 = create_range(0ll, (f->col_count - 1ll));
-        for (i64 expr__it1__idx = 0; expr__it1__idx < (i64)__expr1->size(); expr__it1__idx++) {
+        for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
             i64 expr__it1 = (*__expr1)[expr__it1__idx];
             ci = expr__it1;
             v = get_int_field_value(f, ri, ci);
@@ -171,16 +166,16 @@ void print_int_field(shared_pointer<IntField> f, shared_pointer<IntField> visite
 
             if (vis_value != 0ll) {
                 s = s + "O"s;
-                ////integer_to_string(vis_value)
+                //int_to_str(vis_value)
             }
             else {
                 s = s + int_to_char(v);
             };
-            ////  if ri = f.cri and f.cci = ci
-            ////      s = s + "@" + dir
-            ////  else
-            ////      s = s + "" + int_to_char(v)
-            ////  end
+            //  if ri = f.cri and f.cci = ci {
+            //      s = s + '@' + dir
+            //  } else {
+            //      s = s + '' + int_to_char(v)
+            //  }
         }
         printf("%s\n", (s).c_str());
     }
@@ -204,17 +199,17 @@ i64 char_to_int(std::string c) {
     if (c == "#"s) {
         return 0ll - 1ll;
     };
-    error("char_to_int"s);
+    err("char_to_int"s);
 }
 
-shared_pointer<IntField> lines_to_int_field(shared_vector<std::string> lines) {
-    shared_pointer<IntField> f;
+IntField* lines_to_int_field(std::vector<std::string>* lines) {
+    IntField* f;
     i64 ri;
     i64 ci;
     i64 v;
-    f = create_int_field(array_size(lines), array_size(string_to_chars(lines->at(0ll))));
-    f->start = create_shared_pointer<Coords >();
-    f->finish = create_shared_pointer<Coords >();
+    f = create_int_field(len(lines), len(str_to_chars(lines->at(0ll))));
+    f->start = new Coords();
+    f->finish = new Coords();
     f->north = new_coords(0ll - 1ll, 0ll);
     f->south = new_coords(1ll, 0ll);
     f->west = new_coords(0ll, 0ll - 1ll);
@@ -222,12 +217,12 @@ shared_pointer<IntField> lines_to_int_field(shared_vector<std::string> lines) {
     f->cost = 1000000000ll;
 
     auto __expr0 = lines;
-    for (i64 lines__it0__idx = 0; lines__it0__idx < (i64)__expr0->size(); lines__it0__idx++) {
+    for (int lines__it0__idx = 0; lines__it0__idx < __expr0->size(); lines__it0__idx++) {
         std::string lines__it0 = (*__expr0)[lines__it0__idx];
         ri = lines__it0__idx;
 
-        auto __expr1 = string_to_chars(lines__it0);
-        for (i64 expr__it1__idx = 0; expr__it1__idx < (i64)__expr1->size(); expr__it1__idx++) {
+        auto __expr1 = str_to_chars(lines__it0);
+        for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
             std::string expr__it1 = (*__expr1)[expr__it1__idx];
             ci = expr__it1__idx;
 
@@ -239,7 +234,7 @@ shared_pointer<IntField> lines_to_int_field(shared_vector<std::string> lines) {
             if (expr__it1 == "E"s) {
                 f->finish->ri = ri;
                 f->finish->ci = ci;
-                ////print("finish", ri, ci)
+                //log('finish', ri, ci)
             };
             v = char_to_int(expr__it1);
             set_int_field_value(f, ri, ci, v);
@@ -248,7 +243,7 @@ shared_pointer<IntField> lines_to_int_field(shared_vector<std::string> lines) {
     return f;
 }
 
-shared_pointer<Coords> rotate_left(shared_pointer<IntField> f, shared_pointer<Coords> dir) {
+Coords* rotate_left(IntField* f, Coords* dir) {
 
     if (dir == f->north) {
         return f->west;
@@ -265,10 +260,10 @@ shared_pointer<Coords> rotate_left(shared_pointer<IntField> f, shared_pointer<Co
     if (dir == f->east) {
         return f->north;
     };
-    error("rotate_left"s);
+    err("rotate_left"s);
 }
 
-i64 get_visited_cost(shared_pointer<IntField> f, shared_pointer<VisitedCosts> vis, i64 ri, i64 ci, shared_pointer<Coords> dir) {
+i64 get_visited_cost(IntField* f, VisitedCosts* vis, i64 ri, i64 ci, Coords* dir) {
 
     if (dir == f->north) {
         return get_int_field_value(vis->north, ri, ci);
@@ -285,10 +280,10 @@ i64 get_visited_cost(shared_pointer<IntField> f, shared_pointer<VisitedCosts> vi
     if (dir == f->east) {
         return get_int_field_value(vis->east, ri, ci);
     };
-    error("get_visited_cost"s);
+    err("get_visited_cost"s);
 }
 
-void set_visited_cost(shared_pointer<IntField> f, shared_pointer<VisitedCosts> vis, i64 ri, i64 ci, shared_pointer<Coords> dir, i64 value) {
+void set_visited_cost(IntField* f, VisitedCosts* vis, i64 ri, i64 ci, Coords* dir, i64 value) {
 
     if (dir == f->north) {
         set_int_field_value(vis->north, ri, ci, value);
@@ -309,11 +304,11 @@ void set_visited_cost(shared_pointer<IntField> f, shared_pointer<VisitedCosts> v
         set_int_field_value(vis->east, ri, ci, value);
         return;
     };
-    error("set_visited_cost"s);
+    err("set_visited_cost"s);
 }
 
-i64 try_update_visited_cost(shared_pointer<IntField> f, shared_pointer<VisitedCosts> vis, i64 ri, i64 ci, shared_pointer<Coords> dir, i64 cost) {
-    shared_pointer<IntField> vf;
+i64 try_update_visited_cost(IntField* f, VisitedCosts* vis, i64 ri, i64 ci, Coords* dir, i64 cost) {
+    IntField* vf;
     i64 v;
 
     if (dir == f->north) {
@@ -340,7 +335,7 @@ i64 try_update_visited_cost(shared_pointer<IntField> f, shared_pointer<VisitedCo
     return 0ll;
 }
 
-i64 get_count(shared_pointer<IntField> f) {
+i64 get_count(IntField* f) {
     i64 count;
     i64 ri;
     i64 ci;
@@ -348,12 +343,12 @@ i64 get_count(shared_pointer<IntField> f) {
     count = 0ll;
 
     auto __expr0 = create_range(0ll, f->row_count - 1ll);
-    for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
+    for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
         i64 expr__it0 = (*__expr0)[expr__it0__idx];
         ri = expr__it0;
 
         auto __expr1 = create_range(0ll, f->col_count - 1ll);
-        for (i64 expr__it1__idx = 0; expr__it1__idx < (i64)__expr1->size(); expr__it1__idx++) {
+        for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
             i64 expr__it1 = (*__expr1)[expr__it1__idx];
             ci = expr__it1;
             v = get_int_field_value(f, ri, ci);
@@ -366,18 +361,18 @@ i64 get_count(shared_pointer<IntField> f) {
     return count;
 }
 
-void update_best(shared_pointer<IntField> best, shared_pointer<IntField> visited) {
+void update_best(IntField* best, IntField* visited) {
     i64 ri;
     i64 ci;
     i64 v;
 
     auto __expr0 = create_range(0ll, visited->row_count - 1ll);
-    for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
+    for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
         i64 expr__it0 = (*__expr0)[expr__it0__idx];
         ri = expr__it0;
 
         auto __expr1 = create_range(0ll, visited->col_count - 1ll);
-        for (i64 expr__it1__idx = 0; expr__it1__idx < (i64)__expr1->size(); expr__it1__idx++) {
+        for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
             i64 expr__it1 = (*__expr1)[expr__it1__idx];
             ci = expr__it1;
             v = get_int_field_value(visited, ri, ci);
@@ -389,10 +384,10 @@ void update_best(shared_pointer<IntField> best, shared_pointer<IntField> visited
     }
 }
 
-i64 try_visit(shared_pointer<IntField> f, shared_pointer<IntField> visited, i64 ri, i64 ci, i64 cost, shared_pointer<Coords> dir, shared_pointer<VisitedCosts> visited_costs) {
+i64 try_visit(IntField* f, IntField* visited, i64 ri, i64 ci, i64 cost, Coords* dir, VisitedCosts* visited_costs) {
     i64 v;
-    shared_pointer<Coords> rl;
-    shared_pointer<Coords> rr;
+    Coords* rl;
+    Coords* rr;
     i64 r1;
     i64 r2;
     i64 r3;
@@ -412,33 +407,33 @@ i64 try_visit(shared_pointer<IntField> f, shared_pointer<IntField> visited, i64 
 
     if (ri == f->finish->ri && ci == f->finish->ci) {
         f->cost = cost;
-        ////print_int_field(f, visited)
-        printf("%s %lld\n", ("found"s).c_str(), (i64)(cost));
+        //print_int_field(f, visited)
+        printf("%s %lld\n", ("found"s).c_str(), static_cast<i64>(cost));
 
-        if (cost == 90460ll) {
+        if (cost == 7036ll) {
             update_best(visited_costs->best, visited);
         };
         return 1ll;
     };
     set_int_field_value(visited, ri, ci, 1ll);
-    //// visited_costs.count = visited_costs.count + 1
-    //// if visited_costs.count mod 50000000 = 0
-    ////     print_int_field(f, visited)
-    ////     print("at step", visited_costs.count)
-    ////     readln()
-    //// end
+    // visited_costs.count = visited_costs.count + 1
+    // if visited_costs.count % 50000000 = 0 {
+    //     print_int_field(f, visited)
+    //     log('at step', visited_costs.count)
+    //     readln()
+    // }
     rl = rotate_left(f, dir);
     rr = rotate_left(f, rotate_left(f, rl));
-    ////if try_update_visited_cost(f, visited_costs, ri, ci, dir, cost)
+    //if try_update_visited_cost(f, visited_costs, ri, ci, dir, cost) {
     r1 = try_visit(f, visited, ri + dir->ri, ci + dir->ci, cost + 1ll, dir, visited_costs);
-    ////end
-    r2 =  - 1000000000ll;
+    //}
 
+    //r2 = 0;
     if (try_update_visited_cost(f, visited_costs, ri, ci, rl, cost + 1000ll)) {
         r2 = try_visit(f, visited, ri + rl->ri, ci + rl->ci, cost + 1001ll, rl, visited_costs);
     };
-    r3 =  - 1000000000ll;
 
+    //r3 = 0;
     if (try_update_visited_cost(f, visited_costs, ri, ci, rr, cost + 1000ll)) {
         r3 = try_visit(f, visited, ri + rr->ri, ci + rr->ci, cost + 1001ll, rr, visited_costs);
     };
@@ -451,9 +446,9 @@ i64 try_visit(shared_pointer<IntField> f, shared_pointer<IntField> visited, i64 
     return 1ll;
 }
 
-shared_pointer<VisitedCosts> create_visited_costs(shared_pointer<IntField> f) {
-    shared_pointer<VisitedCosts> c;
-    c = create_shared_pointer<VisitedCosts >();
+VisitedCosts* create_visited_costs(IntField* f) {
+    VisitedCosts* c;
+    c = new VisitedCosts();
     c->north = create_int_field(f->row_count, f->col_count);
     c->south = create_int_field(f->row_count, f->col_count);
     c->west = create_int_field(f->row_count, f->col_count);
@@ -463,18 +458,19 @@ shared_pointer<VisitedCosts> create_visited_costs(shared_pointer<IntField> f) {
 }
 
 void run() {
-    shared_vector<std::string> lines;
-    shared_pointer<IntField> f;
-    shared_pointer<IntField> visited;
-    shared_pointer<VisitedCosts> visited_costs;
+    std::vector<std::string>* lines;
+    IntField* f;
+    IntField* visited;
+    VisitedCosts* visited_costs;
     i64 total;
     lines = read_string_lines_from_file("./input.txt"s);
     f = lines_to_int_field(lines);
     visited = create_int_field(f->row_count, f->col_count);
     visited_costs = create_visited_costs(f);
     try_visit(f, visited, f->start->ri, f->start->ci, 0ll, f->east, visited_costs);
-    ////print_int_field(f, visited)
+    //print_int_field(f, visited)
     total = get_count(visited_costs->best) + 1ll;
-    printf("%s %lld %s %lld\n", ("done"s).c_str(), (i64)(f->cost), ("steps"s).c_str(), (i64)(total));
+    printf("%s %lld %s %lld\n", ("done"s).c_str(), static_cast<i64>(f->cost), ("steps"s).c_str(), static_cast<i64>(total));
 }
+
 

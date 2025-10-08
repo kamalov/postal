@@ -1,44 +1,39 @@
-#include "prelude.cpp"
+#include "prelude.h"
 
-//// prelude start
-template <typename T>i64 array_size(shared_vector<T> a);
-template <typename T>void array_push(shared_vector<T> a, T element);
-template <typename T>T array_pop(shared_vector<T> a);
-template <typename T>void array_quick_sort(shared_vector<T> a);
-template <typename T>void array_push_front(shared_vector<T> a, T element);
-template <typename T>T array_pop_front(shared_vector<T> a);
-template <typename T>T array_last(shared_vector<T> a);
-template <typename T>void array_set_size(shared_vector<T> a, i64 new_size);
-template <typename T>i64 array_contains(shared_vector<T> a, T value);
-template <typename T>void array_remove_at(shared_vector<T> a, i64 index);
-template <typename T>void array_remove(shared_vector<T> a, T value);
-template <typename T>i64 array_index_of(shared_vector<T> a, T value);
-template <typename T>shared_vector<T> array_slice(shared_vector<T> a, i64 from, i64 to);
-template <typename K, typename V>void map_add(shared_map<K, V> map, K key, V value);
-template <typename K, typename V>V map_get_value(shared_map<K, V> map, K key);
-template <typename K, typename V>void map_add_or_update(shared_map<K, V> map, K key, V value);
-template <typename K, typename V>i64 map_has_key(shared_map<K, V> map, K key);
-template <typename K, typename V>void map_remove(shared_map<K, V> map, K key);
-template <typename K, typename V>i64 map_size(shared_map<K, V> map);
-template <typename K, typename V>shared_vector<K> map_keys(shared_map<K, V> map);
-shared_vector<std::string> string_split(std::string s, std::string by);
-i64 string_to_integer(std::string s);
-shared_vector<std::string> string_to_chars(std::string s);
-i64 string_contains(std::string s, std::string subs);
-i64 string_size(std::string s);
-std::string string_remove(std::string s, std::string r);
-std::string string_array_join(shared_vector<std::string> a, std::string delimiter);
-std::string integer_to_string(i64 i);
-void error(std::string s);
-std::string read_line();
-shared_vector<std::string> read_string_lines_from_file(std::string filename);
-//// prelude end
+/// external template <typename T>i64 len(std::vector<T>* a);
+/// external template <typename T>void push(std::vector<T>* a, T elem);
+/// external template <typename T>T pop(std::vector<T>* a);
+/// external template <typename T>void arr_set_len(std::vector<T>* a, i64 new_len);
+/// external template <typename T>void arr_sort(std::vector<T>* a);
+/// external template <typename T>i64 arr_contains(std::vector<T>* a, T value);
+/// external template <typename T>void arr_remove_at(std::vector<T>* a, i64 index);
+/// external template <typename T>void arr_remove(std::vector<T>* a, T value);
+/// external template <typename T>i64 arr_index_of(std::vector<T>* a, T value);
+/// external template <typename T>std::vector<T>* arr_slice(std::vector<T>* a, i64 from, i64 to);
+/// external template <typename K, typename V>void map_add(universal_hashmap<K, V>* map, K key, V value);
+/// external template <typename K, typename V>void map_add_or_update(universal_hashmap<K, V>* map, K key, V value);
+/// external template <typename K, typename V>i64 map_has_key(universal_hashmap<K, V>* map, K key);
+/// external template <typename K, typename V>V map_get_value(universal_hashmap<K, V>* map, K key);
+/// external template <typename K, typename V>void map_remove(universal_hashmap<K, V>* map, K key);
+/// external template <typename K, typename V>i64 map_len(universal_hashmap<K, V>* map);
+/// external template <typename K, typename V>std::vector<K>* map_keys(universal_hashmap<K, V>* map);
+/// external std::vector<std::string>* str_split(std::string s, std::string by);
+/// external i64 str_to_int(std::string s);
+/// external std::vector<std::string>* str_to_chars(std::string s);
+/// external i64 str_contains(std::string s, std::string subs);
+/// external i64 str_len(std::string s);
+/// external std::string str_remove(std::string s, std::string r);
+/// external std::string str_arr_join(std::vector<std::string>* a, std::string delimiter);
+/// external std::string int_to_str(i64 i);
+/// external void err(std::string s);
+/// external std::string readln();
+/// external std::vector<std::string>* read_string_lines_from_file(std::string filename);
 struct IntField {
     i64 row_count;
     i64 col_count;
     i64 cri;
     i64 cci;
-    shared_vector<i64> values;
+    std::vector<i64>* values;
     friend bool operator==(const IntField& l, const IntField& r) {
         return (l.row_count == r.row_count) && (l.col_count == r.col_count) && (l.cri == r.cri) && (l.cci == r.cci);
     }
@@ -98,33 +93,33 @@ namespace std {
     };
 }
 
-shared_pointer<Coords> new_coords(i64 ri, i64 ci) {
-    shared_pointer<Coords> c;
-    c = create_shared_pointer<Coords >();
+Coords* new_coords(i64 ri, i64 ci) {
+    Coords* c;
+    c = new Coords();
     c->ri = ri;
     c->ci = ci;
     return c;
 }
 
-shared_pointer<IntField> create_int_field(i64 row_count, i64 col_count) {
-    shared_pointer<IntField> f;
-    f = create_shared_pointer<IntField >();
+IntField* create_int_field(i64 row_count, i64 col_count) {
+    IntField* f;
+    f = new IntField();
     f->row_count = row_count;
     f->col_count = col_count;
-    f->values = create_shared_vector<i64>();
-    array_set_size(f->values, row_count*col_count);
+    f->values = new std::vector<i64>();
+    arr_set_len(f->values, row_count*col_count);
     return f;
 }
 
-i64 get_int_field_value(shared_pointer<IntField> f, i64 row_index, i64 col_index) {
+i64 get_int_field_value(IntField* f, i64 row_index, i64 col_index) {
     return f->values->at(row_index*f->col_count + col_index);
 }
 
-void set_int_field_value(shared_pointer<IntField> f, i64 row_index, i64 col_index, i64 value) {
+void set_int_field_value(IntField* f, i64 row_index, i64 col_index, i64 value) {
     f->values->at(row_index*f->col_count + col_index) = value;
 }
 
-bool is_valid_field_index(shared_pointer<IntField> f, i64 row_index, i64 col_index) {
+i64 is_valid_field_index(IntField* f, i64 row_index, i64 col_index) {
     return row_index >= 0ll && row_index < f->row_count && col_index >= 0ll && col_index < f->col_count;
 }
 
@@ -145,23 +140,23 @@ std::string int_to_char(i64 i) {
     if (i == 3ll) {
         return "#"s;
     };
-    error("int_to_char"s);
+    err("int_to_char"s);
 }
 
-void print_int_field(shared_pointer<IntField> f, std::string dir) {
+void print_int_field(IntField* f, std::string dir) {
     i64 ri;
     std::string s;
     i64 ci;
     i64 v;
 
     auto __expr0 = create_range(0ll, (f->row_count - 1ll));
-    for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
+    for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
         i64 expr__it0 = (*__expr0)[expr__it0__idx];
         ri = expr__it0;
         s = ""s;
 
         auto __expr1 = create_range(0ll, (f->col_count - 1ll));
-        for (i64 expr__it1__idx = 0; expr__it1__idx < (i64)__expr1->size(); expr__it1__idx++) {
+        for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
             i64 expr__it1 = (*__expr1)[expr__it1__idx];
             ci = expr__it1;
             v = get_int_field_value(f, ri, ci);
@@ -199,7 +194,7 @@ i64 char_to_int(std::string c) {
     if (c == "#"s) {
         return 3ll;
     };
-    error("char_to_int"s);
+    err("char_to_int"s);
 }
 
 std::string char_to_new_chars(std::string c) {
@@ -219,31 +214,31 @@ std::string char_to_new_chars(std::string c) {
     if (c == "#"s) {
         return "##"s;
     };
-    error("char_to_new_chars"s);
+    err("char_to_new_chars"s);
 }
 
-shared_pointer<IntField> lines_to_int_field(shared_vector<std::string> lines) {
-    shared_pointer<IntField> f;
+IntField* lines_to_int_field(std::vector<std::string>* lines) {
+    IntField* f;
     std::string s;
     i64 ri;
     i64 ci;
     i64 v;
-    f = create_int_field(array_size(lines), array_size(string_to_chars(lines->at(0ll)))*2ll);
+    f = create_int_field(len(lines), len(str_to_chars(lines->at(0ll)))*2ll);
 
     auto __expr0 = lines;
-    for (i64 lines__it0__idx = 0; lines__it0__idx < (i64)__expr0->size(); lines__it0__idx++) {
+    for (int lines__it0__idx = 0; lines__it0__idx < __expr0->size(); lines__it0__idx++) {
         std::string lines__it0 = (*__expr0)[lines__it0__idx];
         s = ""s;
 
-        auto __expr1 = string_to_chars(lines__it0);
-        for (i64 expr__it1__idx = 0; expr__it1__idx < (i64)__expr1->size(); expr__it1__idx++) {
+        auto __expr1 = str_to_chars(lines__it0);
+        for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
             std::string expr__it1 = (*__expr1)[expr__it1__idx];
             s = s + char_to_new_chars(expr__it1);
         }
         ri = lines__it0__idx;
 
-        auto __expr2 = string_to_chars(s);
-        for (i64 expr__it2__idx = 0; expr__it2__idx < (i64)__expr2->size(); expr__it2__idx++) {
+        auto __expr2 = str_to_chars(s);
+        for (int expr__it2__idx = 0; expr__it2__idx < __expr2->size(); expr__it2__idx++) {
             std::string expr__it2 = (*__expr2)[expr__it2__idx];
             ci = expr__it2__idx;
 
@@ -258,10 +253,10 @@ shared_pointer<IntField> lines_to_int_field(shared_vector<std::string> lines) {
     return f;
 }
 
-shared_pointer<Delta> get_delta(std::string s) {
+Delta* get_delta(std::string s) {
     i64 dr;
     i64 dc;
-    shared_pointer<Delta> d;
+    Delta* d;
     dr = 0ll;
     dc = 0ll;
 
@@ -280,30 +275,30 @@ shared_pointer<Delta> get_delta(std::string s) {
     if (s == "^"s) {
         dr = 0ll - 1ll;
     };
-    d = create_shared_pointer<Delta >();
+    d = new Delta();
     d->dr = dr;
     d->dc = dc;
     return d;
 }
 
-void move_many(shared_pointer<IntField> f, shared_vector<shared_pointer<Coords>> box_indexes, std::string dir) {
-    shared_pointer<Delta> d;
-    shared_pointer<Coords> c;
+void move_many(IntField* f, std::vector<Coords*>* box_indexes, std::string dir) {
+    Delta* d;
+    Coords* c;
     d = get_delta(dir);
 
     auto __expr0 = box_indexes;
-    for (i64 box_indexes__it0__idx = 0; box_indexes__it0__idx < (i64)__expr0->size(); box_indexes__it0__idx++) {
-        shared_pointer<Coords> box_indexes__it0 = (*__expr0)[box_indexes__it0__idx];
+    for (int box_indexes__it0__idx = 0; box_indexes__it0__idx < __expr0->size(); box_indexes__it0__idx++) {
+        Coords* box_indexes__it0 = (*__expr0)[box_indexes__it0__idx];
         set_int_field_value(f, box_indexes__it0->ri, box_indexes__it0->ci, 0ll);
         set_int_field_value(f, box_indexes__it0->ri, box_indexes__it0->ci + 1ll, 0ll);
     }
 
     for (;;) {
 
-        if (array_size(box_indexes) == 0ll) {
+        if (len(box_indexes) == 0ll) {
             break;
         };
-        c = array_pop(box_indexes);
+        c = pop(box_indexes);
 
         if (dir == ">"s) {
             set_int_field_value(f, c->ri, c->ci + 1ll, 1ll);
@@ -331,7 +326,7 @@ void move_many(shared_pointer<IntField> f, shared_vector<shared_pointer<Coords>>
     }
 }
 
-i64 try_add_boxes(shared_pointer<IntField> f, shared_map<shared_pointer<Coords>, i64> boxes, shared_pointer<Coords> box, i64 dr) {
+i64 try_add_boxes(IntField* f, universal_hashmap<Coords*, i64>* boxes, Coords* box, i64 dr) {
     i64 ri;
     i64 ci;
     i64 l;
@@ -374,15 +369,15 @@ i64 try_add_boxes(shared_pointer<IntField> f, shared_map<shared_pointer<Coords>,
     return 1ll;
 }
 
-void move_next(shared_pointer<IntField> f, std::string dir) {
-    shared_pointer<Delta> d;
+void move_next(IntField* f, std::string dir) {
+    Delta* d;
     i64 ri;
     i64 ci;
     i64 v;
-    shared_vector<shared_pointer<Coords>> box_indexes;
-    shared_map<shared_pointer<Coords>, i64> boxes;
-    shared_pointer<Coords> c;
-    shared_vector<shared_pointer<Coords>> coords;
+    std::vector<Coords*>* box_indexes;
+    universal_hashmap<Coords*, i64>* boxes;
+    Coords* c;
+    std::vector<Coords*>* coords;
     d = get_delta(dir);
     ri = f->cri + d->dr;
     ci = f->cci + d->dc;
@@ -400,7 +395,7 @@ void move_next(shared_pointer<IntField> f, std::string dir) {
     };
 
     if (dir == "<"s || dir == ">"s) {
-        box_indexes = create_shared_vector<shared_pointer<Coords>>();
+        box_indexes = new std::vector<Coords*>();
 
         for (;;) {
             v = get_int_field_value(f, ri, ci);
@@ -417,7 +412,7 @@ void move_next(shared_pointer<IntField> f, std::string dir) {
             };
 
             if (v == 1ll) {
-                array_push(box_indexes, new_coords(ri, ci));
+                push(box_indexes, new_coords(ri, ci));
             };
             ri = ri + d->dr;
             ci = ci + d->dc;
@@ -426,7 +421,7 @@ void move_next(shared_pointer<IntField> f, std::string dir) {
     };
 
     if (dir == "^"s || dir == "v"s) {
-        boxes = create_shared_map<shared_pointer<Coords>, i64>();
+        boxes = new universal_hashmap<Coords*, i64>();
         v = get_int_field_value(f, ri, ci);
 
         if (v == 1ll) {
@@ -447,7 +442,7 @@ void move_next(shared_pointer<IntField> f, std::string dir) {
     };
 }
 
-i64 get_total(shared_pointer<IntField> f) {
+i64 get_total(IntField* f) {
     i64 total;
     i64 ri;
     i64 ci;
@@ -455,12 +450,12 @@ i64 get_total(shared_pointer<IntField> f) {
     total = 0ll;
 
     auto __expr0 = create_range(0ll, (f->row_count - 1ll));
-    for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
+    for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
         i64 expr__it0 = (*__expr0)[expr__it0__idx];
         ri = expr__it0;
 
         auto __expr1 = create_range(0ll, (f->col_count - 1ll));
-        for (i64 expr__it1__idx = 0; expr__it1__idx < (i64)__expr1->size(); expr__it1__idx++) {
+        for (int expr__it1__idx = 0; expr__it1__idx < __expr1->size(); expr__it1__idx++) {
             i64 expr__it1 = (*__expr1)[expr__it1__idx];
             ci = expr__it1;
             v = get_int_field_value(f, ri, ci);
@@ -474,30 +469,30 @@ i64 get_total(shared_pointer<IntField> f) {
 }
 
 void run() {
-    shared_vector<std::string> lines;
+    std::vector<std::string>* lines;
     i64 i;
-    shared_pointer<IntField> f;
+    IntField* f;
     std::string commands_str;
     std::string s;
-    shared_vector<std::string> commands;
+    std::vector<std::string>* commands;
     std::string c;
     std::string next;
-    shared_pointer<Delta> delta;
+    Delta* delta;
     lines = read_string_lines_from_file("./input.txt"s);
-    i = array_index_of(lines, ""s);
-    f = lines_to_int_field(array_slice(lines, 0ll, i - 1ll));
+    i = arr_index_of(lines, ""s);
+    f = lines_to_int_field(arr_slice(lines, 0ll, i - 1ll));
     print_int_field(f, "@"s);
-    commands_str = string_array_join(array_slice(lines, i + 1ll, array_size(lines)), ""s);
-    ////print(commands)
+    commands_str = str_arr_join(arr_slice(lines, i + 1ll, len(lines)), ""s);
+    //log(commands)
     s = ""s;
-    commands = string_to_chars(commands_str);
+    commands = str_to_chars(commands_str);
 
-    auto __expr0 = create_range(0ll, array_size(commands) - 1ll);
-    for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
+    auto __expr0 = create_range(0ll, len(commands) - 1ll);
+    for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
         i64 expr__it0 = (*__expr0)[expr__it0__idx];
         c = commands->at(expr__it0);
 
-        if (expr__it0 >= array_size(commands) - 1ll) {
+        if (expr__it0 >= len(commands) - 1ll) {
             next = "n"s;
         }
         else {
@@ -505,15 +500,16 @@ void run() {
         };
         delta = get_delta(c);
         move_next(f, c);
-        //// print_int_field(f, next)
-        //// print("moved", c)
-        //// if string_size(s) > 50 then s = ""
-        //// s = s + "" + c
-        //// print(s)
-        //// readln()
+        // print_int_field(f, next)
+        // log('moved', c)
+        // if str_len(s) > 50 do s = ''
+        // s = s + '' + c
+        // log(s)
+        // readln()
     }
     print_int_field(f, "@"s);
     printf("\n");
-    printf("%s %lld\n", ("total"s).c_str(), (i64)(get_total(f)));
+    printf("%s %lld\n", ("total"s).c_str(), static_cast<i64>(get_total(f)));
 }
+
 

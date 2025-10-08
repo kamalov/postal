@@ -1,15 +1,15 @@
 current: 
-  -- test on aoc after all changes
-  -- test for memory leaks for shared pointers
   -- groom, remove warning supression
   -- documentation
 
 todo: 
+  -- proper tests (including failure cases)
   -- redo ranges
   -- object initializer
 
 backlog:
   -- remove rust external deps
+  -- test for memory leaks for shared pointers
   -- self referenced structure
   -- ??? refactor type_info
   -- multiline expressions inside () parentheses

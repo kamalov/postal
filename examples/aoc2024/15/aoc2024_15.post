@@ -256,7 +256,7 @@ function get_total(f: IntField)
 end
 
 function run
-    lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt")
+    lines = read_string_lines_from_file("./input.txt")
     i = array_index_of(lines, "")
     f = lines_to_int_field(array_slice(lines, 0, i - 1))
     print_int_field(f, "@")

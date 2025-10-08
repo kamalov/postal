@@ -1,16 +1,16 @@
 function test_multiple_params(a: integer, b: real)
     x = a + 1.1
-    log(a, b, "  ->  ", x)
+    print(a, b, "  ->  ", x)
 end
 
 function test_if(a: integer)
     if a < 0 
-        log("a < 0")
+        print("a < 0")
     else if a > 10 
-        log("a > 10")
+        print("a > 10")
     else
-        log("a >= 0 and <= 10")
-        log(a + 10)
+        print("a >= 0 and <= 10")
+        print(a + 10)
     end
 end
 
@@ -18,7 +18,7 @@ function test_loop
     i = 0
     loop
         i = i + 1
-        log(i)
+        print(i)
         if i = 10 then break
     end
 end
@@ -29,10 +29,10 @@ function test_iterator
     array_push(numbers, 456)
     array_push(numbers, 789)
     for numbers
-        log(index) 
-        log("numbers ", index, " ", item) 
-        for numbers do log("    ", index, " ", item) 
-        log("<< ", index, " ", item) 
+        print(index) 
+        print("numbers ", index, " ", item) 
+        for numbers do print("    ", index, " ", item) 
+        print("<< ", index, " ", item) 
     end
 end
 
@@ -42,9 +42,9 @@ end
 
 function test_params
     b = 5 + 6 + 7*test_params1(5, 6)
-    log(b)
+    print(b)
     b = test_params1(test_params1(5, 6), 6)
-    log(b)
+    print(b)
 end
 
 function test_array_access
@@ -53,7 +53,7 @@ function test_array_access
     array_push(numbers, 456.0)
     array_push(numbers, 789.0)
 
-    for numbers do log(numbers[index])        
+    for numbers do print(numbers[index])        
 end
 
 record Coordinates
@@ -65,26 +65,26 @@ function test_records
     r = Coordinates {}
     r.x = 10 + 10
     r.y = 20
-    log(r.x)
-    log(r.y)
+    print(r.x)
+    print(r.y)
     a = r.x*r.y
-    log(r.x*r.y)
-    log(a)
-    log(r.x*r.y = a)
+    print(r.x*r.y)
+    print(a)
+    print(r.x*r.y = a)
 end
 
 function test_strings
     s = "123"
     ss = "abc"
     sss = s + " " + ss
-    log(sss)
+    print(sss)
 end
 
 // function read_lines(filename: string) [string] external
 
 // function test_read_lines
 //     lines = read_string_lines_from_file("d:/test.txt")
-//     for lines do log(index, item)
+//     for lines do print(index, item)
 // end
 
 function run
@@ -98,5 +98,5 @@ function run
     test_records()
     test_strings()
     //test_read_lines()
-    log("done")
+    print("done")
 end

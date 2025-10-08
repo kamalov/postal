@@ -210,7 +210,7 @@ function try_visit(f: IntField, visited: IntField, ri: integer, ci: integer, cos
         f.cost = cost
         //print_int_field(f, visited)
         print("found", cost)
-        if cost = 90460
+        if cost = 90460 // 7036 11048 90460
             update_best(visited_costs.best, visited)
         end
 
@@ -232,10 +232,12 @@ function try_visit(f: IntField, visited: IntField, ri: integer, ci: integer, cos
         r1 = try_visit(f, visited, ri + dir.ri, ci + dir.ci, cost + 1, dir, visited_costs)
     //end
 
+    r2 = -1000000000
     if try_update_visited_cost(f, visited_costs, ri, ci, rl, cost + 1000)
         r2 = try_visit(f, visited, ri + rl.ri, ci + rl.ci, cost + 1001, rl, visited_costs)
     end
 
+    r3 = -1000000000
     if try_update_visited_cost(f, visited_costs, ri, ci, rr, cost + 1000)
         r3 = try_visit(f, visited, ri + rr.ri, ci + rr.ci, cost + 1001, rr, visited_costs)
     end
@@ -262,7 +264,7 @@ function create_visited_costs(f: IntField)
 end
 
 function run
-    lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt")
+    lines = read_string_lines_from_file("./input.txt")
     f = lines_to_int_field(lines)
     visited = create_int_field(f.row_count, f.col_count)
     visited_costs = create_visited_costs(f)
