@@ -1,102 +1,107 @@
-#include "prelude.h"
+#include "prelude.cpp"
 
-/// prelude template <typename T>i64 len(std::vector<T>* a);
-/// prelude template <typename T>void push(std::vector<T>* a, T elem);
-/// prelude template <typename T>T pop(std::vector<T>* a);
-/// prelude template <typename T>void arr_set_len(std::vector<T>* a, i64 new_len);
-/// prelude template <typename T>void arr_sort(std::vector<T>* a);
-/// prelude template <typename T>i64 arr_contains(std::vector<T>* a, T value);
-/// prelude template <typename T>void arr_remove_at(std::vector<T>* a, i64 index);
-/// prelude template <typename T>void arr_remove(std::vector<T>* a, T value);
-/// prelude template <typename T>i64 arr_index_of(std::vector<T>* a, T value);
-/// prelude template <typename T>std::vector<T>* arr_slice(std::vector<T>* a, i64 from, i64 to);
-/// prelude template <typename K, typename V>void map_add(universal_hashmap<K, V>* map, K key, V value);
-/// prelude template <typename K, typename V>void map_add_or_update(universal_hashmap<K, V>* map, K key, V value);
-/// prelude template <typename K, typename V>i64 map_has_key(universal_hashmap<K, V>* map, K key);
-/// prelude template <typename K, typename V>V map_get_value(universal_hashmap<K, V>* map, K key);
-/// prelude template <typename K, typename V>void map_remove(universal_hashmap<K, V>* map, K key);
-/// prelude template <typename K, typename V>i64 map_len(universal_hashmap<K, V>* map);
-/// prelude template <typename K, typename V>std::vector<K>* map_keys(universal_hashmap<K, V>* map);
-/// prelude std::vector<std::string>* str_split(std::string s, std::string by);
-/// prelude i64 str_to_int(std::string s);
-/// prelude std::vector<std::string>* str_to_chars(std::string s);
-/// prelude i64 str_contains(std::string s, std::string subs);
-/// prelude i64 str_len(std::string s);
-/// prelude std::string str_remove(std::string s, std::string r);
-/// prelude std::string str_arr_join(std::vector<std::string>* a, std::string delimiter);
-/// prelude std::string int_to_str(i64 i);
-/// prelude void err(std::string s);
-/// prelude std::string readln();
-/// prelude std::vector<std::string>* read_string_lines_from_file(std::string filename);
+//// prelude start
+template <typename T>i64 array_size(shared_vector<T> a);
+template <typename T>void array_push(shared_vector<T> a, T element);
+template <typename T>T array_pop(shared_vector<T> a);
+template <typename T>void array_quick_sort(shared_vector<T> a);
+template <typename T>void array_push_front(shared_vector<T> a, T element);
+template <typename T>T array_pop_front(shared_vector<T> a);
+template <typename T>T array_last(shared_vector<T> a);
+template <typename T>void array_set_size(shared_vector<T> a, i64 new_size);
+template <typename T>i64 array_contains(shared_vector<T> a, T value);
+template <typename T>void array_remove_at(shared_vector<T> a, i64 index);
+template <typename T>void array_remove(shared_vector<T> a, T value);
+template <typename T>i64 array_index_of(shared_vector<T> a, T value);
+template <typename T>shared_vector<T> array_slice(shared_vector<T> a, i64 from, i64 to);
+template <typename K, typename V>void map_add(shared_map<K, V> map, K key, V value);
+template <typename K, typename V>V map_get_value(shared_map<K, V> map, K key);
+template <typename K, typename V>void map_add_or_update(shared_map<K, V> map, K key, V value);
+template <typename K, typename V>i64 map_has_key(shared_map<K, V> map, K key);
+template <typename K, typename V>void map_remove(shared_map<K, V> map, K key);
+template <typename K, typename V>i64 map_size(shared_map<K, V> map);
+template <typename K, typename V>shared_vector<K> map_keys(shared_map<K, V> map);
+shared_vector<std::string> string_split(std::string s, std::string by);
+i64 string_to_integer(std::string s);
+shared_vector<std::string> string_to_chars(std::string s);
+i64 string_contains(std::string s, std::string subs);
+i64 string_size(std::string s);
+std::string string_remove(std::string s, std::string r);
+std::string string_array_join(shared_vector<std::string> a, std::string delimiter);
+std::string integer_to_string(i64 i);
+void error(std::string s);
+std::string read_line();
+shared_vector<std::string> read_string_lines_from_file(std::string filename);
+//// prelude end
 struct Part {
-    std::vector<i64>* vals;
+    shared_vector<i64> vals;
 };
 
 
 struct Data {
-    std::vector<Part*>* parts;
+    shared_vector<shared_pointer<Part>> parts;
 };
 
 
-std::vector<i64>* str_to_int_array(std::string s) {
-    std::vector<i64>* r;
-    std::vector<std::string>* chars;
+shared_vector<i64> str_to_int_array(std::string s) {
+    shared_vector<i64> r;
+    shared_vector<std::string> chars;
     i64 i;
-    r = new std::vector<i64>();
-    chars = str_to_chars("bgruw"s);
+    r = create_shared_vector<i64>();
+    chars = string_to_chars("bgruw"s);
 
-    auto __expr0 = str_to_chars(s);
-    for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
+    auto __expr0 = string_to_chars(s);
+    for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
         std::string expr__it0 = (*__expr0)[expr__it0__idx];
-        i = arr_index_of(chars, expr__it0);
-        push(r, i);
+        i = array_index_of(chars, expr__it0);
+        array_push(r, i);
     }
     return r;
 }
 
-std::string int_array_to_str(std::vector<i64>* p) {
-    std::vector<std::string>* chars;
+std::string int_array_to_str(shared_vector<i64> p) {
+    shared_vector<std::string> chars;
     std::string s;
-    chars = str_to_chars("bgruw"s);
+    chars = string_to_chars("bgruw"s);
     s = ""s;
 
     auto __expr0 = p;
-    for (int p__it0__idx = 0; p__it0__idx < __expr0->size(); p__it0__idx++) {
+    for (i64 p__it0__idx = 0; p__it0__idx < (i64)__expr0->size(); p__it0__idx++) {
         i64 p__it0 = (*__expr0)[p__it0__idx];
         s = s + chars->at(p__it0);
     }
     return s;
 }
 
-std::vector<Part*>* parse_parts(std::string line) {
+shared_vector<shared_pointer<Part>> parse_parts(std::string line) {
     std::string s;
-    std::vector<std::string>* a;
-    std::vector<Part*>* parts;
-    Part* p;
-    s = str_remove(line, " "s);
-    a = str_split(s, ","s);
-    arr_sort(a);
-    parts = new std::vector<Part*>();
+    shared_vector<std::string> a;
+    shared_vector<shared_pointer<Part>> parts;
+    shared_pointer<Part> p;
+    s = string_remove(line, " "s);
+    a = string_split(s, ","s);
+    array_quick_sort(a);
+    parts = create_shared_vector<shared_pointer<Part>>();
 
     auto __expr0 = a;
-    for (int a__it0__idx = 0; a__it0__idx < __expr0->size(); a__it0__idx++) {
+    for (i64 a__it0__idx = 0; a__it0__idx < (i64)__expr0->size(); a__it0__idx++) {
         std::string a__it0 = (*__expr0)[a__it0__idx];
-        p = new Part();
+        p = create_shared_pointer<Part >();
         p->vals = str_to_int_array(a__it0);
-        push(parts, p);
+        array_push(parts, p);
     }
     return parts;
 }
 
-i64 matches(std::vector<i64>* target, i64 index, std::vector<i64>* v) {
+i64 matches(shared_vector<i64> target, i64 target_index, shared_vector<i64> v) {
     i64 i;
 
     auto __expr0 = v;
-    for (int v__it0__idx = 0; v__it0__idx < __expr0->size(); v__it0__idx++) {
+    for (i64 v__it0__idx = 0; v__it0__idx < (i64)__expr0->size(); v__it0__idx++) {
         i64 v__it0 = (*__expr0)[v__it0__idx];
-        i = index + v__it0__idx;
+        i = target_index + v__it0__idx;
 
-        if (i >= len(target)) {
+        if (i >= array_size(target)) {
             return 0ll;
         };
 
@@ -109,8 +114,8 @@ i64 matches(std::vector<i64>* target, i64 index, std::vector<i64>* v) {
 
 struct Counter {
     i64 count;
-    std::vector<std::string>* lines;
-    std::vector<i64>* visited;
+    shared_vector<std::string> lines;
+    shared_vector<i64> visited;
     friend bool operator==(const Counter& l, const Counter& r) {
         return (l.count == r.count);
     }
@@ -127,28 +132,28 @@ namespace std {
     };
 }
 
-i64 check(Data* d, std::vector<i64>* target, i64 index, Counter* counter, std::string s) {
+i64 check(shared_pointer<Data> d, shared_vector<i64> target, i64 target_index, shared_pointer<Counter> counter, std::string s) {
     i64 r;
-    std::vector<i64>* p;
+    shared_vector<i64> p;
     i64 i;
     i64 v;
     std::string ns;
     r = 0ll;
 
-    if (index >= len(target)) {
+    if (target_index >= array_size(target)) {
         counter->count = counter->count + 1ll;
-        //log('found', s)
+        ////print("found", s)
         return 1ll;
     };
 
     auto __expr0 = d->parts;
-    for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
-        Part* expr__it0 = (*__expr0)[expr__it0__idx];
+    for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
+        shared_pointer<Part> expr__it0 = (*__expr0)[expr__it0__idx];
         p = expr__it0->vals;
 
-        if (matches(target, index, p)) {
-            //log('matches', index, int_array_to_str(p))
-            i = index*1000ll + expr__it0__idx;
+        if (matches(target, target_index, p)) {
+            ////print("matches", target_index, int_array_to_str(p))
+            i = target_index*1000ll + expr__it0__idx;
             v = counter->visited->at(i);
 
             if (v == 0ll - 1ll) {
@@ -160,7 +165,7 @@ i64 check(Data* d, std::vector<i64>* target, i64 index, Counter* counter, std::s
                 r = r + v;
             }
             else {
-                v = check(d, target, index + len(p), counter, ns);
+                v = check(d, target, target_index + array_size(p), counter, ns);
 
                 if (v > 0ll) {
                     counter->visited->at(i) = v;
@@ -176,43 +181,42 @@ i64 check(Data* d, std::vector<i64>* target, i64 index, Counter* counter, std::s
 }
 
 void run() {
-    std::vector<std::string>* lines;
-    Data* d;
+    shared_vector<std::string> lines;
+    shared_pointer<Data> d;
     i64 i;
     i64 total;
-    std::vector<i64>* target;
-    Counter* c;
+    shared_vector<i64> target;
+    shared_pointer<Counter> c;
     i64 r;
-    lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt"s);
-    d = new Data();
+    lines = read_string_lines_from_file("./input.txt"s);
+    d = create_shared_pointer<Data >();
     d->parts = parse_parts(lines->at(0ll));
 
     auto __expr0 = d->parts;
-    for (int expr__it0__idx = 0; expr__it0__idx < __expr0->size(); expr__it0__idx++) {
-        Part* expr__it0 = (*__expr0)[expr__it0__idx];
+    for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
+        shared_pointer<Part> expr__it0 = (*__expr0)[expr__it0__idx];
         printf("%s\n", (int_array_to_str(expr__it0->vals)).c_str());
     }
     printf("\n");
-    i = arr_index_of(lines, ""s);
-    lines = arr_slice(lines, i + 1ll, len(lines));
+    i = array_index_of(lines, ""s);
+    lines = array_slice(lines, i + 1ll, array_size(lines));
     total = 0ll;
 
     auto __expr1 = lines;
-    for (int lines__it1__idx = 0; lines__it1__idx < __expr1->size(); lines__it1__idx++) {
+    for (i64 lines__it1__idx = 0; lines__it1__idx < (i64)__expr1->size(); lines__it1__idx++) {
         std::string lines__it1 = (*__expr1)[lines__it1__idx];
         target = str_to_int_array(lines__it1);
         printf("%s\n", (lines__it1).c_str());
-        c = new Counter();
-        c->lines = new std::vector<std::string>();
-        c->visited = new std::vector<i64>();
-        arr_set_len(c->visited, 1000000ll);
+        c = create_shared_pointer<Counter >();
+        c->lines = create_shared_vector<std::string>();
+        c->visited = create_shared_vector<i64>();
+        array_set_size(c->visited, 1000000ll);
         r = check(d, target, 0ll, c, ""s);
-        printf("%lld\n", static_cast<i64>(r));
-        //total = total + c.count
+        printf("%lld\n", (i64)(r));
+        ////total = total + c.count
         total = total + r;
-        //for c.visited do log(it)
+        ////for c.visited then print(item)
     }
-    printf("%s %lld\n", ("total"s).c_str(), static_cast<i64>(total));
+    printf("%s %lld\n", ("total"s).c_str(), (i64)(total));
 }
-
 

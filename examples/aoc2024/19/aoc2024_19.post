@@ -83,7 +83,7 @@ function check(d: Data, target: [integer], target_index: integer, counter: Count
 end
 
 function run
-    lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt")
+    lines = read_string_lines_from_file("./input.txt")
     d = Data {}
     d.parts = parse_parts(lines[0])
     

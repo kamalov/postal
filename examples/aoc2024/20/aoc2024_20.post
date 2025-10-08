@@ -169,7 +169,7 @@ function try_cheat(f: IntField)
 end
 
 function run
-    lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt")
+    lines = read_string_lines_from_file("./input.txt")
     f = lines_to_int_field(lines)
 
     //print_int_field(f)

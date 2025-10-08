@@ -33,314 +33,263 @@ void error(std::string s);
 std::string read_line();
 shared_vector<std::string> read_string_lines_from_file(std::string filename);
 //// prelude end
-struct Coords {
-    i64 ri;
-    i64 ci;
-    friend bool operator==(const Coords& l, const Coords& r) {
-        return (l.ri == r.ri) && (l.ci == r.ci);
-    }
-};
-
-namespace std {
-    template<>
-    struct hash<Coords> {
-        std::size_t operator()(const Coords& rec) const {
-            size_t h = 0;
-            h ^= std::hash<i64>{}(rec.ri) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            h ^= std::hash<i64>{}(rec.ci) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            return h;
-        }
-    };
-}
-
-shared_pointer<Coords> new_coords(i64 ri, i64 ci) {
-    shared_pointer<Coords> c;
-    c = create_shared_pointer<Coords >();
-    c->ri = ri;
-    c->ci = ci;
-    return c;
-}
-
-struct IntField {
-    i64 row_count;
-    i64 col_count;
-    shared_pointer<Coords> start;
-    shared_pointer<Coords> finish;
-    shared_vector<i64> values;
-    friend bool operator==(const IntField& l, const IntField& r) {
-        return (l.row_count == r.row_count) && (l.col_count == r.col_count);
-    }
-};
-
-namespace std {
-    template<>
-    struct hash<IntField> {
-        std::size_t operator()(const IntField& rec) const {
-            size_t h = 0;
-            h ^= std::hash<i64>{}(rec.row_count) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            h ^= std::hash<i64>{}(rec.col_count) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            return h;
-        }
-    };
-}
-
-shared_pointer<IntField> create_int_field(i64 row_count, i64 col_count) {
-    shared_pointer<IntField> f;
-    f = create_shared_pointer<IntField >();
-    f->row_count = row_count;
-    f->col_count = col_count;
-    f->values = create_shared_vector<i64>();
-    array_set_size(f->values, row_count*col_count);
-    return f;
-}
-
-i64 get_int_field_value(shared_pointer<IntField> f, i64 row_index, i64 col_index) {
-    return f->values->at(row_index*f->col_count + col_index);
-}
-
-void set_int_field_value(shared_pointer<IntField> f, i64 row_index, i64 col_index, i64 value) {
-    f->values->at(row_index*f->col_count + col_index) = value;
-}
-
-bool is_valid_field_index(shared_pointer<IntField> f, i64 row_index, i64 col_index) {
-    return row_index >= 0ll && row_index < f->row_count && col_index >= 0ll && col_index < f->col_count;
-}
-
-std::string int_to_char(i64 i) {
-
-    if (i == 0ll) {
-        return "."s;
-    };
-
-    if (i == 0ll-1ll) {
-        return "#"s;
-    };
-    return integer_to_string(i);
-}
-
-i64 char_to_int(std::string c) {
-
-    if (c == "."s) {
-        return 0ll;
-    };
-
-    if (c == "S"s) {
-        return 0ll;
-    };
-
-    if (c == "E"s) {
-        return 0ll;
-    };
-
-    if (c == "#"s) {
-        return 0ll-1ll;
-    };
-    error("char_to_int"s);
-}
-
-void print_int_field(shared_pointer<IntField> f) {
-    i64 ri;
-    std::string s;
-    i64 ci;
-    i64 v;
-
-    auto __expr0 = create_range(0ll, (f->row_count-1ll));
-    for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
-        i64 expr__it0 = (*__expr0)[expr__it0__idx];
-        ri = expr__it0;
-        s = ""s;
-
-        auto __expr1 = create_range(0ll, (f->col_count-1ll));
-        for (i64 expr__it1__idx = 0; expr__it1__idx < (i64)__expr1->size(); expr__it1__idx++) {
-            i64 expr__it1 = (*__expr1)[expr__it1__idx];
-            ci = expr__it1;
-            v = get_int_field_value(f, ri, ci);
-            s = s + int_to_char(v);
-        }
-        printf("%s\n", (s).c_str());
-    }
-    printf("\n");
-}
-
-shared_pointer<IntField> lines_to_int_field(shared_vector<std::string> lines) {
-    shared_pointer<IntField> f;
-    i64 ri;
-    i64 ci;
-    i64 v;
-    f = create_int_field(array_size(lines), array_size(string_to_chars(lines->at(0ll))));
-    f->start = create_shared_pointer<Coords >();
-    f->finish = create_shared_pointer<Coords >();
-
-    auto __expr0 = lines;
-    for (i64 lines__it0__idx = 0; lines__it0__idx < (i64)__expr0->size(); lines__it0__idx++) {
-        std::string lines__it0 = (*__expr0)[lines__it0__idx];
-        ri = lines__it0__idx;
-
-        auto __expr1 = string_to_chars(lines__it0);
-        for (i64 expr__it1__idx = 0; expr__it1__idx < (i64)__expr1->size(); expr__it1__idx++) {
-            std::string expr__it1 = (*__expr1)[expr__it1__idx];
-            ci = expr__it1__idx;
-
-            if (expr__it1 == "S"s) {
-                f->start->ri = ri;
-                f->start->ci = ci;
-            };
-
-            if (expr__it1 == "E"s) {
-                f->finish->ri = ri;
-                f->finish->ci = ci;
-            };
-            v = char_to_int(expr__it1);
-            set_int_field_value(f, ri, ci, v);
-        }
-    }
-    return f;
-}
-
-void prepare(shared_pointer<IntField> f, i64 ri, i64 ci, i64 cost) {
-    i64 v;
-
-    if (!is_valid_field_index(f, ri, ci)) {
-        return;
-    };
-    v = get_int_field_value(f, ri, ci);
-
-    if (v == 0ll-1ll || v > 0ll) {
-        return;
-    };
-    set_int_field_value(f, ri, ci, cost);
-    prepare(f, ri + 1ll, ci, cost + 1ll);
-    prepare(f, ri-1ll, ci, cost + 1ll);
-    prepare(f, ri, ci + 1ll, cost + 1ll);
-    prepare(f, ri, ci-1ll, cost + 1ll);
-}
-
-i64 abs_val(i64 i) {
-
-    if (i < 0ll) {
-        return 0ll-i;
-    };
-    return i;
-}
-
-i64 check_cheat(shared_pointer<IntField> f, i64 ri, i64 ci, i64 ri1, i64 ci1, shared_vector<i64> cheat_count) {
-    i64 v;
-    i64 v1;
-    i64 l;
-    i64 diff;
-
-    if (!is_valid_field_index(f, ri1, ci1)) {
-        return 0ll;
-    };
-    v = get_int_field_value(f, ri, ci);
-    v1 = get_int_field_value(f, ri1, ci1);
-
-    if (v1 == 0ll-1ll) {
-        return 0ll;
-    };
-    l = abs_val(ri-ri1) + abs_val(ci-ci1);
-    diff = v1-v-l;
-
-    if (diff > 0ll) {
-        cheat_count->at(diff) = cheat_count->at(diff) + 1ll;
-
-        if (diff >= 100ll) {
-            ////     print("cheat=", diff, "from", ri, ci, "to", ri1, ci1)
-            return 1ll;
-        };
-    };
-    return 0ll;
-}
-
-i64 try_cheat(shared_pointer<IntField> f) {
+i64 exp(i64 a, i64 e) {
     i64 r;
-    shared_vector<i64> cheat_count;
-    i64 max;
-    i64 ri;
-    i64 ci;
-    i64 v;
-    i64 dr;
-    i64 dc;
-    i64 l;
-    r = 0ll;
-    cheat_count = create_shared_vector<i64>();
-    array_set_size(cheat_count, 10000ll);
-    max = 20ll;
+    r = 1ll;
 
-    auto __expr0 = create_range(0ll, (f->row_count-1ll));
+    auto __expr0 = create_range(1ll, e);
     for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
         i64 expr__it0 = (*__expr0)[expr__it0__idx];
-        ri = expr__it0;
-
-        auto __expr1 = create_range(0ll, (f->col_count-1ll));
-        for (i64 expr__it1__idx = 0; expr__it1__idx < (i64)__expr1->size(); expr__it1__idx++) {
-            i64 expr__it1 = (*__expr1)[expr__it1__idx];
-            ci = expr__it1;
-            v = get_int_field_value(f, ri, ci);
-
-            if (v == 0ll-1ll) {
-                continue;
-            };
-
-            auto __expr2 = create_range(0ll, max);
-            for (i64 expr__it2__idx = 0; expr__it2__idx < (i64)__expr2->size(); expr__it2__idx++) {
-                i64 expr__it2 = (*__expr2)[expr__it2__idx];
-                dr = expr__it2;
-
-                auto __expr3 = create_range(0ll, max);
-                for (i64 expr__it3__idx = 0; expr__it3__idx < (i64)__expr3->size(); expr__it3__idx++) {
-                    i64 expr__it3 = (*__expr3)[expr__it3__idx];
-                    dc = expr__it3;
-                    l = dr + dc;
-
-                    if (l < 2ll || l > max) {
-                        continue;
-                    };
-                    ////if dr <> 0 and dc <> 0 then continue
-                    ////print("dr dc", dr, dc)
-
-                    if (dr == 0ll) {
-                        r = r + check_cheat(f, ri, ci, ri, ci + dc, cheat_count);
-                        r = r + check_cheat(f, ri, ci, ri, ci-dc, cheat_count);
-                    }
-                    else if (dc == 0ll) {
-                        r = r + check_cheat(f, ri, ci, ri + dr, ci, cheat_count);
-                        r = r + check_cheat(f, ri, ci, ri-dr, ci, cheat_count);
-                    }
-                    else {
-                        r = r + check_cheat(f, ri, ci, ri + dr, ci + dc, cheat_count);
-                        r = r + check_cheat(f, ri, ci, ri + dr, ci-dc, cheat_count);
-                        r = r + check_cheat(f, ri, ci, ri-dr, ci + dc, cheat_count);
-                        r = r + check_cheat(f, ri, ci, ri-dr, ci-dc, cheat_count);
-                    };
-                }
-            }
-        }
-    }
-
-    auto __expr4 = cheat_count;
-    for (i64 cheat_count__it4__idx = 0; cheat_count__it4__idx < (i64)__expr4->size(); cheat_count__it4__idx++) {
-        i64 cheat_count__it4 = (*__expr4)[cheat_count__it4__idx];
-        ////if item > 0 then print("cheat", index, "count", item)
-
-        if (cheat_count__it4 > 0ll) {
-            printf("%s %lld %s %lld\n", ("count"s).c_str(), (i64)(cheat_count__it4), ("cheat"s).c_str(), (i64)(cheat_count__it4__idx));
-        };
+        r = r*a;
     }
     return r;
 }
 
+struct Data {
+    i64 a;
+    i64 b;
+    i64 c;
+    i64 ip;
+    shared_vector<i64> instructions;
+    std::string out;
+    friend bool operator==(const Data& l, const Data& r) {
+        return (l.a == r.a) && (l.b == r.b) && (l.c == r.c) && (l.ip == r.ip) && (l.out == r.out);
+    }
+};
+
+namespace std {
+    template<>
+    struct hash<Data> {
+        std::size_t operator()(const Data& rec) const {
+            size_t h = 0;
+            h ^= std::hash<i64>{}(rec.a) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            h ^= std::hash<i64>{}(rec.b) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            h ^= std::hash<i64>{}(rec.c) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            h ^= std::hash<i64>{}(rec.ip) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            h ^= std::hash<std::string>{}(rec.out) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            return h;
+        }
+    };
+}
+
+i64 get_combo_value(shared_pointer<Data> d, i64 operand) {
+
+    if (operand <= 3ll) {
+        return operand;
+    };
+
+    if (operand == 4ll) {
+        return d->a;
+    };
+
+    if (operand == 5ll) {
+        return d->b;
+    };
+
+    if (operand == 6ll) {
+        return d->c;
+    };
+
+    if (operand == 7ll) {
+        return 7ll;
+    };
+    error("get_combo_value opcode "s + integer_to_string(operand));
+}
+
+void print_data(shared_pointer<Data> d) {
+    printf("%s %lld %s %lld %s %lld\n", ("A="s).c_str(), (i64)(d->a), ("B="s).c_str(), (i64)(d->b), ("C="s).c_str(), (i64)(d->c));
+    ////print("instructions:", array_size(d.instructions))
+    ////print("out:", d.out)
+}
+
+void print_params(shared_pointer<Data> d) {
+    i64 op;
+    i64 v;
+
+    if (d->ip >= array_size(d->instructions)) {
+        op = 0ll;
+        v = 0ll;
+    }
+    else {
+        op = d->instructions->at(d->ip);
+        v = d->instructions->at(d->ip + 1ll);
+    };
+    printf("%s %lld %s %lld %s %lld %s %s\n", ("op="s).c_str(), (i64)(op), ("value="s).c_str(), (i64)(v), ("combo="s).c_str(), (i64)(get_combo_value(d, v)), ("out:"s).c_str(), (d->out).c_str());
+}
+
+shared_pointer<Data> create_data(shared_vector<std::string> lines) {
+    shared_pointer<Data> d;
+    d = create_shared_pointer<Data >();
+    d->a = string_to_integer(string_split(lines->at(0ll), " "s)->at(2ll));
+    d->b = string_to_integer(string_split(lines->at(1ll), " "s)->at(2ll));
+    d->c = string_to_integer(string_split(lines->at(2ll), " "s)->at(2ll));
+    d->instructions = create_shared_vector<i64>();
+
+    auto __expr0 = string_split(string_split(lines->at(4ll), " "s)->at(1ll), ","s);
+    for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
+        std::string expr__it0 = (*__expr0)[expr__it0__idx];
+        array_push(d->instructions, string_to_integer(expr__it0));
+    }
+    return d;
+}
+
+void execute(shared_pointer<Data> d) {
+    i64 opcode;
+    i64 operand;
+    i64 value;
+    i64 combo_value;
+    i64 v;
+
+    for (;;) {
+
+        if (d->ip >= array_size(d->instructions)) {
+            break;
+        };
+        opcode = d->instructions->at(d->ip);
+        operand = d->instructions->at(d->ip + 1ll);
+        value = operand;
+        combo_value = get_combo_value(d, operand);
+        ////print(d)
+        ////print_params(d)
+
+        if (opcode == 0ll) {
+            ///// adv
+            ////print("adv", "A >> combo |", d.a, ">>", combo_value, "=", d.a rshift 3)
+            d->a = d->a >> combo_value;
+            d->ip = d->ip + 2ll;
+        }
+        else if (opcode == 1ll) {
+            ///// bxl
+            ////print("bxl", "B xor value => B |", d.b, "xor", value, "=>", d.bbit_xorvalue)
+            d->b = d->b^value;
+            d->ip = d->ip + 2ll;
+        }
+        else if (opcode == 2ll) {
+            ///// bst 
+            ////print("bst: A(", d.a, ") mod 8 => B(", d.a mod 8, ")")
+            d->b = combo_value % 8ll;
+            d->ip = d->ip + 2ll;
+        }
+        else if (opcode == 3ll) {
+            ////print("return return return return return return return return return return return return return return return return return return return return return")
+            ///// jnz
+
+            if (d->a > 0ll) {
+                d->ip = value;
+            }
+            else {
+                d->ip = d->ip + 2ll;
+            };
+        }
+        else if (opcode == 4ll) {
+            ///// bxc
+            ////print("bxc: B xor C => B(", d.b, "xor", d.c, "=>", d.b bit_xor d.c)
+            d->b = d->b^d->c;
+            d->ip = d->ip + 2ll;
+        }
+        else if (opcode == 5ll) {
+            ///// out
+            v = combo_value % 8ll;
+            ////print("out: combo mod 8:", combo_value, "mod 8", v)
+
+            if (string_size(d->out) > 0ll) {
+                d->out = d->out + ","s;
+            };
+            d->out = d->out + integer_to_string(v);
+            d->ip = d->ip + 2ll;
+        }
+        else if (opcode == 6ll) {
+            ////print("opcode = 6")
+            ///// bdv
+            d->b = d->a >> combo_value;
+            d->ip = d->ip + 2ll;
+        }
+        else if (opcode == 7ll) {
+            ///// cdv
+            d->c = d->a >> combo_value;
+            ////print("cdv", "A >> combo => C |", d.a, ">>", combo_value, "=", d.c)
+            d->ip = d->ip + 2ll;
+        }
+        else {
+            error("err"s);
+        };
+        ////print(d)
+        ////print()
+        ////readln()
+    }
+}
+
+i64 test(i64 a) {
+    i64 b;
+    i64 c;
+    b = a % 8ll;
+    b = b^5ll;
+    c = a >> b;
+    b = b^6ll;
+    b = b^c;
+    b = b % 8ll;
+    return b;
+}
+
+void try_find(shared_vector<i64> targets, i64 a, i64 target_index, shared_vector<i64> res) {
+    i64 target;
+    i64 a_new;
+
+    if (target_index >= array_size(targets)) {
+        return;
+    };
+    target = targets->at(target_index);
+
+    auto __expr0 = create_range(0ll, 7ll);
+    for (i64 expr__it0__idx = 0; expr__it0__idx < (i64)__expr0->size(); expr__it0__idx++) {
+        i64 expr__it0 = (*__expr0)[expr__it0__idx];
+        a_new = a*8ll + expr__it0;
+
+        if (test(a_new) == target) {
+
+            if (target_index == array_size(targets) - 1ll) {
+                printf("%s %lld\n", ("found "s).c_str(), (i64)(a_new));
+                array_push(res, a_new);
+            };
+            try_find(targets, a_new, target_index + 1ll, res);
+        };
+    }
+}
+
+void generate(shared_pointer<Data> d) {
+    shared_vector<i64> targets;
+    shared_vector<std::string> arr;
+    shared_vector<i64> res;
+    targets = create_shared_vector<i64>();
+    arr = string_split("2,4,1,5,7,5,1,6,0,3,4,3,5,5,3,0"s, ","s);
+
+    for (;;) {
+
+        if (array_size(arr) == 0ll) {
+            break;
+        };
+        array_push(targets, string_to_integer(array_pop(arr)));
+    }
+    res = create_shared_vector<i64>();
+    try_find(targets, 0ll, 0ll, res);
+    array_quick_sort(res);
+    printf("%s %lld\n", ("reses"s).c_str(), (i64)(array_size(res)));
+    printf("%s %lld\n", ("min"s).c_str(), (i64)(res->at(0ll)));
+}
+
 void run() {
     shared_vector<std::string> lines;
-    shared_pointer<IntField> f;
-    i64 t;
-    lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt"s);
-    f = lines_to_int_field(lines);
-    ////print_int_field(f)
-    prepare(f, f->start->ri, f->start->ci, 1ll);
-    ////print_int_field(f)
-    printf("%s %lld\n", ("max"s).c_str(), (i64)(get_int_field_value(f, f->finish->ri, f->finish->ci)));
-    t = try_cheat(f);
-    printf("%s %lld\n", ("done"s).c_str(), (i64)(t));
+    shared_pointer<Data> d;
+    std::string s;
+    lines = read_string_lines_from_file("./input.txt"s);
+    d = create_data(lines);
+    s = string_split(lines->at(4ll), " "s)->at(1ll);
+    s = string_remove(s, ","s);
+    ////target = string_to_integer(s)
+    print_data(d);
+    execute(d);
+    print_data(d);
+    generate(d);
+    printf("%s %s\n", ("\nout="s).c_str(), (d->out).c_str());
 }
 

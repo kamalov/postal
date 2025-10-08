@@ -22,7 +22,7 @@ function get_combo_value(d: Data, operand: integer)
     error("get_combo_value opcode " + integer_to_string(operand))
 end
 
-function print(d: Data)
+function print_data(d: Data)
     print("A=", d.a, "B=", d.b, "C=", d.c)
     //print("instructions:", array_size(d.instructions))
     //print("out:", d.out)
@@ -53,12 +53,6 @@ function create_data(lines: [string])
     return d
 end
 
-function print1(d: Data, cmd: string)
-    return
-    print(cmd)
-    print(d)
-end
-
 function execute(d: Data)
     loop
         if d.ip >= array_size(d.instructions) then break
@@ -73,7 +67,7 @@ function execute(d: Data)
         if opcode = 0
             /// adv
             //print("adv", "A >> combo |", d.a, ">>", combo_value, "=", d.a rshift 3)
-            d.a = d.a rshift combo_value
+            d.a = d.a bit_shift_right combo_value
             d.ip = d.ip + 2
         else if opcode = 1
             /// bxl
@@ -108,11 +102,11 @@ function execute(d: Data)
         else if opcode = 6
             //print("opcode = 6")
             /// bdv
-            d.b = d.a rshift combo_value
+            d.b = d.a bit_shift_right combo_value
             d.ip = d.ip + 2
         else if opcode = 7
             /// cdv
-            d.c = d.a rshift combo_value
+            d.c = d.a bit_shift_right combo_value
             //print("cdv", "A >> combo => C |", d.a, ">>", combo_value, "=", d.c)
             d.ip = d.ip + 2
         else
@@ -127,7 +121,7 @@ end
 function test(a: integer)
     b = a mod 8
     b = b bit_xor 5
-    c = a rshift b
+    c = a bit_shift_right b
     b = b bit_xor 6
     b = b bit_xor c
     b = b mod 8
@@ -167,14 +161,14 @@ function generate(d: Data)
 end
 
 function run
-    lines = read_string_lines_from_file("D:/src/postal/aoc2024/input.txt")
+    lines = read_string_lines_from_file("./input.txt")
     d = create_data(lines)
     s = string_split(lines[4], " ")[1]
     s = string_remove(s, ",")
     //target = string_to_integer(s)
-    print(d)
+    print_data(d)
     execute(d)
-    print(d)
+    print_data(d)
     generate(d)
     
     print("\nout=", d.out)

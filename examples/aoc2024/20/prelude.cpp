@@ -1,6 +1,3 @@
-#pragma warning(disable:4189) // unused variable
-#pragma warning(disable:4100) // unused function parameter
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector> // todo, make local vector
