@@ -92,4 +92,4 @@ function run
     print("Hello, World!")
 end
 
-// more examples in 'examples' and 'test' folders
+// more examples in 'examples' and 'compiler/test' folders
