@@ -12,7 +12,7 @@ pub const KEYWORDS: [&str; 29] = [
     "function", "external", "var", "if", "for", "in", "loop", "break", "continue", "return", //
     "integer", "real", "string", "record", //
     "div", "mod", //
-    "yes", "no", "not", "and", "or", //
+    "true", "false", "not", "and", "or", //
     "bit_xor", "bit_shift_right", "bit_shift_left", "bit_and", "bit_or"//
 ];
 

@@ -22,7 +22,7 @@
 			"patterns": [
                 {
 				    "name": "keyword.control.postal",
-				    "match": "#|\\b(#|if|then|else|loop|for|return|sub|function|do|end|item|index|record|external|integer|real|string|and|or|not|bit_xor|bit_shift_left|bit_shift_right|bit_and|bit_or|div|mod|continue|break|yes|no)\\b"
+				    "match": "#|\\b(#|if|then|else|loop|for|return|sub|function|do|end|item|index|record|external|integer|real|string|boolean|and|or|not|bit_xor|bit_shift_left|bit_shift_right|bit_and|bit_or|div|mod|continue|break|yes|no|true|false)\\b"
 			    },
                 {
 				    "name": "keyword.control.postal1",

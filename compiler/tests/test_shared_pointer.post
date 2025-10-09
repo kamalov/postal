@@ -15,7 +15,7 @@ function test_array
     a = A {}
     a.v = 5
     push(aa, a)
-    b = A { a: 5, d: 1613, c: asldkjsdlkf }
+    b = A {}
     b.v = 5
     push(aa, b)
     log('object array contains A {v: 5} =', array_contains(aa, b))

@@ -1,5 +1,5 @@
 function run
-    print("done")
+    for 10..15
+        print(item, index)
+    end
 end
-
-

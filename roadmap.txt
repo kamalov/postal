@@ -22,6 +22,7 @@ Phase zero (basic syntax and type checking, proof of concept):
    -- transpilation to C++
 -- limitations:
    -- no polymorpism
+   -- no global variables
    -- single source file
    -- ansi strings
    -- no nested built-in collections (i.e. array of array, hashmap of array, etc.)

@@ -616,8 +616,8 @@ impl CodeGenerator<'_> {
             }
             ExpressionKind::BooleanLiteral(literal) => {
                 match literal.as_str() {
-                    "yes" => write!(&mut r, "true"),
-                    "no" => write!(&mut r, "false"),
+                    "true" => write!(&mut r, "true"),
+                    "false" => write!(&mut r, "false"),
                     _ => panic!(),
                 };
             }
