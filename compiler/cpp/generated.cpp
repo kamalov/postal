@@ -78,9 +78,9 @@ bool example_function(i64 p1, std::string p2) {
     shared_pointer<FooType> f;
     i = 1000ll;
     r = 1000.1;
-    s = "some"s + " "s + "value"s;
-    b = true || false;
-    //// if/else
+    s = "some value"s;
+    b = true;
+    //// if/else if/else
 
     if ((i == 1000ll || i > 1000ll || r < 1000.1) && (b || !r)) {
         v = 1ll;
@@ -166,4 +166,4 @@ void run() {
     printf("%s\n", ("Hello, World!"s).c_str());
 }
 
-//// more examples in 'examples' and 'test' folders
+//// more examples in 'examples' and 'compiler/test' folders

@@ -15,7 +15,11 @@
         {
             "name": "comment.line.postal",
             "match": "//.*$"
-        }	
+        },
+        {
+            "match": "\\b(\\d+)|(\\d*\\.\\d+([eE][\\-+]?\\d+)?)\\b",
+            "name": "constant.numeric.postal"
+        }
     ],
 	"repository": {
 		"keywords": {

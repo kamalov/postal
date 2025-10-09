@@ -1,25 +1,37 @@
 {
 	"name": "Postal Light",
 	"colors": {
-        "activityBar.background": "#0b3b3c",
-        "sideBar.background": "#0b3b3c",
-        "sideBar.foreground": "#a7bcb2",
-        "editorLineNumber.foreground": "#0b3b3c",
-        "editorLineNumber.activeForeground": "#0b3b3c",
-        "editor.selectionBackground": "#fbf1a9aa",
+        //"activityBar.background": "#808080",
+        // "sideBar.background": "#0b3b3c",
+        // "sideBar.foreground": "#a7bcb2",
+        // "editorLineNumber.foreground": "#0b3b3c",
+        // "editorLineNumber.activeForeground": "#0b3b3c",
+        // "editor.selectionBackground": "#fbf1a9aa",
 
-		"editor.background": "#e8efe8",
-		"editor.foreground": "#222"
+		"editor.background": "#f6f8fa",
+		"editor.foreground": "#000"
 	},
 	"tokenColors": [
-		{
+        {
+            "name": "Comments",
+            "scope": [
+                "comment"
+            ],
+            "settings": {
+                "foreground": "#AA3731",
+                //"foreground": "#448C27"
+            }
+        },
+        {
 			"name": "Keywords",
 			"scope": [
 				"keyword",
 				"storage"
 			],
 			"settings": {
-				"foreground": "#0b3b3c"
+				"foreground": "#cf222e",
+				"foreground": "#448C27",
+				"foreground": "#0550ae"
 			}
 		},
 		{
@@ -27,6 +39,18 @@
 			"scope": "keyword.operator",
 			"settings": {
 				"foreground": "#0b3b3c"
+			}
+		},
+		{
+			"name": "Literals: Strings, Numbers, Characters",
+			"scope": [
+                "string",
+				"constant.numeric1",
+				"constant.character"
+			],
+			"settings": {
+				"foreground": "#7A3E9D",
+				"foreground": "#448C27"
 			}
 		},
 		// {
@@ -95,17 +119,6 @@
 			"scope": "entity.name.section",
 			"settings": {
 				"fontStyle": "bold"
-			}
-		},
-		{
-			"name": "Numbers, Characters",
-			"scope": [
-                "string",
-				"constant.numeric",
-				"constant.character"
-			],
-			"settings": {
-				"foreground": "#ff5138"
 			}
 		},
 		{

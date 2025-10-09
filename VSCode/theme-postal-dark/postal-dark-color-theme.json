@@ -114,6 +114,10 @@
             "settings": { "foreground": "#ffffff" }
         },
         {
+            "scope": ["constant.numeric.postal"], 
+            "settings": { "foreground": "#ffffff" }
+        },
+        {
             "scope": ["brackets1.postal"], 
             "settings": { "foreground": "#4d6457" }
         },

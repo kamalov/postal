@@ -1,10 +1,8 @@
-### Post Pascal
+### Post Pascal programming language (aka postal)
 
-[readme in html (with proper syntax highlighting)](readme.html)
+[View syntax with proper highlighting](https://htmlpreview.github.io/?https://github.com/kamalov/postal/blob/main/syntax.html)
 
-[readme in html (with proper syntax highlighting)](https://htmlpreview.github.io/?https://github.com/kamalov/postal/readme.html)
-
-```pascal
+```
 // user type
 record FooType
     // simple fields
@@ -22,12 +20,12 @@ end
 
 // example function
 function example_function(p1: integer, p2: string) boolean
-    i = 1000                      // integer literal
-    r = 1000.1                    // floating point literal
-    s = "some" + " " + "value"    // string literals and concatenation
-    b = true or false             // boolean literals
+    i = 1000            // integer variable
+    r = 1000.1          // floating point variable
+    s = "some value"    // string variable 
+    b = true            // boolean variable
 
-    // if/else
+    // if/else if/else
     if (i = 1000 or i > 1000 or r < 1000.1) and (b or not r)
         v = 1               
     else if s = "some"
@@ -101,6 +99,3 @@ end
 
 // more examples in 'examples' and 'compiler/test' folders
 ```
-
-
-

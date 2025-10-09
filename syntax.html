@@ -1,0 +1,599 @@
+<html>
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1251">
+<meta name=Generator content="Microsoft Word 15 (filtered)">
+<style>
+<!--
+    body {
+        background-color: #F6F8FA;
+    }
+ /* Font Definitions */
+ @font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;}
+@font-face
+	{font-family:monospace;
+	panose-1:2 11 6 9 2 2 4 3 2 4;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin-top:0cm;
+	margin-right:0cm;
+	margin-bottom:8.0pt;
+	margin-left:0cm;
+	line-height:107%;
+	font-size:11.0pt;
+	font-family:"Calibri",sans-serif;}
+.MsoChpDefault
+	{font-family:"Calibri",sans-serif;}
+.MsoPapDefault
+	{margin-bottom:8.0pt;
+	line-height:107%;}
+@page WordSection1
+	{size:612.0pt 792.0pt;
+	margin:72.0pt 72.0pt 72.0pt 72.0pt;}
+div.WordSection1
+	{page:WordSection1;}
+-->
+</style>
+
+</head>
+
+<body lang=EN-US>
+
+<div class=WordSection1>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:#AA3731'>// user type</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:#0550AE'>record</span><span style='font-size:13.5pt;font-family:monospace;
+color:black'> FooType</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#AA3731'>// simple fields</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; i: </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>integer</span><span style='font-size:13.5pt;font-family:
+monospace;color:black'> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span><span
+style='font-size:13.5pt;font-family:monospace;color:#AA3731'>// signed int 64</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; r: </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>real</span><span style='font-size:13.5pt;font-family:
+monospace;color:black'> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </span><span
+style='font-size:13.5pt;font-family:monospace;color:#AA3731'>// double floating
+point</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; s: </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>string</span><span style='font-size:13.5pt;font-family:
+monospace;color:black'> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </span><span
+style='font-size:13.5pt;font-family:monospace;color:#AA3731'>// string (as value
+type)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; b: </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>boolean</span><span style='font-size:13.5pt;font-family:
+monospace;color:black'> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span><span
+style='font-size:13.5pt;font-family:monospace;color:#AA3731'>// true/false</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#AA3731'>// complex fields</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; integer_array: [</span><span style='font-size:13.5pt;
+font-family:monospace;color:#0550AE'>integer</span><span style='font-size:13.5pt;
+font-family:monospace;color:black'>] &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp;</span><span style='font-size:13.5pt;font-family:
+monospace;color:#AA3731'>// dynamic array of integer</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; foo_array: [FooType] &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span><span
+style='font-size:13.5pt;font-family:monospace;color:#AA3731'>// dynamic array of
+FooType</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; string_to_integer_map: </span><span
+style='font-size:13.5pt;font-family:monospace;color:#0550AE'>#</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'>[</span><span
+style='font-size:13.5pt;font-family:monospace;color:#0550AE'>string</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'>, </span><span
+style='font-size:13.5pt;font-family:monospace;color:#0550AE'>integer</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'>] &nbsp; </span><span
+style='font-size:13.5pt;font-family:monospace;color:#AA3731'>// string to
+integer map</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; foo_to_string_map: </span><span style='font-size:
+13.5pt;font-family:monospace;color:#0550AE'>#</span><span style='font-size:13.5pt;
+font-family:monospace;color:black'>[FooType, FooType] &nbsp; &nbsp; &nbsp;</span><span
+style='font-size:13.5pt;font-family:monospace;color:#AA3731'>// FooType to
+FooType map</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:#0550AE'>end</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:#AA3731'>// example function</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:#0550AE'>function</span><span style='font-size:13.5pt;font-family:monospace;
+color:black'> example_function(p1: </span><span style='font-size:13.5pt;
+font-family:monospace;color:#0550AE'>integer</span><span style='font-size:13.5pt;
+font-family:monospace;color:black'>, p2: </span><span style='font-size:13.5pt;
+font-family:monospace;color:#0550AE'>string</span><span style='font-size:13.5pt;
+font-family:monospace;color:black'>) </span><span style='font-size:13.5pt;
+font-family:monospace;color:#0550AE'>boolean</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; i = 1000 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span><span
+style='font-size:13.5pt;font-family:monospace;color:#AA3731'>// integer variable</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; r = 1000.1 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span><span
+style='font-size:13.5pt;font-family:monospace;color:#AA3731'>// floating point
+variable</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; s = </span><span style='font-size:13.5pt;font-family:
+monospace;color:#448C27'>&quot;some value&quot;</span><span style='font-size:
+13.5pt;font-family:monospace;color:black'> &nbsp; &nbsp;</span><span
+style='font-size:13.5pt;font-family:monospace;color:#AA3731'>// string variable </span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; b = </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>true</span><span style='font-size:13.5pt;font-family:
+monospace;color:black'> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span><span
+style='font-size:13.5pt;font-family:monospace;color:#AA3731'>// boolean variable</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#AA3731'>// if/else if/else</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>if</span><span style='font-size:13.5pt;font-family:
+monospace;color:black'> (i = 1000 </span><span style='font-size:13.5pt;
+font-family:monospace;color:#0550AE'>or</span><span style='font-size:13.5pt;
+font-family:monospace;color:black'> i &gt; 1000 </span><span style='font-size:
+13.5pt;font-family:monospace;color:#0550AE'>or</span><span style='font-size:
+13.5pt;font-family:monospace;color:black'> r &lt; 1000.1) </span><span
+style='font-size:13.5pt;font-family:monospace;color:#0550AE'>and</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'> (b </span><span
+style='font-size:13.5pt;font-family:monospace;color:#0550AE'>or</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'> </span><span
+style='font-size:13.5pt;font-family:monospace;color:#0550AE'>not</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'> r)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; &nbsp; &nbsp; v = 1 &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; </span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>else</span><span style='font-size:13.5pt;font-family:
+monospace;color:black'> </span><span style='font-size:13.5pt;font-family:monospace;
+color:#0550AE'>if</span><span style='font-size:13.5pt;font-family:monospace;
+color:black'> s = </span><span style='font-size:13.5pt;font-family:monospace;
+color:#448C27'>&quot;some&quot;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; &nbsp; &nbsp; </span><span style='font-size:13.5pt;
+font-family:monospace;color:#AA3731'>// all variables are in function scope
+(like old C or JavaScript)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; &nbsp; &nbsp; </span><span style='font-size:13.5pt;
+font-family:monospace;color:#AA3731'>// no local scopes (yet)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; &nbsp; &nbsp; v = 2</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>else</span><span style='font-size:13.5pt;font-family:
+monospace;color:black'> </span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; &nbsp; &nbsp; v = 3</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>end</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#AA3731'>// single line condition</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>if</span><span style='font-size:13.5pt;font-family:
+monospace;color:black'> i &gt; 1000 </span><span style='font-size:13.5pt;
+font-family:monospace;color:#0550AE'>then</span><span style='font-size:13.5pt;
+font-family:monospace;color:black'> i = i + 1</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#AA3731'>// endless loop</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>loop</span><span style='font-size:13.5pt;font-family:
+monospace;color:black'> </span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; &nbsp; &nbsp; i = i + 1</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; &nbsp; &nbsp; </span><span style='font-size:13.5pt;
+font-family:monospace;color:#0550AE'>if</span><span style='font-size:13.5pt;
+font-family:monospace;color:black'> i &lt; 2000 </span><span style='font-size:
+13.5pt;font-family:monospace;color:#0550AE'>then</span><span style='font-size:
+13.5pt;font-family:monospace;color:black'> </span><span style='font-size:13.5pt;
+font-family:monospace;color:#0550AE'>continue</span><span style='font-size:13.5pt;
+font-family:monospace;color:black'> &nbsp; &nbsp; </span><span style='font-size:
+13.5pt;font-family:monospace;color:#AA3731'>// continue cycle</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; &nbsp; &nbsp; </span><span style='font-size:13.5pt;
+font-family:monospace;color:#0550AE'>if</span><span style='font-size:13.5pt;
+font-family:monospace;color:black'> i &gt; 2000 </span><span style='font-size:
+13.5pt;font-family:monospace;color:#0550AE'>then</span><span style='font-size:
+13.5pt;font-family:monospace;color:black'> </span><span style='font-size:13.5pt;
+font-family:monospace;color:#0550AE'>break</span><span style='font-size:13.5pt;
+font-family:monospace;color:black'> &nbsp; &nbsp; &nbsp; &nbsp;</span><span
+style='font-size:13.5pt;font-family:monospace;color:#AA3731'>// break loop</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>end</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#AA3731'>// iterate over range (both sides included)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>for</span><span style='font-size:13.5pt;font-family:
+monospace;color:black'> 10..15</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; &nbsp; &nbsp; range_item = </span><span
+style='font-size:13.5pt;font-family:monospace;color:#0550AE'>item</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'> &nbsp; &nbsp; &nbsp;</span><span
+style='font-size:13.5pt;font-family:monospace;color:#AA3731'>// item for current
+element</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; &nbsp; &nbsp; range_index = </span><span
+style='font-size:13.5pt;font-family:monospace;color:#0550AE'>index</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'> &nbsp; &nbsp;</span><span
+style='font-size:13.5pt;font-family:monospace;color:#AA3731'>// index for
+current index of element</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; &nbsp; &nbsp; print(</span><span style='font-size:
+13.5pt;font-family:monospace;color:#448C27'>&quot;iterating over range&quot;</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'>, </span><span
+style='font-size:13.5pt;font-family:monospace;color:#0550AE'>index</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'>, </span><span
+style='font-size:13.5pt;font-family:monospace;color:#0550AE'>item</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'>)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>end</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#AA3731'>// array </span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; integer_array = [</span><span style='font-size:13.5pt;
+font-family:monospace;color:#0550AE'>integer</span><span style='font-size:13.5pt;
+font-family:monospace;color:black'>]</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#AA3731'>// adding into array (std functions declarations are
+inside 'prelude.post' file)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; array_push(integer_array, 5)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; array_push(integer_array, 6)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; array_push(integer_array, 7)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; integer_array[0] = 1</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#AA3731'>// iterating over array</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>for</span><span style='font-size:13.5pt;font-family:
+monospace;color:black'> integer_array</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; &nbsp; &nbsp; print(</span><span style='font-size:
+13.5pt;font-family:monospace;color:#448C27'>&quot;iterating over integer
+array&quot;</span><span style='font-size:13.5pt;font-family:monospace;
+color:black'>, </span><span style='font-size:13.5pt;font-family:monospace;
+color:#0550AE'>index</span><span style='font-size:13.5pt;font-family:monospace;
+color:black'>, </span><span style='font-size:13.5pt;font-family:monospace;
+color:#0550AE'>item</span><span style='font-size:13.5pt;font-family:monospace;
+color:black'>)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>end</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#AA3731'>// creating FooType objects</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; f1 = FooType {}</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; f1.i = 1</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; f1.s = </span><span style='font-size:13.5pt;
+font-family:monospace;color:#448C27'>&quot;one&quot;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; f2 = FooType {}</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; f2.r = 2.0</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; f2.s = </span><span style='font-size:13.5pt;
+font-family:monospace;color:#448C27'>&quot;two&quot;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#AA3731'>// string to FooType map</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; some_map = </span><span style='font-size:13.5pt;
+font-family:monospace;color:#0550AE'>#</span><span style='font-size:13.5pt;
+font-family:monospace;color:black'>[</span><span style='font-size:13.5pt;
+font-family:monospace;color:#0550AE'>string</span><span style='font-size:13.5pt;
+font-family:monospace;color:black'>, FooType]</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; map_add(some_map, </span><span style='font-size:
+13.5pt;font-family:monospace;color:#448C27'>&quot;one&quot;</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'>, f1)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; map_add(some_map, </span><span style='font-size:
+13.5pt;font-family:monospace;color:#448C27'>&quot;two&quot;</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'>, f2)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#AA3731'>// iterating over map</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>for</span><span style='font-size:13.5pt;font-family:
+monospace;color:black'> map_keys(some_map)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; &nbsp; &nbsp; f = map_get_value(some_map, </span><span
+style='font-size:13.5pt;font-family:monospace;color:#0550AE'>item</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'>)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; &nbsp; &nbsp; print(</span><span style='font-size:
+13.5pt;font-family:monospace;color:#448C27'>&quot;iterating over map&quot;</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'>, </span><span
+style='font-size:13.5pt;font-family:monospace;color:#0550AE'>item</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'>, f.s)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>end</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#AA3731'>// return </span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; </span><span style='font-size:13.5pt;font-family:
+monospace;color:#0550AE'>return</span><span style='font-size:13.5pt;font-family:
+monospace;color:black'> </span><span style='font-size:13.5pt;font-family:monospace;
+color:#0550AE'>true</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:#0550AE'>end</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:#AA3731'>// entry point</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:#0550AE'>function</span><span style='font-size:13.5pt;font-family:monospace;
+color:black'> run </span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; b = example_function(1, </span><span
+style='font-size:13.5pt;font-family:monospace;color:#448C27'>&quot;2&quot;</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'>)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp; &nbsp; print(</span><span style='font-size:13.5pt;
+font-family:monospace;color:#448C27'>&quot;Hello, World!&quot;</span><span
+style='font-size:13.5pt;font-family:monospace;color:black'>)</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:#0550AE'>end</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:black'>&nbsp;</span></p>
+
+<p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+18.0pt;background:#F6F8FA'><span style='font-size:13.5pt;font-family:monospace;
+color:#AA3731'>// more examples in 'examples' and 'compiler/test' folders</span></p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+</div>
+
+</body>
+
+</html>
