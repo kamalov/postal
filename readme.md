@@ -2,6 +2,8 @@
 
 [readme in html (with proper syntax highlighting)](readme.html)
 
+[readme in html (with proper syntax highlighting)](https://htmlpreview.github.io/?https://github.com/kamalov/postal/readme.html)
+
 ```pascal
 // user type
 record FooType
