@@ -1,4 +1,4 @@
-### Post Pascal programming language (aka postal)
+### Post Pascal Programming Language (aka postal)
 
 [View syntax with proper highlighting](https://htmlpreview.github.io/?https://github.com/kamalov/postal/blob/main/syntax.html)
 
@@ -97,5 +97,59 @@ function run
     print("Hello, World!")
 end
 
-// more examples in 'examples' and 'compiler/test' folders
+// more examples in 'examples' and 'compiler/tests' folders
 ```
+**Goal: easy syntax (TypeScript like), fast compilation (Jai like), fast runtime (C like)**
+
+**Priorities (by desc):**
+1. Typed
+2. Memsafe
+3. Design time: better than TypeScript code writing speed (and TypeScript is smooth)
+4. Run time: close to C runtime performance (speed and memory wise, with bump memory allocation)
+5. Compile time: close to Jai compilation speed
+
+**Implementation**
+
+Phase zero (basic syntax and type checking, proof of concept, done):
+- features:
+  - [x] type checking
+  - [x] type inference
+  - [x] refcounted memory management
+  - [x] Pascal/C/Basic hybrid syntax
+  - [x] built-in strings, dyn array and hash table
+  - [x] structs only
+  - [x] transpilation to C++
+- limitations:
+  - no polymorpism
+  - no global variables
+  - single source file
+  - ansi strings
+  - no nested built-in collections (i.e. array of array, hashmap of array, etc.)
+
+Phase one (critical):
+- [ ] declarative? bump memory allocation mechanizm (and probably value types). Never ever been done before?
+- [ ] polymorphism (generics, tagget unions)
+- [ ] error handling mechanizm (exceptions or result or smth.)
+- [ ] transpilation to C99 (or C89, or even jai... needs research)
+
+Phase two (non-critical):
+- [ ] function pointers
+- [ ] enums
+- [ ] tuples
+- [ ] global variables
+- [ ] nested collections
+- [ ] language server
+- [ ] ...
+- [ ] multiple source files (modules?)
+- [ ] utf-8 strings
+- [ ] iterators (+ mapping with >>)
+- [ ] function overload
+- [ ] standard library
+
+Backlog:
+- better compile error messages
+- semantic block comment (clojure style)
+- scope variables
+- ??? variant data type
+ 
+
