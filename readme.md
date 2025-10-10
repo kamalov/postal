@@ -151,5 +151,14 @@ Backlog:
 - semantic block comment (clojure style)
 - scope variables
 - ??? variant data type
+
+**How to run**
+- Current sequence is 'input.post' => compiler => 'cpp/generated.cpp' => 'your favourite C++ compiler' => executable.
+- Input filename is hardcoded in 'compiler/main.rs' file.
+- Output is 'compiler/cpp/generated.cpp'.
+- 'compiler/cpp/prelude.cpp' contains C++ utils.
+- Use 'compiler/cpp/run.bat' to compile with msvc cl.exe compiler (you should specify your C++ environment beforehand).   
+
+
  
 
