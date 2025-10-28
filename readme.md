@@ -1,6 +1,6 @@
 ### Post Pascal Programming Language (aka postal)
 
-[View syntax with proper highlighting](https://htmlpreview.github.io/?https://github.com/kamalov/postal/blob/main/syntax.html)
+[View syntax with proper highlighting](https://htmlpreview.github.io/?https://github.com/kamalov/postal/blob/main/misc/syntax.html)
 
 ```
 // user type
