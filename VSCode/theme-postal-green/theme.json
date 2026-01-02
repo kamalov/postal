@@ -1,0 +1,59 @@
+{
+    "$schema": "vscode://schemas/color-theme",
+    "name": "Postal Green",
+    "type": "dark",
+    "include": "./themes/kimbie-dark-color-theme.json",
+    "colors": {
+        "editor.background": "#18231e", // "#062626", "#142323", "#18211e",
+        "editor.foreground": "#c3e88d",
+        "editorLineNumber.activeForeground": "#4d6457",
+        "editorLineNumber.foreground": "#4d6457",
+        "editor.selectionBackground": "#84613d",
+        //"editor.lineHighlightBackground": "#ff0000aa",
+        //"editor.selectionHighlightBackground": "#ff0000aa",
+        
+        "activityBar.background": "#18211e",
+        "activityBar.border": "#2B2B2B",
+        "sideBar.background": "#18211e",
+        "sideBar.border": "#2B2B2B",
+        "sideBar.foreground": "#ddd",
+    },
+    "tokenColors": [
+        {
+            "scope": [
+                "keyword",
+                "punctuation"
+            ],
+            "settings": {
+                "foreground": "#c2edd3", //"#afebc9"
+            }
+        },
+        {
+            "scope": [
+                "comment"
+            ],
+            "settings": {
+                "foreground": "#67d180", // "#d3af86",
+            }
+        },
+        {
+            "scope": [
+                "string",
+                "constant",
+            ],
+            "settings": {
+                "foreground":"#fff", // "#c2edd3", "#67d180",
+            }
+        },
+    ],
+    "semanticHighlighting": true,
+    "semanticTokenColors": {
+        "struct.declaration": "#f9a646",
+        "method.declaration": "#f9a646",
+        "function.declaration": "#f9a646",
+        "typeAlias.declaration": "#f9a646",
+        "enum.declaration": "#f9a646",
+        
+        "escapeSequence": "#d3af86",
+    }
+}

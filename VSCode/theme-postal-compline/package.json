@@ -1,0 +1,21 @@
+{
+  "name": "theme-postal-compline",
+  "displayName": "Postal Compline theme for Visual Studio Code",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "*"
+  },
+  "categories": [
+    "Themes"
+  ],
+  "contributes": {
+    "themes": [
+      {
+        "label": "Postal Compline",
+        "uiTheme": "vs-dark",
+        "path": "./theme.json"
+      }
+    ]
+  }
+}

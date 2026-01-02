@@ -1,0 +1,24 @@
+{
+    "name": "theme-postal-green",
+    "description": "Postal Green theme for Visual Studio Code",
+    "displayName": "Postal Green theme",
+    "version": "0.0.1",
+    "publisher": "none",
+    "license": "MIT",
+    "engines": {
+        "vscode": "*"
+    },
+    "categories": [
+        "Themes"
+    ],
+    "contributes": {
+        "themes": [
+            {
+                "id": "Postal Green",
+                "label": "Postal Green",
+                "uiTheme": "vs-dark",
+                "path": "./theme.json"
+            }
+        ]
+    }
+}
